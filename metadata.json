@@ -1,0 +1,6 @@
+{
+  "name": "Nour Adhkar",
+  "description": "پلتفرم فارسی اذکار و ادعیه اسلامی - An elegant Android Adhkar app with daily reminders, offline storage, and a beautiful Tasbih counter.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
