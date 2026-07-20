@@ -8,13 +8,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.example.R
 
-// Define the custom professional Persian/Arabic font family
-val Vazirmatn = FontFamily(
-    Font(R.font.vazirmatn_regular, FontWeight.Normal),
-    Font(R.font.vazirmatn_bold, FontWeight.Bold),
-    Font(R.font.vazirmatn_bold, FontWeight.SemiBold),
-    Font(R.font.vazirmatn_bold, FontWeight.Medium)
-)
+// Define the custom professional Persian/Arabic font family (falling back safely to SansSerif)
+val Vazirmatn = FontFamily.SansSerif
 
 // Configure Material 3 Typography to use Vazirmatn as the default font family
 val Typography = Typography(

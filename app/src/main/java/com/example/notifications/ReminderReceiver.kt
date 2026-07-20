@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.MainActivity
+import com.example.R
 import com.example.data.model.AdhkarData
 import com.example.data.repository.PreferenceRepository
 
@@ -34,26 +35,38 @@ class ReminderReceiver : BroadcastReceiver() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        val (title, text) = when (type) {
+        val (title, text, bigText) = when (type) {
             "morning" -> {
                 val dhikr = AdhkarData.adhkarList["morning"]?.randomOrNull()
-                Pair(
-                    "ذکر صبحگاه ☀️",
-                    dhikr?.persianTranslation ?: "روز خود را با یاد خدا و تلاوت اذکار صبحگاه نورانی کنید."
+                val intro = "امروز خود را با تلاوت اذکار مبارک صبحگاه متبرک و نورانی کنید. زمان تلاوت فرا رسیده است:"
+                val content = dhikr?.let { "«${it.arabicText}»\n\nترجمه: ${it.persianTranslation}" } 
+                    ?: "روز خود را با یاد خدا و تلاوت اذکار صبحگاه نورانی کنید."
+                Triple(
+                    "☀️ نسیم صبحگاه: یاد خدا",
+                    "زمان قرائت اذکار مبارک صبحگاهی است.",
+                    "$intro\n\n$content"
                 )
             }
             "evening" -> {
                 val dhikr = AdhkarData.adhkarList["evening"]?.randomOrNull()
-                Pair(
-                    "ذکر شامگاه 🌙",
-                    dhikr?.persianTranslation ?: "پایان روز را با یاد پروردگار به آرامش برسانید."
+                val intro = "غروبی سرشار از آرامش با یاد پروردگار مهربان. زمان قرائت اذکار مبارک شامگاه فرا رسیده است:"
+                val content = dhikr?.let { "«${it.arabicText}»\n\nترجمه: ${it.persianTranslation}" } 
+                    ?: "پایان روز را با یاد پروردگار به آرامش برسانید."
+                Triple(
+                    "🌙 نور شامگاه: آرامش دل‌ها",
+                    "زمان قرائت اذکار مبارک شامگاهی است.",
+                    "$intro\n\n$content"
                 )
             }
             else -> {
                 val dhikr = AdhkarData.adhkarList["daily"]?.randomOrNull()
-                Pair(
-                    "یاد خدا - نور اذکار ✨",
-                    dhikr?.persianTranslation ?: "ألا بذکر الله تطمئن القلوب..."
+                val intro = "دل‌ها با یاد الهی به آرامش حقیقی می‌رسند. یادآوری تلاوت اذکار روزانه:"
+                val content = dhikr?.let { "«${it.arabicText}»\n\nترجمه: ${it.persianTranslation}" } 
+                    ?: "ألا بذکر الله تطمئن القلوب..."
+                Triple(
+                    "✨ نور اذکار: آرامش روزانه",
+                    "هم‌اکنون زمان تلاوت اذکار روزانه است.",
+                    "$intro\n\n$content"
                 )
             }
         }
@@ -69,10 +82,10 @@ class ReminderReceiver : BroadcastReceiver() {
         )
 
         val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(android.R.drawable.ic_popup_reminder) // temporary fallback or we'll use a standard icon
+            .setSmallIcon(R.drawable.ic_notification_adhkar)
             .setContentTitle(title)
             .setContentText(text)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)

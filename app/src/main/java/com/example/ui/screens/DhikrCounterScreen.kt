@@ -25,6 +25,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -328,7 +330,7 @@ fun DhikrItemCard(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            // Header: Index and Target Info
+            // Header: Index and Visual Status (No Text)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -349,21 +351,41 @@ fun DhikrItemCard(
                     )
                 }
 
-                // Status Indicator
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = if (isCompleted) SunGold.copy(alpha = 0.15f) else Color(0xFFE8F0E1),
-                            shape = RoundedCornerShape(12.dp)
+                // Visual Status Indicator (Completed: Green Check, Remaining: Small Golden Dot)
+                if (isCompleted) {
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = Color(0xFFE8F5E9),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "کامل شده",
+                            tint = Color(0xFF4CAF50),
+                            modifier = Modifier.size(16.dp)
                         )
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                ) {
-                    Text(
-                        text = if (isCompleted) "کامل شد ✓" else "تعداد هدف: ${item.targetCount}",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isCompleted) SunGold else SandDark
-                    )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = SunGold.copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(SunGold)
+                        )
+                    }
                 }
             }
 
@@ -421,23 +443,15 @@ fun DhikrItemCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Interactive Bottom Panel (Counter Ring & Tap Button)
-            Row(
+            // Interactive Bottom Panel (Enhanced & Centered Counter Ring, No Text Labels)
+            Box(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = if (isCompleted) "این ذکر با موفقیت تکمیل شد" else "جهت شمارش، روی کارت ضربه بزنید",
-                    fontSize = 11.sp,
-                    color = if (isCompleted) Color(0xFF4CAF50) else NightBlue,
-                    fontWeight = if (isCompleted) FontWeight.SemiBold else FontWeight.Normal
-                )
-
                 // Interactive Circle Counter
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(54.dp)
+                    modifier = Modifier.size(60.dp)
                 ) {
                     val progress = if (item.targetCount > 0) {
                         item.currentCount.toFloat() / item.targetCount.toFloat()
@@ -446,18 +460,25 @@ fun DhikrItemCard(
                     }
 
                     if (isCompleted) {
+                        CircularProgressIndicator(
+                            progress = { 1.0f },
+                            modifier = Modifier.fillMaxSize(),
+                            color = Color(0xFF4CAF50),
+                            trackColor = SoftBorder,
+                            strokeWidth = 4.dp
+                        )
                         Box(
                             modifier = Modifier
-                                .size(42.dp)
+                                .size(44.dp)
                                 .clip(CircleShape)
                                 .background(Color(0xFFE8F5E9)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "✔",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF4CAF50)
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "تکمیل شده",
+                                tint = Color(0xFF4CAF50),
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     } else {
@@ -466,25 +487,30 @@ fun DhikrItemCard(
                             modifier = Modifier.fillMaxSize(),
                             color = SunGold,
                             trackColor = SoftBorder,
-                            strokeWidth = 3.5.dp
+                            strokeWidth = 4.dp
                         )
 
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
                             Text(
                                 text = item.currentCount.toString(),
-                                fontSize = 15.sp,
+                                fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = SandDark
                             )
-                            HorizontalDivider(
-                                modifier = Modifier.width(18.dp),
-                                color = SoftBorder,
-                                thickness = 1.dp
+                            Text(
+                                text = "/",
+                                fontSize = 11.sp,
+                                color = SandDark.copy(alpha = 0.5f),
+                                modifier = Modifier.padding(horizontal = 2.dp)
                             )
                             Text(
                                 text = item.targetCount.toString(),
-                                fontSize = 10.sp,
-                                color = NightBlue
+                                fontSize = 11.sp,
+                                color = NightBlue,
+                                fontWeight = FontWeight.Medium
                             )
                         }
                     }
