@@ -68,6 +68,7 @@ import com.example.ui.theme.SoftBorder
 import com.example.ui.theme.SunGold
 import com.example.ui.theme.TextArabic
 import com.example.ui.theme.TextPersian
+import com.example.ui.theme.UthmanTaha
 import com.example.ui.viewmodel.AdhkarViewModel
 
 @Composable
@@ -395,9 +396,10 @@ fun DhikrItemCard(
             Text(
                 text = item.arabicText,
                 style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = (21 * fontScale).sp,
-                    lineHeight = (34 * fontScale).sp,
-                    fontWeight = FontWeight.Medium,
+                    fontFamily = UthmanTaha,
+                    fontSize = (24 * fontScale).sp,
+                    lineHeight = (38 * fontScale).sp,
+                    fontWeight = FontWeight.Bold,
                     color = TextArabic
                 ),
                 textAlign = TextAlign.Center,

@@ -68,6 +68,7 @@ import com.example.ui.theme.SoftBorder
 import com.example.ui.theme.SunGold
 import com.example.ui.theme.TextArabic
 import com.example.ui.theme.TextPersian
+import com.example.ui.theme.UthmanTaha
 import com.example.ui.viewmodel.AdhkarViewModel
 
 @Composable
@@ -877,8 +878,9 @@ fun SearchResultsView(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = dhikr.arabicText,
-                            fontSize = (16 * fontScale).sp,
-                            lineHeight = 24.sp,
+                            fontFamily = UthmanTaha,
+                            fontSize = (18 * fontScale).sp,
+                            lineHeight = (28 * fontScale).sp,
                             fontWeight = FontWeight.Bold,
                             color = TextArabic,
                             maxLines = 3,
