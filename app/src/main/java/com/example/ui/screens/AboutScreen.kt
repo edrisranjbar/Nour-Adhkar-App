@@ -390,7 +390,7 @@ fun AboutScreen(
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Text(
-                                    text = "مقالات معتبر معرفتی و حدیثی جهت بالا بردن حضور قلب در ذکر",
+                                    text = "مقالات معتبر حدیثی و معرفتی در بیان فضایل و برکات اذکار",
                                     fontSize = (13 * fontScale).sp,
                                     color = TextPersian
                                 )

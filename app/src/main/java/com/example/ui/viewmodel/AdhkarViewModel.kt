@@ -156,6 +156,12 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun resetSingleDhikr(categoryId: String, dhikrId: Int) {
+        viewModelScope.launch {
+            repository.resetSingleDhikr(categoryId, dhikrId)
+        }
+    }
+
     // Tasbih triggers
     fun incrementTasbih() {
         _tasbihCount.value += 1

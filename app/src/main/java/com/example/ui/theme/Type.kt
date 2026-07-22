@@ -10,15 +10,11 @@ import com.example.R
 
 // Define the custom professional Persian/Arabic font family using actual TTF resource files
 val Vazirmatn = FontFamily(
-    Font(R.font.vazirmatn_regular, FontWeight.Normal),
-    Font(R.font.vazirmatn_bold, FontWeight.Bold)
+    Font(R.font.vazirmatn_regular)
 )
 
-// Define the elegant Arabic font family for Quran verses / Arabic texts
-val UthmanTaha = FontFamily(
-    Font(R.font.kfgqpc_uthman_taha_naskh_bold, FontWeight.Bold),
-    Font(R.font.kfgqpc_uthman_taha_naskh_bold, FontWeight.Normal)
-)
+// Alias for Arabic text using Vazirmatn font
+val UthmanTaha = Vazirmatn
 
 // Configure Material 3 Typography to use Vazirmatn as the default font family
 val Typography = Typography(

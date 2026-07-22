@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -29,6 +30,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -38,6 +40,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -55,6 +58,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import com.example.ui.components.StreakCelebrationDialog
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.DhikrProgressEntity
@@ -63,12 +69,13 @@ import com.example.data.model.AdhkarData
 import com.example.data.model.Category
 import com.example.data.model.DhikrItem
 import com.example.ui.theme.NightBlue
+import com.example.ui.theme.SandBackground
 import com.example.ui.theme.SandDark
 import com.example.ui.theme.SoftBorder
 import com.example.ui.theme.SunGold
 import com.example.ui.theme.TextArabic
 import com.example.ui.theme.TextPersian
-import com.example.ui.theme.UthmanTaha
+import com.example.ui.theme.Vazirmatn
 import com.example.ui.viewmodel.AdhkarViewModel
 
 @Composable
@@ -206,7 +213,7 @@ fun HomeScreen(
                                 // Morning Card
                                 SpecialAdhkarCard(
                                     title = "اذکار صبحگاه",
-                                    description = "روز خود را با یاد خدا آغاز کنید",
+                                    description = "",
                                     badgeText = "۳۰ ذکر",
                                     emoji = "☀️",
                                     modifier = Modifier.weight(1f),
@@ -216,7 +223,7 @@ fun HomeScreen(
                                 // Evening Card
                                 SpecialAdhkarCard(
                                     title = "اذکار شامگاه",
-                                    description = "هر روز را غرق آرامش کنید",
+                                    description = "",
                                     badgeText = "۲۶ ذکر",
                                     emoji = "🌙",
                                     modifier = Modifier.weight(1f),
@@ -265,22 +272,21 @@ fun AyahOfTheDayCard(viewModel: AdhkarViewModel, fontScale: Float) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 2.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(28.dp),
-        border = BorderStroke(1.dp, SoftBorder),
+        shape = RoundedCornerShape(22.dp),
+        border = BorderStroke(1.dp, SoftBorder.copy(alpha = 0.8f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(horizontal = 16.dp, vertical = 14.dp)
         ) {
+            // Header: SVG Icon + Title
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
@@ -289,56 +295,77 @@ fun AyahOfTheDayCard(viewModel: AdhkarViewModel, fontScale: Float) {
                         .background(Color(0xFFE8F0E1)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("📖", fontSize = 16.sp)
+                    Icon(
+                        imageVector = Icons.Default.MenuBook,
+                        contentDescription = "آیه روز",
+                        tint = SunGold,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
                     text = "آیه روز",
                     style = MaterialTheme.typography.titleMedium.copy(
-                        fontSize = (15 * fontScale).sp,
-                        fontWeight = FontWeight.SemiBold,
+                        fontSize = (16.5 * fontScale).sp,
+                        fontWeight = FontWeight.Bold,
                         color = SandDark
                     )
                 )
             }
-            Spacer(modifier = Modifier.height(14.dp))
-            // Arabic Text
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Arabic Text - Centered
             Text(
                 text = ayah.text,
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = (19 * fontScale).sp,
-                    lineHeight = (30 * fontScale).sp,
-                    fontWeight = FontWeight.Medium,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontFamily = Vazirmatn,
+                    fontSize = (15.5 * fontScale).sp,
+                    lineHeight = (26 * fontScale).sp,
+                    fontWeight = FontWeight.Bold,
                     color = TextArabic
                 ),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = SoftBorder, thickness = 1.dp)
-            Spacer(modifier = Modifier.height(12.dp))
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             // Persian Translation
             Text(
                 text = ayah.translation,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = (13 * fontScale).sp,
-                    lineHeight = (20 * fontScale).sp,
+                    fontSize = (12.5 * fontScale).sp,
+                    lineHeight = (18.5 * fontScale).sp,
                     color = TextPersian
                 ),
-                textAlign = TextAlign.Center,
+                textAlign = TextAlign.Right,
                 modifier = Modifier.fillMaxWidth()
             )
+
             Spacer(modifier = Modifier.height(10.dp))
-            // Surah Reference
-            Text(
-                text = ayah.reference,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = (11 * fontScale).sp,
-                    fontWeight = FontWeight.Bold,
-                    color = NightBlue
-                ),
-                modifier = Modifier.align(Alignment.End)
-            )
+
+            // Surah Reference - Bottom Left
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = SandBackground,
+                    border = BorderStroke(0.5.dp, SoftBorder)
+                ) {
+                    Text(
+                        text = ayah.reference,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = (11 * fontScale).sp,
+                            fontWeight = FontWeight.Bold,
+                            color = SunGold
+                        ),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -399,19 +426,31 @@ fun StreakCalendarCard(
         s
     }
 
+    var showStreakDialog by remember { mutableStateOf(false) }
+
+    if (showStreakDialog) {
+        StreakCelebrationDialog(
+            streakCount = streak,
+            pastDays = days,
+            fontScale = fontScale,
+            onDismiss = { showStreakDialog = false }
+        )
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 4.dp)
+            .clickable { showStreakDialog = true },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(18.dp),
         border = BorderStroke(1.dp, SoftBorder),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp)
+                .padding(horizontal = 14.dp, vertical = 12.dp)
         ) {
             // Header: Streak & Title
             Row(
@@ -422,51 +461,41 @@ fun StreakCalendarCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(10.dp))
+                            .size(28.dp)
+                            .clip(RoundedCornerShape(8.dp))
                             .background(Color(0xFFFFF3E0)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("⚡", fontSize = 18.sp)
+                        Text("⚡", fontSize = 14.sp)
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Text(
-                            text = "استمرار عبادت",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontSize = (15 * fontScale).sp,
-                                fontWeight = FontWeight.Bold,
-                                color = SandDark
-                            )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "استمرار عبادت",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontSize = (14 * fontScale).sp,
+                            fontWeight = FontWeight.Bold,
+                            color = SandDark
                         )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "گزارش فعالیت ۷ روز گذشته",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = (11 * fontScale).sp,
-                                color = SandDark.copy(alpha = 0.6f)
-                            )
-                        )
-                    }
+                    )
                 }
 
                 // Flame Badge
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .background(Color(0xFFFFF3E0), shape = RoundedCornerShape(14.dp))
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                        .background(Color(0xFFFFF3E0), shape = RoundedCornerShape(10.dp))
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
                         text = "$streak روز متوالی 🔥",
-                        fontSize = (12 * fontScale).sp,
+                        fontSize = (11.5 * fontScale).sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFFF9800)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Calendar Days Row
             Row(
@@ -481,17 +510,17 @@ fun StreakCalendarCard(
                         // Day Label
                         Text(
                             text = day.dayLabel,
-                            fontSize = (12 * fontScale).sp,
+                            fontSize = (11 * fontScale).sp,
                             fontWeight = if (day.isToday) FontWeight.Bold else FontWeight.Normal,
                             color = if (day.isToday) SunGold else SandDark.copy(alpha = 0.7f)
                         )
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
 
                         // Status Badge
                         Box(
                             modifier = Modifier
-                                .size(34.dp)
+                                .size(26.dp)
                                 .clip(CircleShape)
                                 .background(
                                     when {
@@ -514,25 +543,25 @@ fun StreakCalendarCard(
                             if (day.isActive) {
                                 Text(
                                     text = "✔",
-                                    fontSize = 12.sp,
+                                    fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF4CAF50)
                                 )
                             } else if (day.isToday) {
                                 Text(
                                     text = "●",
-                                    fontSize = 10.sp,
+                                    fontSize = 8.sp,
                                     color = SunGold.copy(alpha = 0.7f)
                                 )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(2.dp))
 
                         // Subtitle: today indicator
                         Text(
                             text = if (day.isToday) "امروز" else "",
-                            fontSize = (9 * fontScale).sp,
+                            fontSize = (8.5 * fontScale).sp,
                             fontWeight = FontWeight.Bold,
                             color = SunGold
                         )
@@ -603,51 +632,60 @@ fun SpecialAdhkarCard(
 ) {
     Card(
         modifier = modifier
-            .height(148.dp)
+            .wrapContentHeight()
             .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(22.dp),
         border = BorderStroke(1.dp, SoftBorder),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
+                .fillMaxWidth()
+                .padding(14.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Icon box
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFE8F0E1)),
-                contentAlignment = Alignment.Center
+            // Top Row: Icon & Badge
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(emoji, fontSize = 20.sp)
-            }
-
-            // Text Info
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color(0xFFE8F0E1)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = title,
-                        color = SandDark,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Text(emoji, fontSize = 18.sp)
+                }
 
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color(0xFFFFF3E0)
+                ) {
                     Text(
                         text = badgeText,
                         color = SunGold,
                         fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                     )
                 }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Title
+            Text(
+                text = title,
+                color = SandDark,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            if (description.isNotBlank()) {
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = description,
@@ -878,7 +916,7 @@ fun SearchResultsView(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = dhikr.arabicText,
-                            fontFamily = UthmanTaha,
+                            fontFamily = Vazirmatn,
                             fontSize = (18 * fontScale).sp,
                             lineHeight = (28 * fontScale).sp,
                             fontWeight = FontWeight.Bold,

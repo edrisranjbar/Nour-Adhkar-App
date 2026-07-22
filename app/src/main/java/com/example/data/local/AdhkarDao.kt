@@ -23,13 +23,16 @@ interface DhikrProgressDao {
     @Query("DELETE FROM dhikr_progress WHERE categoryId = :categoryId")
     suspend fun deleteProgressForCategory(categoryId: String)
 
+    @Query("DELETE FROM dhikr_progress WHERE id = :id")
+    suspend fun deleteProgressById(id: String)
+
     @Query("DELETE FROM dhikr_progress")
     suspend fun deleteAllProgress()
 }
 
 @Dao
 interface TasbihSessionDao {
-    @Query("SELECT * FROM tasbih_sessions ORDER BY timestamp DESC LIMIT 50")
+    @Query("SELECT * FROM tasbih_sessions ORDER BY timestamp DESC LIMIT 500")
     fun getRecentSessions(): Flow<List<TasbihSessionEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

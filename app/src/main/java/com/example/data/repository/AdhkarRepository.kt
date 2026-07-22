@@ -7,8 +7,10 @@ import com.example.data.local.TasbihSessionEntity
 import com.example.data.model.AdhkarData
 import com.example.data.model.DhikrItem
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 
 class AdhkarRepository(
     private val dhikrProgressDao: DhikrProgressDao,
@@ -22,6 +24,10 @@ class AdhkarRepository(
             staticList.map { dhikr ->
                 dhikr.copy(currentCount = progressMap[dhikr.id] ?: 0)
             }
+        }.catch {
+            emit(staticList)
+        }.onStart {
+            emit(staticList)
         }
     }
 
@@ -39,10 +45,24 @@ class AdhkarRepository(
             lastUpdated = System.currentTimeMillis()
         )
         dhikrProgressDao.insertOrUpdateProgress(progressEntity)
+
+        val categoryTitle = AdhkarData.categories.find { it.id == categoryId }?.title ?: categoryId
+        tasbihSessionDao.insertSession(
+            TasbihSessionEntity(
+                dhikrName = categoryTitle,
+                count = 1,
+                timestamp = System.currentTimeMillis()
+            )
+        )
     }
 
     suspend fun resetCategoryProgress(categoryId: String) {
         dhikrProgressDao.deleteProgressForCategory(categoryId)
+    }
+
+    suspend fun resetSingleDhikr(categoryId: String, dhikrId: Int) {
+        val id = "${categoryId}_${dhikrId}"
+        dhikrProgressDao.deleteProgressById(id)
     }
 
     fun getAllProgress(): Flow<List<DhikrProgressEntity>> {
