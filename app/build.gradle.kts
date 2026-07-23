@@ -14,7 +14,7 @@ android {
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    applicationId = "com.aistudio.nouradhkar.qshvzw"
+    applicationId = "ir.adhkar.app"
     minSdk = 24
     targetSdk = 36
     versionCode = 1
@@ -114,7 +114,6 @@ dependencies {
   implementation(libs.okhttp)
   // implementation(libs.play.services.location)
   implementation(libs.retrofit)
-  implementation("app.rive:rive-android:3.1.2")
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.core)
   testImplementation(libs.androidx.junit)

@@ -1,6 +1,5 @@
 package com.example.ui.components
 
-import androidx.annotation.RawRes
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -58,10 +57,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import app.rive.runtime.kotlin.RiveAnimationView
 import com.example.ui.screens.DayActivity
 import com.example.ui.screens.getPersianDayAbbreviation
 import com.example.ui.theme.SunGold
@@ -209,8 +206,8 @@ fun StreakCelebrationDialog(
                             }
                         }
 
-                        // Rive Animated Flame with fallback to Sparks Canvas
-                        RiveFireAnimation(modifier = Modifier.size(170.dp))
+                        // Realistic Animated Flame Canvas with Live Sparks
+                        AnimatedRealisticFireWithSparks(modifier = Modifier.size(170.dp))
 
                         Spacer(modifier = Modifier.height(4.dp))
 
@@ -588,42 +585,5 @@ private fun BackgroundEmbersCanvas() {
                 alpha = alpha.coerceIn(0f, 1f)
             )
         }
-    }
-}
-
-/**
- * Rive Animation View wrapper for Jetpack Compose.
- * Automatically plays .riv files from raw or asset directory (e.g., res/raw/fire_streak.riv or assets/fire_streak.riv).
- * Falls back to realistic spark fire canvas if Rive file is absent or fails to load.
- */
-@Composable
-fun RiveFireAnimation(
-    modifier: Modifier = Modifier,
-    @RawRes riveRawResId: Int? = null
-) {
-    var hasError by remember { mutableStateOf(false) }
-
-    if (!hasError && riveRawResId != null) {
-        AndroidView(
-            modifier = modifier,
-            factory = { context ->
-                RiveAnimationView(context).apply {
-                    try {
-                        setRiveResource(riveRawResId)
-                    } catch (e: Exception) {
-                        hasError = true
-                    }
-                }
-            },
-            update = { view ->
-                try {
-                    view.play()
-                } catch (e: Exception) {
-                    hasError = true
-                }
-            }
-        )
-    } else {
-        AnimatedRealisticFireWithSparks(modifier = modifier)
     }
 }

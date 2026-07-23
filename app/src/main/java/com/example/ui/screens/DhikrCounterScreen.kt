@@ -638,26 +638,7 @@ fun DhikrItemCard(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Source/Benefit if available
-            if (item.source.isNotBlank()) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0xFFE8F0E1).copy(alpha = 0.5f), shape = RoundedCornerShape(14.dp))
-                        .border(1.dp, SoftBorder, shape = RoundedCornerShape(14.dp))
-                        .padding(12.dp)
-                ) {
-                    Text(
-                        text = "فضیلت: ${item.source}",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = (11 * fontScale).sp,
-                            lineHeight = 16.sp,
-                            color = TextPersian
-                        )
-                    )
-                }
-            }
+
 
             Spacer(modifier = Modifier.height(18.dp))
 

@@ -9,10 +9,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.with
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -108,7 +107,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AppMainScaffold(viewModel: AdhkarViewModel) {
     val currentTab by viewModel.currentTab.collectAsState()
@@ -329,7 +327,7 @@ fun AppMainScaffold(viewModel: AdhkarViewModel) {
                 AnimatedContent(
                     targetState = currentTab,
                     transitionSpec = {
-                        fadeIn(animationSpec = tween(220)) with fadeOut(animationSpec = tween(220))
+                        fadeIn(animationSpec = tween(220)) togetherWith fadeOut(animationSpec = tween(220))
                     },
                     label = "tabTransitions"
                 ) { targetTab ->
