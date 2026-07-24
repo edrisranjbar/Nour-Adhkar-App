@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,9 +30,22 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Grain
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.NightsStay
+import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -51,7 +65,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -63,11 +79,13 @@ import androidx.compose.runtime.setValue
 import com.example.ui.components.StreakCelebrationDialog
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.local.DhikrProgressEntity
 import com.example.data.local.TasbihSessionEntity
 import com.example.data.model.AdhkarData
 import com.example.data.model.Category
 import com.example.data.model.DhikrItem
+import com.example.ui.theme.AmiriQuran
 import com.example.ui.theme.NightBlue
 import com.example.ui.theme.SandBackground
 import com.example.ui.theme.SandDark
@@ -75,7 +93,6 @@ import com.example.ui.theme.SoftBorder
 import com.example.ui.theme.SunGold
 import com.example.ui.theme.TextArabic
 import com.example.ui.theme.TextPersian
-import com.example.ui.theme.Vazirmatn
 import com.example.ui.viewmodel.AdhkarViewModel
 
 @Composable
@@ -96,33 +113,44 @@ fun HomeScreen(
                 .padding(top = innerPadding.calculateTopPadding())
                 .padding(horizontal = 16.dp)
         ) {
-            // Header Title
-            Row(
+            // Compact brand header
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
+                    .padding(top = 10.dp, bottom = 6.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = Color(0xFFE8F0E1).copy(alpha = 0.7f),
+                border = BorderStroke(1.dp, SoftBorder.copy(alpha = 0.9f))
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "اذکار نور",
-                        style = MaterialTheme.typography.headlineLarge.copy(
-                            fontSize = (30 * fontScale).sp,
-                            fontWeight = FontWeight.Bold,
-                            color = SandDark
-                        ),
-                        textAlign = TextAlign.Center
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.ic_nour_adhkar_logo),
+                        contentDescription = "نشان اذکار نور",
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(RoundedCornerShape(17.dp))
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "پلتفرم فارسی اذکار و ادعیه اسلامی",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = (12 * fontScale).sp,
-                            color = SandDark.copy(alpha = 0.7f)
-                        ),
-                        textAlign = TextAlign.Center
-                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "اذکار نور",
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                fontSize = (24 * fontScale).sp,
+                                fontWeight = FontWeight.Bold,
+                                color = SandDark
+                            )
+                        )
+                        Text(
+                            text = "اذکار و ادعیه اسلامی",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontSize = (11.5 * fontScale).sp,
+                                color = NightBlue
+                            )
+                        )
+                    }
                 }
             }
 
@@ -143,8 +171,8 @@ fun HomeScreen(
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Search,
-                        contentDescription = "Search",
-                        tint = SandDark.copy(alpha = 0.7f)
+                        contentDescription = "جستجو",
+                        tint = SunGold
                     )
                 },
                 trailingIcon = {
@@ -152,17 +180,17 @@ fun HomeScreen(
                         IconButton(onClick = { viewModel.updateSearchQuery("") }) {
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = "Clear",
+                                contentDescription = "پاک کردن جستجو",
                                 tint = SandDark
                             )
                         }
                     }
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = SandDark,
-                    unfocusedBorderColor = SandDark.copy(alpha = 0.3f),
+                    focusedBorderColor = SunGold,
+                    unfocusedBorderColor = SoftBorder,
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
                     focusedTextColor = SandDark,
@@ -193,14 +221,11 @@ fun HomeScreen(
 
                         // 2. Special Daily Adhkar Header
                         item {
-                            Text(
-                                text = "│ اذکار ویژه روزانه",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontSize = (16 * fontScale).sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = SandDark
-                                ),
-                                modifier = Modifier.padding(top = 8.dp)
+                            HomeSectionHeader(
+                                title = "اذکار ویژه روزانه",
+                                icon = Icons.Default.WbSunny,
+                                fontScale = fontScale,
+                                modifier = Modifier.padding(top = 6.dp)
                             )
                         }
 
@@ -213,9 +238,9 @@ fun HomeScreen(
                                 // Morning Card
                                 SpecialAdhkarCard(
                                     title = "اذکار صبحگاه",
-                                    description = "",
                                     badgeText = "۳۰ ذکر",
-                                    emoji = "☀️",
+                                    icon = Icons.Default.WbSunny,
+                                    accentColor = Color(0xFFD58B19),
                                     modifier = Modifier.weight(1f),
                                     onClick = { viewModel.selectCategory("morning") }
                                 )
@@ -223,9 +248,9 @@ fun HomeScreen(
                                 // Evening Card
                                 SpecialAdhkarCard(
                                     title = "اذکار شامگاه",
-                                    description = "",
                                     badgeText = "۲۶ ذکر",
-                                    emoji = "🌙",
+                                    icon = Icons.Default.NightsStay,
+                                    accentColor = Color(0xFF53699A),
                                     modifier = Modifier.weight(1f),
                                     onClick = { viewModel.selectCategory("evening") }
                                 )
@@ -234,14 +259,11 @@ fun HomeScreen(
 
                         // 4. Grid Categories Header
                         item {
-                            Text(
-                                text = "│ دسته‌بندی‌ها",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontSize = (16 * fontScale).sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = SandDark
-                                ),
-                                modifier = Modifier.padding(top = 12.dp)
+                            HomeSectionHeader(
+                                title = "دسته‌بندی‌ها",
+                                icon = Icons.Default.GridView,
+                                fontScale = fontScale,
+                                modifier = Modifier.padding(top = 8.dp)
                             )
                         }
 
@@ -319,7 +341,7 @@ fun AyahOfTheDayCard(viewModel: AdhkarViewModel, fontScale: Float) {
             Text(
                 text = ayah.text,
                 style = MaterialTheme.typography.titleMedium.copy(
-                    fontFamily = Vazirmatn,
+                    fontFamily = AmiriQuran,
                     fontSize = (15.5 * fontScale).sp,
                     lineHeight = (26 * fontScale).sp,
                     fontWeight = FontWeight.Bold,
@@ -466,7 +488,12 @@ fun StreakCalendarCard(
                             .background(Color(0xFFFFF3E0)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("⚡", fontSize = 14.sp)
+                        Icon(
+                            imageVector = Icons.Default.Bolt,
+                            contentDescription = null,
+                            tint = Color(0xFFFF9800),
+                            modifier = Modifier.size(17.dp)
+                        )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
@@ -486,8 +513,15 @@ fun StreakCalendarCard(
                         .background(Color(0xFFFFF3E0), shape = RoundedCornerShape(10.dp))
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
+                    Icon(
+                        imageVector = Icons.Default.LocalFireDepartment,
+                        contentDescription = null,
+                        tint = Color(0xFFFF9800),
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Spacer(modifier = Modifier.width(3.dp))
                     Text(
-                        text = "$streak روز متوالی 🔥",
+                        text = "$streak روز متوالی",
                         fontSize = (11.5 * fontScale).sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFFF9800)
@@ -541,11 +575,11 @@ fun StreakCalendarCard(
                             contentAlignment = Alignment.Center
                         ) {
                             if (day.isActive) {
-                                Text(
-                                    text = "✔",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF4CAF50)
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = Color(0xFF4CAF50),
+                                    modifier = Modifier.size(14.dp)
                                 )
                             } else if (day.isToday) {
                                 Text(
@@ -622,11 +656,53 @@ fun getPersianDayAbbreviation(calendarDayOfWeek: Int): String {
 }
 
 @Composable
+fun HomeSectionHeader(
+    title: String,
+    icon: ImageVector,
+    fontScale: Float,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color(0xFFE8F0E1)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = SunGold,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(9.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontSize = (16 * fontScale).sp,
+                fontWeight = FontWeight.Bold,
+                color = SandDark
+            )
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        HorizontalDivider(
+            modifier = Modifier.weight(1f),
+            color = SoftBorder.copy(alpha = 0.9f)
+        )
+    }
+}
+
+@Composable
 fun SpecialAdhkarCard(
     title: String,
-    description: String,
     badgeText: String,
-    emoji: String,
+    icon: ImageVector,
+    accentColor: Color,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -634,15 +710,17 @@ fun SpecialAdhkarCard(
         modifier = modifier
             .wrapContentHeight()
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(22.dp),
-        border = BorderStroke(1.dp, SoftBorder),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = accentColor.copy(alpha = 0.075f)
+        ),
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, accentColor.copy(alpha = 0.22f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(15.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             // Top Row: Icon & Badge
@@ -653,21 +731,26 @@ fun SpecialAdhkarCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFFE8F0E1)),
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(13.dp))
+                        .background(accentColor.copy(alpha = 0.14f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(emoji, fontSize = 18.sp)
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = accentColor,
+                        modifier = Modifier.size(23.dp)
+                    )
                 }
 
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = Color(0xFFFFF3E0)
+                    color = accentColor.copy(alpha = 0.12f)
                 ) {
                     Text(
                         text = badgeText,
-                        color = SunGold,
+                        color = accentColor,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
@@ -675,25 +758,26 @@ fun SpecialAdhkarCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // Title
-            Text(
-                text = title,
-                color = SandDark,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            if (description.isNotBlank()) {
-                Spacer(modifier = Modifier.height(2.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Text(
-                    text = description,
-                    color = NightBlue,
-                    fontSize = 11.sp,
-                    lineHeight = 14.sp,
+                    text = title,
+                    color = SandDark,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
+                )
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = null,
+                    tint = accentColor,
+                    modifier = Modifier.size(17.dp)
                 )
             }
         }
@@ -752,7 +836,12 @@ fun CategoriesGrid(viewModel: AdhkarViewModel, fontScale: Float) {
                                 .background(Color(0xFFE8F0E1)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("📿", fontSize = 20.sp)
+                            Icon(
+                                imageVector = Icons.Default.Grain,
+                                contentDescription = null,
+                                tint = SunGold,
+                                modifier = Modifier.size(23.dp)
+                            )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
@@ -769,7 +858,12 @@ fun CategoriesGrid(viewModel: AdhkarViewModel, fontScale: Float) {
                             )
                         }
                     }
-                    Text("←", fontSize = 16.sp, color = NightBlue)
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = null,
+                        tint = NightBlue,
+                        modifier = Modifier.size(19.dp)
+                    )
                 }
             }
         }
@@ -803,12 +897,12 @@ fun CategoryTile(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val emoji = when (cat.id) {
-                    "daily" -> "📅"
-                    "ramadan" -> "🌙"
-                    "sleep" -> "🛌"
-                    "istikhara" -> "🤲"
-                    else -> "✨"
+                val categoryIcon = when (cat.id) {
+                    "daily" -> Icons.Default.CalendarMonth
+                    "ramadan" -> Icons.Default.DarkMode
+                    "sleep" -> Icons.Default.Bedtime
+                    "istikhara" -> Icons.Default.Psychology
+                    else -> Icons.Default.MenuBook
                 }
                 Box(
                     modifier = Modifier
@@ -817,7 +911,12 @@ fun CategoryTile(
                         .background(Color(0xFFE8F0E1)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(emoji, fontSize = 16.sp)
+                    Icon(
+                        imageVector = categoryIcon,
+                        contentDescription = null,
+                        tint = SunGold,
+                        modifier = Modifier.size(19.dp)
+                    )
                 }
                 Text(
                     text = "${cat.count} ذکر",
@@ -853,7 +952,20 @@ fun SearchResultsView(
                 .padding(top = 40.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("📭", fontSize = 48.sp)
+            Box(
+                modifier = Modifier
+                    .size(72.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFE8F0E1)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.SearchOff,
+                    contentDescription = null,
+                    tint = SunGold,
+                    modifier = Modifier.size(36.dp)
+                )
+            }
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "ذکری با این مشخصات یافت نشد.",
@@ -916,7 +1028,7 @@ fun SearchResultsView(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = dhikr.arabicText,
-                            fontFamily = Vazirmatn,
+                            fontFamily = AmiriQuran,
                             fontSize = (18 * fontScale).sp,
                             lineHeight = (28 * fontScale).sp,
                             fontWeight = FontWeight.Bold,

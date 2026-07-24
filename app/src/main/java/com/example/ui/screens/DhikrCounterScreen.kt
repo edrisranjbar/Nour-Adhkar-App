@@ -24,7 +24,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Warning
@@ -44,7 +43,6 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.ui.draw.scale
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material.icons.filled.RotateLeft
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.Text
@@ -74,13 +72,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.AdhkarData
 import com.example.data.model.DhikrItem
+import com.example.ui.theme.AmiriQuran
 import com.example.ui.theme.NightBlue
 import com.example.ui.theme.SandDark
 import com.example.ui.theme.SoftBorder
 import com.example.ui.theme.SunGold
 import com.example.ui.theme.TextArabic
 import com.example.ui.theme.TextPersian
-import com.example.ui.theme.Vazirmatn
 import com.example.ui.viewmodel.AdhkarViewModel
 
 /**
@@ -132,6 +130,13 @@ fun DhikrCounterScreen(
         }
 
         val title = category.title.ifBlank { "اذکار" }
+        val completedItems = displayAdhkarList.count { it.currentCount >= it.targetCount }
+        val totalItems = displayAdhkarList.size
+        val itemProgressRatio = if (totalItems > 0) {
+            completedItems.toFloat() / totalItems
+        } else {
+            0f
+        }
 
         val allProgress by viewModel.allProgress.collectAsState()
         val recentSessions by viewModel.recentTasbihSessions.collectAsState()
@@ -190,7 +195,6 @@ fun DhikrCounterScreen(
                 fontScale = fontScale,
                 onDismiss = {
                     showCongratsDialog = false
-                    viewModel.resetCategoryProgress(categoryId)
                     viewModel.selectCategory(null) // Return home
                 }
             )
@@ -204,41 +208,37 @@ fun DhikrCounterScreen(
                         .background(MaterialTheme.colorScheme.background)
                         .statusBarsPadding()
                         .padding(horizontal = 12.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = {
-                            viewModel.selectCategory(null)
-                        }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "برگشت",
-                                tint = SandDark
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Column {
-                            Text(
-                                text = title,
-                                fontSize = (18 * fontScale).sp,
-                                fontWeight = FontWeight.Bold,
-                                color = SandDark
-                            )
-                            Text(
-                                text = "جهت ثبت تکرار، روی هر کارت ضربه بزنید",
-                                fontSize = 11.sp,
-                                color = SandDark.copy(alpha = 0.6f)
-                            )
-                        }
-                    }
-
-                    // Reset Category button
-                    IconButton(onClick = { viewModel.resetCategoryProgress(categoryId) }) {
+                    IconButton(onClick = {
+                        viewModel.selectCategory(null)
+                    }) {
                         Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "بازنشانی همه",
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "برگشت",
                             tint = SandDark
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = title,
+                            fontSize = (18 * fontScale).sp,
+                            fontWeight = FontWeight.Bold,
+                            color = SandDark
+                        )
+                        Spacer(modifier = Modifier.height(7.dp))
+                        LinearProgressIndicator(
+                            progress = { itemProgressRatio.coerceIn(0f, 1f) },
+                            modifier = Modifier
+                                // In RTL, end is the physical left edge. Combined with the
+                                // app-bar's 12dp inset, this aligns with the cards' 16dp inset.
+                                .padding(end = 4.dp)
+                                .fillMaxWidth()
+                                .height(5.dp)
+                                .clip(RoundedCornerShape(3.dp)),
+                            color = if (completedItems == totalItems) Color(0xFF4CAF50) else SunGold,
+                            trackColor = SoftBorder
                         )
                     }
                 }
@@ -253,102 +253,11 @@ fun DhikrCounterScreen(
                 contentPadding = PaddingValues(bottom = 32.dp, start = 16.dp, end = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Category Overview & Progress Header
-                item {
-                    val completedItems = displayAdhkarList.count { it.currentCount >= it.targetCount }
-                    val totalItems = displayAdhkarList.size
-                    val itemProgressRatio = if (totalItems > 0) completedItems.toFloat() / totalItems else 0f
-
-                    val totalRecitations = displayAdhkarList.sumOf { it.currentCount }
-                    val totalTarget = displayAdhkarList.sumOf { it.targetCount }
-
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        shape = RoundedCornerShape(22.dp),
-                        border = BorderStroke(1.dp, SoftBorder),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(10.dp)
-                                            .clip(CircleShape)
-                                            .background(if (completedItems == totalItems) Color(0xFF4CAF50) else SunGold)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "پیشرفت مجموع این بخش",
-                                        fontSize = (13 * fontScale).sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = SandDark
-                                    )
-                                }
-
-                                Text(
-                                    text = "$completedItems از $totalItems ذکر",
-                                    fontSize = (12 * fontScale).sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = SunGold
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            LinearProgressIndicator(
-                                progress = { itemProgressRatio.coerceIn(0f, 1f) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(8.dp)
-                                    .clip(RoundedCornerShape(4.dp)),
-                                color = SunGold,
-                                trackColor = SoftBorder
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "کل قرائت‌ها: $totalRecitations / $totalTarget",
-                                    fontSize = 11.sp,
-                                    color = SandDark.copy(alpha = 0.65f)
-                                )
-
-                                Text(
-                                    text = "${(itemProgressRatio * 100).toInt()}٪",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = SandDark
-                                )
-                            }
-                        }
-                    }
-                }
-
                 itemsIndexed(displayAdhkarList) { index, item ->
                     DhikrItemCard(
                         index = index + 1,
                         item = item,
                         fontScale = fontScale,
-                        onReset = {
-                            viewModel.resetSingleDhikr(categoryId, item.id)
-                        },
                         onTap = {
                             val currentCount = item.currentCount
                             val targetCount = item.targetCount
@@ -377,7 +286,7 @@ fun DhikrCounterScreen(
                                         coroutineScope.launch {
                                             delay(400)
                                             try {
-                                                listState.animateScrollToItem(targetScrollIndex + 1) // +1 for header
+                                                listState.animateScrollToItem(targetScrollIndex)
                                             } catch (_: Exception) {}
                                         }
                                     } else {
@@ -390,31 +299,6 @@ fun DhikrCounterScreen(
                             }
                         }
                     )
-                }
-
-                // Bottom reset button for easy reachability
-                item {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    OutlinedButton(
-                        onClick = { viewModel.resetCategoryProgress(categoryId) },
-                        modifier = Modifier.fillMaxWidth(),
-                        border = BorderStroke(1.dp, SandDark.copy(alpha = 0.3f)),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = SandDark
-                        ),
-                        shape = RoundedCornerShape(14.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Reset"
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "شروع مجدد این دسته از اذکار",
-                            fontSize = (13 * fontScale).sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
                 }
             }
         }
@@ -517,7 +401,6 @@ fun DhikrItemCard(
     index: Int,
     item: DhikrItem,
     fontScale: Float,
-    onReset: () -> Unit = {},
     onTap: () -> Unit
 ) {
     val isCompleted = item.currentCount >= item.targetCount
@@ -566,42 +449,20 @@ fun DhikrItemCard(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            // Header: Index & Optional Individual Reset Button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // Item index
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFE8F0E1)),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFE8F0E1)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = index.toString(),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = SunGold
-                    )
-                }
-
-                if (item.currentCount > 0) {
-                    IconButton(
-                        onClick = onReset,
-                        modifier = Modifier
-                            .size(30.dp)
-                            .background(Color.Black.copy(alpha = 0.04f), CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.RotateLeft,
-                            contentDescription = "بازنشانی این ذکر",
-                            tint = SandDark.copy(alpha = 0.7f),
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
+                Text(
+                    text = index.toString(),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = SunGold
+                )
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -611,9 +472,9 @@ fun DhikrItemCard(
             Text(
                 text = arabicDisplay,
                 style = MaterialTheme.typography.titleLarge.copy(
-                    fontFamily = Vazirmatn,
-                    fontSize = (24 * fontScale).sp,
-                    lineHeight = (38 * fontScale).sp,
+                    fontFamily = AmiriQuran,
+                    fontSize = (21 * fontScale).sp,
+                    lineHeight = (40 * fontScale).sp,
                     fontWeight = FontWeight.Bold,
                     color = TextArabic
                 ),

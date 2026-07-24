@@ -1,6 +1,9 @@
 *.iml
 .gradle
 .kotlin
+/.idea/
+/.tooling/
+/repo_main.zip
 /local.properties
 /.idea/caches
 /.idea/libraries

@@ -8,13 +8,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.example.R
 
-// Define the custom professional Persian/Arabic font family using actual TTF resource files
+// Vazirmatn remains the interface font for Persian text.
 val Vazirmatn = FontFamily(
     Font(R.font.vazirmatn_regular)
 )
 
-// Alias for Arabic text using Vazirmatn font
-val UthmanTaha = Vazirmatn
+// Amiri Quran is designed for Quranic Arabic, including full diacritics and ayah symbols.
+val AmiriQuran = FontFamily(
+    Font(R.font.amiri_quran_regular, weight = FontWeight.Normal)
+)
 
 // Configure Material 3 Typography to use Vazirmatn as the default font family
 val Typography = Typography(

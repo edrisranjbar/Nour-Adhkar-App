@@ -11,9 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -47,14 +45,7 @@ fun AboutScreen(
     innerPadding: PaddingValues
 ) {
     val fontScale by viewModel.fontScale.collectAsState()
-    val allProgress by viewModel.allProgress.collectAsState()
-    val recentSessions by viewModel.recentTasbihSessions.collectAsState()
     val uriHandler = LocalUriHandler.current
-
-    // Calculate dynamic stats
-    val totalProgressCount = allProgress.sumOf { it.currentCount }
-    val totalSessionsCount = recentSessions.sumOf { it.count }
-    val totalRecitations = totalProgressCount + totalSessionsCount
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Column(
@@ -114,7 +105,7 @@ fun AboutScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "نسخه ۱.۲.۰",
+                                text = "نسخه ۱.۰.۰",
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontSize = (12 * fontScale).sp,
                                     color = NightBlue.copy(alpha = 0.6f)
@@ -133,6 +124,55 @@ fun AboutScreen(
                                 ),
                                 textAlign = TextAlign.Justify
                             )
+                        }
+                    }
+                }
+
+                // Donation banner
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { uriHandler.openUri("https://edrisranjbar.ir/donation") },
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E7)),
+                        border = BorderStroke(1.dp, Color(0xFFE8C978))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 18.dp, vertical = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(Color(0xFFFFE7A8)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Favorite,
+                                    contentDescription = null,
+                                    tint = Color(0xFFC78600),
+                                    modifier = Modifier.size(23.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "حمایت از توسعه اذکار نور",
+                                    fontSize = (14 * fontScale).sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = SandDark
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "برای ادامه توسعه رایگان و بدون تبلیغ برنامه",
+                                    fontSize = (11.5 * fontScale).sp,
+                                    color = NightBlue
+                                )
+                            }
                         }
                     }
                 }
@@ -169,40 +209,6 @@ fun AboutScreen(
                             )
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // Telegram Link Button
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(Color(0xFFE3F2FD)) // Soft blue background
-                                    .clickable { uriHandler.openUri("https://t.me/edicodes_pv") }
-                                    .padding(vertical = 12.dp, horizontal = 16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Send,
-                                    contentDescription = "تلگرام",
-                                    tint = Color(0xFF2196F3),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column {
-                                    Text(
-                                        text = "کانال و پشتیبانی تلگرام",
-                                        fontSize = (13 * fontScale).sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF0D47A1)
-                                    )
-                                    Text(
-                                        text = "t.me/edicodes_pv",
-                                        fontSize = 11.sp,
-                                        color = Color(0xFF1565C0)
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
                             // Email Address Button
                             Row(
                                 modifier = Modifier
@@ -215,14 +221,14 @@ fun AboutScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Email,
-                                    contentDescription = "ایمیل",
+                                    contentDescription = "پست الکترونیکی",
                                     tint = Color(0xFF607D8B),
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column {
                                     Text(
-                                        text = "پست الکترونیکی (ایمیل)",
+                                        text = "پست الکترونیکی",
                                         fontSize = (13 * fontScale).sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF37474F)
@@ -243,7 +249,7 @@ fun AboutScreen(
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(16.dp))
                                     .background(Color(0xFFF1F8E9)) // Soft green/sage background
-                                    .clickable { uriHandler.openUri("https://github.com/edrisranjbar/adhkar") }
+                                    .clickable { uriHandler.openUri("https://github.com/edrisranjbar/nour-adhkar") }
                                     .padding(vertical = 12.dp, horizontal = 16.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -262,7 +268,7 @@ fun AboutScreen(
                                         color = Color(0xFF33691E)
                                     )
                                     Text(
-                                        text = "github.com/edrisranjbar/adhkar",
+                                        text = "github.com/edrisranjbar/nour-adhkar",
                                         fontSize = 11.sp,
                                         color = Color(0xFF558B2F)
                                     )
@@ -272,167 +278,7 @@ fun AboutScreen(
                     }
                 }
 
-                // Statistics Card
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(28.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        border = BorderStroke(1.dp, SoftBorder)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(20.dp)
-                        ) {
-                            Text(
-                                text = "آمار عبادات شما",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontSize = (15 * fontScale).sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = SandDark
-                                )
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                StatItem(
-                                    title = "کل قرائت‌ها",
-                                    value = totalRecitations.toString(),
-                                    icon = "✨",
-                                    fontScale = fontScale,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                StatItem(
-                                    title = "نشست‌های تسبیح",
-                                    value = recentSessions.size.toString(),
-                                    icon = "📿",
-                                    fontScale = fontScale,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Features and Virtues Card
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(28.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        border = BorderStroke(1.dp, SoftBorder)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(20.dp),
-                            verticalArrangement = Arrangement.spacedBy(14.dp)
-                        ) {
-                            Text(
-                                text = "ویژگی‌های کلیدی پروژه",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontSize = (15 * fontScale).sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = SandDark
-                                )
-                            )
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Favorite,
-                                    contentDescription = null,
-                                    tint = SunGold,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text(
-                                    text = "طراحی مینیمال، چشم‌نواز و آرامش‌بخش منطبق بر اصول معنوی",
-                                    fontSize = (13 * fontScale).sp,
-                                    color = TextPersian
-                                )
-                            }
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Star,
-                                    contentDescription = null,
-                                    tint = SunGold,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text(
-                                    text = "سیستم دقیق، هوشمند و محلی ذخیره‌سازی پیشرفت روزانه",
-                                    fontSize = (13 * fontScale).sp,
-                                    color = TextPersian
-                                )
-                            }
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Info,
-                                    contentDescription = null,
-                                    tint = SunGold,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text(
-                                    text = "مقالات معتبر حدیثی و معرفتی در بیان فضایل و برکات اذکار",
-                                    fontSize = (13 * fontScale).sp,
-                                    color = TextPersian
-                                )
-                            }
-                        }
-                    }
-                }
             }
-        }
-    }
-}
-
-@Composable
-fun StatItem(
-    title: String,
-    value: String,
-    icon: String,
-    fontScale: Float,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFFF7FAF3))
-            .border(1.dp, SoftBorder, RoundedCornerShape(20.dp))
-            .padding(16.dp)
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-            Text(icon, fontSize = 24.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = value,
-                fontSize = (20 * fontScale).sp,
-                fontWeight = FontWeight.Bold,
-                color = SunGold
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = title,
-                fontSize = (11 * fontScale).sp,
-                color = NightBlue.copy(alpha = 0.7f)
-            )
         }
     }
 }

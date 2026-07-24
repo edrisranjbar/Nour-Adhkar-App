@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.TasbihSessionEntity
+import com.example.ui.theme.AmiriQuran
 import com.example.ui.theme.NightBlue
 import com.example.ui.theme.SandDark
 import com.example.ui.theme.SoftBorder
@@ -152,6 +153,7 @@ fun TasbihScreen(
                                 ) {
                                     Text(
                                         text = phrase,
+                                        fontFamily = AmiriQuran,
                                         color = if (isSelected) SunGold else SandDark,
                                         fontSize = (12 * fontScale).sp,
                                         fontWeight = FontWeight.SemiBold
@@ -179,6 +181,7 @@ fun TasbihScreen(
                         ) {
                             Text(
                                 text = selectedDhikr,
+                                fontFamily = AmiriQuran,
                                 fontSize = (22 * fontScale).sp,
                                 fontWeight = FontWeight.Bold,
                                 color = TextArabic,
@@ -394,6 +397,7 @@ fun HistoryItemCard(
                 Column {
                     Text(
                         text = session.dhikrName,
+                        fontFamily = AmiriQuran,
                         fontSize = (14 * fontScale).sp,
                         fontWeight = FontWeight.SemiBold,
                         color = SandDark

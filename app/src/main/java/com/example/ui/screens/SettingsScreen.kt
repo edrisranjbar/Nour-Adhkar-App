@@ -51,6 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ui.theme.AmiriQuran
 import com.example.ui.theme.NightBlue
 import com.example.ui.theme.SandDark
 import com.example.ui.theme.SoftBorder
@@ -248,7 +249,7 @@ fun SettingsScreen(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Notifications,
-                                        contentDescription = "Test",
+                                        contentDescription = "ارسال اعلان آزمایشی",
                                         modifier = Modifier.size(16.dp),
                                         tint = Color.White
                                     )
@@ -286,7 +287,7 @@ fun SettingsScreen(
                             ) {
                                 Column {
                                     Text(
-                                        text = "لرزش هنگام ضربه (Haptic)",
+                                        text = "لرزش هنگام لمس",
                                         fontSize = (13 * fontScale).sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = SandDark
@@ -321,7 +322,7 @@ fun SettingsScreen(
                             ) {
                                 Column {
                                     Text(
-                                        text = "پخش صدای ملایم (Beep)",
+                                        text = "پخش صدای ملایم",
                                         fontSize = (13 * fontScale).sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = SandDark
@@ -394,6 +395,7 @@ fun SettingsScreen(
                                 ) {
                                     Text(
                                         text = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+                                        fontFamily = AmiriQuran,
                                         fontSize = (20 * fontScale).sp,
                                         fontWeight = FontWeight.Bold,
                                         color = TextArabic,
