@@ -19,3 +19,8 @@
 local.properties
 .env
 debug.keystore
+release-signing.properties
+*.jks
+
+# Generated Cafe Bazaar release deliverables
+/release/

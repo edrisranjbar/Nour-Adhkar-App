@@ -1,0 +1,6 @@
+# Copy this file to the project root as release-signing.properties.
+# The real file and *.jks files are ignored by Git.
+storeFile=nour-adhkar-release.jks
+storePassword=CHANGE_ME
+keyAlias=nour-adhkar
+keyPassword=CHANGE_ME

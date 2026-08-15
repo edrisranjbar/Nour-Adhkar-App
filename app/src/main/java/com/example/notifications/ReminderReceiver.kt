@@ -20,6 +20,7 @@ class ReminderReceiver : BroadcastReceiver() {
         if (!prefs.isNotificationsEnabled()) return
 
         val type = intent.getStringExtra("REMINDER_TYPE") ?: "general"
+        if ((type == "morning" || type == "evening") && prefs.isAdhkarCompletedToday(type)) return
         
         val channelId = "nour_adhkar_reminders"
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

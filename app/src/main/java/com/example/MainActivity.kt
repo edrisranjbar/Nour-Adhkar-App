@@ -40,7 +40,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Icon
@@ -62,7 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.ui.screens.ArticlesScreen
+import com.example.ui.screens.DailyChecklistScreen
 import com.example.ui.screens.DhikrCounterScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.SettingsScreen
@@ -174,29 +174,29 @@ fun AppMainScaffold(viewModel: AdhkarViewModel) {
                                     )
                                 }
 
-                                // 2. Articles Tab
-                                val isArticlesSelected = currentTab == "articles"
+                                // 2. Daily Checklist Tab
+                                val isChecklistSelected = currentTab == "checklist"
                                 Column(
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(RoundedCornerShape(16.dp))
-                                        .clickable { viewModel.selectTab("articles") }
+                                        .clickable { viewModel.selectTab("checklist") }
                                         .padding(vertical = 8.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.MenuBook,
-                                        contentDescription = "مقالات",
-                                        tint = if (isArticlesSelected) SunGold else NightBlue.copy(alpha = 0.75f),
+                                        imageVector = Icons.Default.Checklist,
+                                        contentDescription = "چک‌لیست",
+                                        tint = if (isChecklistSelected) SunGold else NightBlue.copy(alpha = 0.75f),
                                         modifier = Modifier.size(24.dp)
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "مقالات",
+                                        text = "چک‌لیست",
                                         fontSize = (10 * fontScale).sp,
-                                        fontWeight = if (isArticlesSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isArticlesSelected) SunGold else NightBlue.copy(alpha = 0.75f)
+                                        fontWeight = if (isChecklistSelected) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isChecklistSelected) SunGold else NightBlue.copy(alpha = 0.75f)
                                     )
                                 }
 
@@ -333,7 +333,7 @@ fun AppMainScaffold(viewModel: AdhkarViewModel) {
                 ) { targetTab ->
                     when (targetTab) {
                         "home" -> HomeScreen(viewModel = viewModel, innerPadding = innerPadding)
-                        "articles" -> ArticlesScreen(viewModel = viewModel, innerPadding = innerPadding)
+                        "checklist" -> DailyChecklistScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "tasbih" -> TasbihScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "about" -> AboutScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "settings" -> SettingsScreen(viewModel = viewModel, innerPadding = innerPadding)

@@ -16,10 +16,13 @@ import com.example.data.local.TasbihSessionEntity
 import com.example.data.model.AdhkarData
 import com.example.data.model.AyahOfTheDay
 import com.example.data.model.DhikrItem
+import com.example.data.model.EmotionalAyah
+import com.example.data.model.UserFeeling
 import com.example.data.repository.AdhkarRepository
 import com.example.data.repository.PreferenceRepository
 import com.example.notifications.AdhkarNotificationManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -67,8 +70,16 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     private val _eveningTime = MutableStateFlow(prefs.getEveningNotificationTime())
     val eveningTime: StateFlow<String> = _eveningTime.asStateFlow()
 
+    private val _dailyChecklistCompletedIds = MutableStateFlow(prefs.getDailyChecklistCompletedIds())
+    val dailyChecklistCompletedIds: StateFlow<Set<String>> = _dailyChecklistCompletedIds.asStateFlow()
+
     // Dynamic Ayah of the Day
     val ayahOfTheDay: AyahOfTheDay = getRotatedAyah()
+
+    private val _selectedFeeling = MutableStateFlow(UserFeeling.fromStorageKey(prefs.getSelectedFeeling()))
+    val selectedFeeling: StateFlow<UserFeeling?> = _selectedFeeling.asStateFlow()
+    private val _emotionalAyah = MutableStateFlow(getEmotionalAyah(_selectedFeeling.value))
+    val emotionalAyah: StateFlow<EmotionalAyah?> = _emotionalAyah.asStateFlow()
 
     // Active Category Adhkar Flow
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -126,6 +137,23 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     init {
         // Initial scheduling on app startup
         notificationManager.scheduleReminders()
+        viewModelScope.launch {
+            while (true) {
+                val now = Calendar.getInstance()
+                val nextDay = (now.clone() as Calendar).apply {
+                    add(Calendar.DAY_OF_YEAR, 1)
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                delay((nextDay.timeInMillis - now.timeInMillis).coerceAtLeast(1_000L))
+                prefs.clearSelectedFeeling()
+                _selectedFeeling.value = null
+                _emotionalAyah.value = null
+                _dailyChecklistCompletedIds.value = prefs.getDailyChecklistCompletedIds()
+            }
+        }
     }
 
     // Navigation triggers
@@ -138,6 +166,13 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         _selectedCategoryId.value = categoryId
     }
 
+    fun leaveCategory(categoryId: String) {
+        _selectedCategoryId.value = null
+        viewModelScope.launch {
+            repository.resetCompletedProgress(categoryId)
+        }
+    }
+
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
     }
@@ -145,7 +180,10 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     // Count operations
     fun incrementDhikr(categoryId: String, dhikrId: Int, targetCount: Int) {
         viewModelScope.launch {
-            repository.incrementDhikrCount(categoryId, dhikrId, targetCount)
+            val categoryCompleted = repository.incrementDhikrCount(categoryId, dhikrId, targetCount)
+            if (categoryCompleted) {
+                prefs.markAdhkarCompletedToday(categoryId)
+            }
             playHapticAndAudio()
         }
     }
@@ -232,6 +270,28 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         notificationManager.triggerTestNotification()
     }
 
+    fun setDailyChecklistItemCompleted(itemId: String, completed: Boolean) {
+        _dailyChecklistCompletedIds.value =
+            prefs.setDailyChecklistItemCompleted(
+                dayKey = currentChecklistDayKey(),
+                itemId = itemId,
+                completed = completed
+            )
+    }
+
+    private fun currentChecklistDayKey(): Long = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
+
+    fun selectFeeling(feeling: UserFeeling) {
+        prefs.setSelectedFeeling(feeling.storageKey)
+        _selectedFeeling.value = feeling
+        _emotionalAyah.value = getEmotionalAyah(feeling)
+    }
+
     fun clearAllUserData() {
         viewModelScope.launch {
             repository.resetAllProgress()
@@ -244,6 +304,15 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         val dayOfYear = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
         val index = dayOfYear % AdhkarData.ayatList.size
         return AdhkarData.ayatList[index]
+    }
+
+    private fun getEmotionalAyah(feeling: UserFeeling?): EmotionalAyah? {
+        if (feeling == null) return null
+        val choices = AdhkarData.emotionalAyat.filter { it.feeling == feeling }
+        if (choices.isEmpty()) return null
+        val calendar = Calendar.getInstance()
+        val dayKey = calendar.get(Calendar.YEAR) * 1000 + calendar.get(Calendar.DAY_OF_YEAR)
+        return choices[Math.floorMod(dayKey + feeling.ordinal * 31, choices.size)]
     }
 
     private fun playHapticAndAudio() {

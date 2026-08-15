@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -105,7 +106,7 @@ fun AboutScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "نسخه ۱.۰.۰",
+                                text = "نسخه ۱.۱.۱",
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontSize = (12 * fontScale).sp,
                                     color = NightBlue.copy(alpha = 0.6f)
@@ -171,6 +172,58 @@ fun AboutScreen(
                                     text = "برای ادامه توسعه رایگان و بدون تبلیغ برنامه",
                                     fontSize = (11.5 * fontScale).sp,
                                     color = NightBlue
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Audio credits
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = BorderStroke(1.dp, SoftBorder)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 18.dp, vertical = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(Color(0xFFE8F0E1)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Headphones,
+                                    contentDescription = null,
+                                    tint = SunGold,
+                                    modifier = Modifier.size(23.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "منبع فایل‌های صوتی",
+                                    fontSize = (14 * fontScale).sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = SandDark
+                                )
+                                Spacer(modifier = Modifier.height(3.dp))
+                                Text(
+                                    text = "تلاوت با صدای مشاری راشد العفاسی",
+                                    fontSize = (12 * fontScale).sp,
+                                    color = TextPersian
+                                )
+                                Text(
+                                    text = "Makkah Live / Internet Archive",
+                                    fontSize = (11 * fontScale).sp,
+                                    color = NightBlue.copy(alpha = 0.75f)
                                 )
                             }
                         }

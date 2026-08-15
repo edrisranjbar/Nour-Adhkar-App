@@ -11,11 +11,15 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class AdhkarRepository(
     private val dhikrProgressDao: DhikrProgressDao,
     private val tasbihSessionDao: TasbihSessionDao
 ) {
+    private val progressMutex = Mutex()
+    private val groupedHistoryCategories = setOf("morning", "evening", "daily", "sleep")
 
     fun getAdhkarByCategory(categoryId: String): Flow<List<DhikrItem>> {
         val staticList = AdhkarData.adhkarList[categoryId] ?: emptyList()
@@ -31,7 +35,7 @@ class AdhkarRepository(
         }
     }
 
-    suspend fun incrementDhikrCount(categoryId: String, dhikrId: Int, targetCount: Int) {
+    suspend fun incrementDhikrCount(categoryId: String, dhikrId: Int, targetCount: Int): Boolean = progressMutex.withLock {
         val id = "${categoryId}_${dhikrId}"
         val existingProgress = dhikrProgressDao.getProgressById(id)
 
@@ -47,17 +51,68 @@ class AdhkarRepository(
         dhikrProgressDao.insertOrUpdateProgress(progressEntity)
 
         val categoryTitle = AdhkarData.categories.find { it.id == categoryId }?.title ?: categoryId
-        tasbihSessionDao.insertSession(
-            TasbihSessionEntity(
-                dhikrName = categoryTitle,
-                count = 1,
-                timestamp = System.currentTimeMillis()
+        if (categoryId !in groupedHistoryCategories) {
+            tasbihSessionDao.insertSession(
+                TasbihSessionEntity(
+                    dhikrName = categoryTitle,
+                    count = 1,
+                    timestamp = System.currentTimeMillis()
+                )
             )
-        )
+            return@withLock false
+        }
+
+        val progressById = dhikrProgressDao.getProgressByCategory(categoryId).first()
+            .associateBy { it.dhikrId }
+        val categoryCompleted = AdhkarData.adhkarList[categoryId].orEmpty().all { item ->
+            (progressById[item.id]?.currentCount ?: 0) >= item.targetCount
+        }
+        if (categoryCompleted) {
+            tasbihSessionDao.insertSession(
+                TasbihSessionEntity(
+                    dhikrName = "$categoryTitle انجام شد",
+                    count = 1,
+                    timestamp = System.currentTimeMillis()
+                )
+            )
+        }
+        categoryCompleted
     }
 
     suspend fun resetCategoryProgress(categoryId: String) {
         dhikrProgressDao.deleteProgressForCategory(categoryId)
+    }
+
+    suspend fun completeCategory(categoryId: String, recordHistory: Boolean) = progressMutex.withLock {
+        val items = AdhkarData.adhkarList[categoryId].orEmpty()
+        val now = System.currentTimeMillis()
+        items.forEach { item ->
+            dhikrProgressDao.insertOrUpdateProgress(
+                DhikrProgressEntity(
+                    id = "${categoryId}_${item.id}",
+                    categoryId = categoryId,
+                    dhikrId = item.id,
+                    currentCount = item.targetCount,
+                    targetCount = item.targetCount,
+                    lastUpdated = now
+                )
+            )
+        }
+
+        if (recordHistory && categoryId in groupedHistoryCategories) {
+            val categoryTitle = AdhkarData.categories.find { it.id == categoryId }?.title ?: categoryId
+            tasbihSessionDao.insertSession(
+                TasbihSessionEntity(
+                    dhikrName = "$categoryTitle انجام شد",
+                    count = 1,
+                    timestamp = now
+                )
+            )
+        }
+    }
+
+    suspend fun resetCompletedProgress(categoryId: String) {
+        dhikrProgressDao.deleteCompletedProgressForCategory(categoryId)
     }
 
     suspend fun resetSingleDhikr(categoryId: String, dhikrId: Int) {

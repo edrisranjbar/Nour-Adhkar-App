@@ -65,10 +65,9 @@ import com.example.ui.theme.SoftBorder
 import com.example.ui.theme.SunGold
 import com.example.ui.theme.TextArabic
 import com.example.ui.theme.TextPersian
+import com.example.ui.util.formatPersianDateTime
+import com.example.ui.util.toPersianDigits
 import com.example.ui.viewmodel.AdhkarViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun TasbihScreen(
@@ -228,7 +227,7 @@ fun TasbihScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        text = count.toString(),
+                                        text = count.toPersianDigits(),
                                         fontSize = 44.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = SandDark
@@ -387,7 +386,7 @@ fun HistoryItemCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = session.count.toString(),
+                        text = session.count.toPersianDigits(),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = SunGold
@@ -424,6 +423,5 @@ fun HistoryItemCard(
 }
 
 private fun formatTimestamp(timestamp: Long): String {
-    val sdf = SimpleDateFormat("yyyy/MM/dd - HH:mm", Locale.getDefault())
-    return sdf.format(Date(timestamp))
+    return formatPersianDateTime(timestamp)
 }

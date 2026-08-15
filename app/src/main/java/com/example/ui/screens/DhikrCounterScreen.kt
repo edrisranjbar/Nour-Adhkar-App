@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import androidx.compose.animation.animateColorAsState
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -38,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import com.example.ui.components.StreakCelebrationDialog
+import com.example.ui.components.AdhkarAudioPlayer
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -79,6 +81,7 @@ import com.example.ui.theme.SoftBorder
 import com.example.ui.theme.SunGold
 import com.example.ui.theme.TextArabic
 import com.example.ui.theme.TextPersian
+import com.example.ui.util.toPersianDigits
 import com.example.ui.viewmodel.AdhkarViewModel
 
 /**
@@ -116,6 +119,10 @@ fun DhikrCounterScreen(
     val coroutineScope = rememberCoroutineScope()
     var showCongratsDialog by remember { mutableStateOf(false) }
 
+    BackHandler {
+        viewModel.leaveCategory(categoryId)
+    }
+
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         // Fallback UI if category is completely invalid or no content exists
         if (category == null || displayAdhkarList.isEmpty()) {
@@ -123,7 +130,7 @@ fun DhikrCounterScreen(
                 title = "اطلاعات موجود نیست",
                 message = "محتوای این بخش از اذکار یا دسته‌بندی در دسترس نمی‌باشد.",
                 onBackClick = {
-                    viewModel.selectCategory(null)
+                    viewModel.leaveCategory(categoryId)
                 }
             )
             return@CompositionLocalProvider
@@ -195,7 +202,7 @@ fun DhikrCounterScreen(
                 fontScale = fontScale,
                 onDismiss = {
                     showCongratsDialog = false
-                    viewModel.selectCategory(null) // Return home
+                    viewModel.leaveCategory(categoryId)
                 }
             )
         }
@@ -211,7 +218,7 @@ fun DhikrCounterScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = {
-                        viewModel.selectCategory(null)
+                        viewModel.leaveCategory(categoryId)
                     }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -253,6 +260,17 @@ fun DhikrCounterScreen(
                 contentPadding = PaddingValues(bottom = 32.dp, start = 16.dp, end = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                if (categoryId == "morning" || categoryId == "evening") {
+                    item(key = "adhkar_audio_player") {
+                        AdhkarAudioPlayer(
+                            categoryId = categoryId,
+                            fontScale = fontScale,
+                            onPlaybackCompleted = {
+                                showCongratsDialog = true
+                            }
+                        )
+                    }
+                }
                 itemsIndexed(displayAdhkarList) { index, item ->
                     DhikrItemCard(
                         index = index + 1,
@@ -286,7 +304,9 @@ fun DhikrCounterScreen(
                                         coroutineScope.launch {
                                             delay(400)
                                             try {
-                                                listState.animateScrollToItem(targetScrollIndex)
+                                                val audioHeaderOffset =
+                                                    if (categoryId == "morning" || categoryId == "evening") 1 else 0
+                                                listState.animateScrollToItem(targetScrollIndex + audioHeaderOffset)
                                             } catch (_: Exception) {}
                                         }
                                     } else {
@@ -458,7 +478,7 @@ fun DhikrItemCard(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = index.toString(),
+                    text = index.toPersianDigits(),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = SunGold
@@ -468,7 +488,7 @@ fun DhikrItemCard(
             Spacer(modifier = Modifier.height(14.dp))
 
             // Arabic Text
-            val arabicDisplay = item.arabicText.ifBlank { "متن ذکر در دسترس نیست" }
+            val arabicDisplay = item.arabicText.ifBlank { "متن ذکر در دسترس نیست" }.toPersianDigits()
             Text(
                 text = arabicDisplay,
                 style = MaterialTheme.typography.titleLarge.copy(
@@ -487,7 +507,7 @@ fun DhikrItemCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             // Persian Translation
-            val persianDisplay = item.persianTranslation.ifBlank { "ترجمه ذکر در دسترس نیست" }
+            val persianDisplay = item.persianTranslation.ifBlank { "ترجمه ذکر در دسترس نیست" }.toPersianDigits()
             Text(
                 text = persianDisplay,
                 style = MaterialTheme.typography.bodyMedium.copy(
@@ -558,7 +578,7 @@ fun DhikrItemCard(
                                 horizontalArrangement = Arrangement.Center
                             ) {
                                 Text(
-                                    text = item.currentCount.toString(),
+                                    text = item.currentCount.toPersianDigits(),
                                     fontSize = 17.sp,
                                     fontWeight = FontWeight.Black,
                                     color = SandDark
@@ -570,7 +590,7 @@ fun DhikrItemCard(
                                     modifier = Modifier.padding(horizontal = 2.dp)
                                 )
                                 Text(
-                                    text = item.targetCount.toString(),
+                                    text = item.targetCount.toPersianDigits(),
                                     fontSize = 12.sp,
                                     color = NightBlue,
                                     fontWeight = FontWeight.Bold

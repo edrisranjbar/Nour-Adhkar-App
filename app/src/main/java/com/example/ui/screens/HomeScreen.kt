@@ -57,6 +57,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -85,6 +86,7 @@ import com.example.data.local.TasbihSessionEntity
 import com.example.data.model.AdhkarData
 import com.example.data.model.Category
 import com.example.data.model.DhikrItem
+import com.example.data.model.UserFeeling
 import com.example.ui.theme.AmiriQuran
 import com.example.ui.theme.NightBlue
 import com.example.ui.theme.SandBackground
@@ -93,6 +95,7 @@ import com.example.ui.theme.SoftBorder
 import com.example.ui.theme.SunGold
 import com.example.ui.theme.TextArabic
 import com.example.ui.theme.TextPersian
+import com.example.ui.util.toPersianDigits
 import com.example.ui.viewmodel.AdhkarViewModel
 
 @Composable
@@ -214,12 +217,7 @@ fun HomeScreen(
                             )
                         }
 
-                        // 1. Ayah of the Day
-                        item {
-                            AyahOfTheDayCard(viewModel = viewModel, fontScale = fontScale)
-                        }
-
-                        // 2. Special Daily Adhkar Header
+                        // 1. Special Daily Adhkar Header
                         item {
                             HomeSectionHeader(
                                 title = "اذکار ویژه روزانه",
@@ -229,7 +227,7 @@ fun HomeScreen(
                             )
                         }
 
-                        // 3. Special Daily Cards (Morning & Evening)
+                        // 2. Special Daily Cards (Morning & Evening)
                         item {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -257,6 +255,11 @@ fun HomeScreen(
                             }
                         }
 
+                        // 3. Daily verse based on the user's feeling
+                        item {
+                            EmotionalAyahCard(viewModel = viewModel, fontScale = fontScale)
+                        }
+
                         // 4. Grid Categories Header
                         item {
                             HomeSectionHeader(
@@ -282,6 +285,151 @@ fun HomeScreen(
                             viewModel.updateSearchQuery("")
                         }
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun EmotionalAyahCard(viewModel: AdhkarViewModel, fontScale: Float) {
+    val selectedFeeling by viewModel.selectedFeeling.collectAsState()
+    val ayah by viewModel.emotionalAyah.collectAsState()
+    var showFeelingPicker by remember { mutableStateOf(selectedFeeling == null) }
+
+    LaunchedEffect(selectedFeeling) {
+        if (selectedFeeling == null) showFeelingPicker = true
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(22.dp),
+        border = BorderStroke(1.dp, SoftBorder.copy(alpha = 0.8f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFFE8F0E1)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.MenuBook, contentDescription = null, tint = SunGold, modifier = Modifier.size(18.dp))
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "آیه‌ای برای حال امروزت",
+                        fontSize = (16.5 * fontScale).sp,
+                        fontWeight = FontWeight.Bold,
+                        color = SandDark
+                    )
+                    Text(
+                        text = "امروز دلت چه حالی دارد؟",
+                        fontSize = (11.5 * fontScale).sp,
+                        color = NightBlue
+                    )
+                }
+                selectedFeeling?.takeUnless { showFeelingPicker }?.let { feeling ->
+                    Surface(
+                        modifier = Modifier.clickable { showFeelingPicker = true },
+                        shape = RoundedCornerShape(12.dp),
+                        color = SunGold.copy(alpha = 0.14f),
+                        border = BorderStroke(1.dp, SunGold.copy(alpha = 0.45f))
+                    ) {
+                        Text(
+                            text = feeling.emoji,
+                            fontSize = 22.sp,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        )
+                    }
+                }
+            }
+
+            if (showFeelingPicker) {
+                Spacer(modifier = Modifier.height(12.dp))
+                UserFeeling.entries.chunked(2).forEach { feelings ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    feelings.forEach { feeling ->
+                        val isSelected = selectedFeeling == feeling
+                        Surface(
+                            modifier = Modifier.weight(1f).clickable {
+                                viewModel.selectFeeling(feeling)
+                                showFeelingPicker = false
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            color = if (isSelected) SunGold.copy(alpha = 0.14f) else SandBackground.copy(alpha = 0.7f),
+                            border = BorderStroke(
+                                if (isSelected) 1.5.dp else 0.5.dp,
+                                if (isSelected) SunGold else SoftBorder
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 9.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(text = feeling.emoji, fontSize = 20.sp)
+                                Spacer(modifier = Modifier.width(7.dp))
+                                Text(
+                                    text = feeling.title,
+                                    fontSize = (11.5 * fontScale).sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = SandDark,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+
+                    }
+                }
+            }
+            }
+
+            AnimatedVisibility(
+                visible = ayah != null,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                ayah?.let { emotionalAyah ->
+                    Column(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                        HorizontalDivider(color = SoftBorder.copy(alpha = 0.8f))
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = emotionalAyah.text.toPersianDigits(),
+                            fontFamily = AmiriQuran,
+                            fontSize = (16 * fontScale).sp,
+                            lineHeight = (27 * fontScale).sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextArabic,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = emotionalAyah.translation.toPersianDigits(),
+                            fontSize = (12.5 * fontScale).sp,
+                            lineHeight = (19 * fontScale).sp,
+                            color = TextPersian,
+                            textAlign = TextAlign.Right,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(9.dp))
+                        Text(
+                            text = emotionalAyah.reference.toPersianDigits(),
+                            fontSize = (11 * fontScale).sp,
+                            fontWeight = FontWeight.Bold,
+                            color = SunGold,
+                            modifier = Modifier.align(Alignment.End)
+                        )
+                    }
                 }
             }
         }
@@ -339,7 +487,7 @@ fun AyahOfTheDayCard(viewModel: AdhkarViewModel, fontScale: Float) {
 
             // Arabic Text - Centered
             Text(
-                text = ayah.text,
+                        text = ayah.text.toPersianDigits(),
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontFamily = AmiriQuran,
                     fontSize = (15.5 * fontScale).sp,
@@ -355,7 +503,7 @@ fun AyahOfTheDayCard(viewModel: AdhkarViewModel, fontScale: Float) {
 
             // Persian Translation
             Text(
-                text = ayah.translation,
+                        text = ayah.translation.toPersianDigits(),
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontSize = (12.5 * fontScale).sp,
                     lineHeight = (18.5 * fontScale).sp,
@@ -378,7 +526,7 @@ fun AyahOfTheDayCard(viewModel: AdhkarViewModel, fontScale: Float) {
                     border = BorderStroke(0.5.dp, SoftBorder)
                 ) {
                     Text(
-                        text = ayah.reference,
+                        text = ayah.reference.toPersianDigits(),
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontSize = (11 * fontScale).sp,
                             fontWeight = FontWeight.Bold,
@@ -521,7 +669,7 @@ fun StreakCalendarCard(
                     )
                     Spacer(modifier = Modifier.width(3.dp))
                     Text(
-                        text = "$streak روز متوالی",
+                        text = "${streak.toPersianDigits()} روز متوالی",
                         fontSize = (11.5 * fontScale).sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFFF9800)
@@ -919,7 +1067,7 @@ fun CategoryTile(
                     )
                 }
                 Text(
-                    text = "${cat.count} ذکر",
+                    text = "${cat.count.toPersianDigits()} ذکر",
                     fontSize = (10 * fontScale).sp,
                     fontWeight = FontWeight.Bold,
                     color = SunGold

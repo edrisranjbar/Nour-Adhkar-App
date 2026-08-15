@@ -1,13 +1,25 @@
-import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
+import java.util.Properties
 
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.google.devtools.ksp)
   alias(libs.plugins.roborazzi)
-  alias(libs.plugins.secrets)
-  alias(libs.plugins.google.services)
 }
+
+val releaseSigningFile = rootProject.file("release-signing.properties")
+val releaseSigningProperties = Properties().apply {
+  if (releaseSigningFile.exists()) {
+    releaseSigningFile.inputStream().use(::load)
+  }
+}
+
+fun releaseSecret(environmentName: String, propertyName: String): String? =
+  System.getenv(environmentName)?.takeIf(String::isNotBlank)
+    ?: releaseSigningProperties.getProperty(propertyName)?.takeIf(String::isNotBlank)
+
+val releaseBuildRequested =
+  gradle.startParameter.taskNames.any { it.contains("release", ignoreCase = true) }
 
 android {
   namespace = "com.example"
@@ -17,19 +29,36 @@ android {
     applicationId = "ir.adhkar.app"
     minSdk = 24
     targetSdk = 36
-    versionCode = 1
-    versionName = "1.0.0"
+    versionCode = 8
+    versionName = "1.1.2"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
   signingConfigs {
     create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-      storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD")
-      keyAlias = "upload"
-      keyPassword = System.getenv("KEY_PASSWORD")
+      val keystorePath = releaseSecret("KEYSTORE_PATH", "storeFile")
+      val signingStorePassword = releaseSecret("STORE_PASSWORD", "storePassword")
+      val signingKeyAlias = releaseSecret("KEY_ALIAS", "keyAlias")
+      val signingKeyPassword = releaseSecret("KEY_PASSWORD", "keyPassword")
+
+      if (releaseBuildRequested) {
+        val missingValues = buildList {
+          if (keystorePath == null) add("KEYSTORE_PATH/storeFile")
+          if (signingStorePassword == null) add("STORE_PASSWORD/storePassword")
+          if (signingKeyAlias == null) add("KEY_ALIAS/keyAlias")
+          if (signingKeyPassword == null) add("KEY_PASSWORD/keyPassword")
+        }
+        check(missingValues.isEmpty()) {
+          "Release signing is not configured. Missing: ${missingValues.joinToString()}. " +
+            "Set environment variables or create the ignored release-signing.properties file."
+        }
+      }
+
+      keystorePath?.let { storeFile = rootProject.file(it) }
+      storePassword = signingStorePassword
+      keyAlias = signingKeyAlias
+      keyPassword = signingKeyPassword
     }
   }
 
@@ -57,22 +86,13 @@ android {
   testOptions { unitTests { isIncludeAndroidResources = true } }
 }
 
-// Configure the Secrets Gradle Plugin to use .env and .env.example files
-// to match the convention used in Web projects.
-secrets {
-  propertiesFileName = ".env"
-  defaultPropertiesFileName = ".env.example"
-}
-
-googleServices { missingGoogleServicesStrategy = MissingGoogleServicesStrategy.WARN }
-
 // Some unused dependencies are commented out below instead of being removed.
 // This makes it easy to add them back in the future if needed.
 dependencies {
   implementation(platform(libs.androidx.compose.bom))
-  implementation(platform(libs.firebase.bom))
   // implementation(libs.accompanist.permissions)
   implementation(libs.androidx.activity.compose)
+  implementation(libs.androidx.concurrent.futures)
   // implementation(libs.androidx.camera.camera2)
   // implementation(libs.androidx.camera.core)
   // implementation(libs.androidx.camera.lifecycle)
@@ -92,26 +112,9 @@ dependencies {
   implementation(libs.androidx.room.ktx)
   implementation(libs.androidx.room.runtime)
   // implementation(libs.coil.compose)
-  implementation(libs.converter.moshi)
-  implementation(libs.firebase.ai)
-  // Uncomment to use Firestore:
-  // implementation(libs.firebase.firestore)
-
-  // Firebase Auth with Google Sign-In requires all of the following to be uncommented together.
-  // If you are using Firebase Auth with other providers (e.g. Email/Password), you may only need
-  // firebase-auth.
-  // implementation(libs.firebase.auth)
-  // implementation(libs.androidx.credentials)
-  // implementation(libs.androidx.credentials.play.services)
-  // implementation(libs.googleid)
-  implementation(libs.firebase.appcheck.recaptcha)
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.coroutines.core)
-  implementation(libs.logging.interceptor)
-  implementation(libs.moshi.kotlin)
-  implementation(libs.okhttp)
   // implementation(libs.play.services.location)
-  implementation(libs.retrofit)
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.core)
   testImplementation(libs.androidx.junit)
@@ -129,5 +132,4 @@ dependencies {
   debugImplementation(libs.androidx.compose.ui.test.manifest)
   debugImplementation(libs.androidx.compose.ui.tooling)
   "ksp"(libs.androidx.room.compiler)
-  "ksp"(libs.moshi.kotlin.codegen)
 }

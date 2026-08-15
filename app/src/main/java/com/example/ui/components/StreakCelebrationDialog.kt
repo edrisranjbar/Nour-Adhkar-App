@@ -62,6 +62,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.ui.screens.DayActivity
 import com.example.ui.screens.getPersianDayAbbreviation
 import com.example.ui.theme.SunGold
+import com.example.ui.util.toPersianDigits
 import java.util.Calendar
 import kotlin.math.cos
 import kotlin.math.sin
@@ -213,7 +214,7 @@ fun StreakCelebrationDialog(
 
                         // Snappy Big Streak Number
                         Text(
-                            text = "$streakCount",
+                            text = streakCount.toPersianDigits(),
                             fontSize = (54 * fontScale).sp,
                             fontWeight = FontWeight.Black,
                             color = Color(0xFFFFB74D),

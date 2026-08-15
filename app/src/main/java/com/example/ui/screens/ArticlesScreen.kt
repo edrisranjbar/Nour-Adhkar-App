@@ -46,6 +46,7 @@ import com.example.ui.theme.SoftBorder
 import com.example.ui.theme.SunGold
 import com.example.ui.theme.TextArabic
 import com.example.ui.theme.TextPersian
+import com.example.ui.util.toPersianDigits
 import com.example.ui.viewmodel.AdhkarViewModel
 
 @Composable
@@ -139,7 +140,7 @@ fun ArticleCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = article.readTime,
+                    text = article.readTime.toPersianDigits(),
                     fontSize = (10 * fontScale).sp,
                     color = SunGold,
                     fontWeight = FontWeight.Bold
@@ -150,7 +151,7 @@ fun ArticleCard(
 
             // Title
             Text(
-                text = article.title,
+                text = article.title.toPersianDigits(),
                 fontSize = (16 * fontScale).sp,
                 fontWeight = FontWeight.Bold,
                 color = TextArabic,
@@ -161,7 +162,7 @@ fun ArticleCard(
 
             // Summary
             Text(
-                text = article.summary,
+                text = article.summary.toPersianDigits(),
                 fontSize = (12.5 * fontScale).sp,
                 lineHeight = 18.sp,
                 color = TextPersian,
@@ -179,7 +180,7 @@ fun ArticleCard(
                     HorizontalDivider(color = SoftBorder, thickness = 1.dp)
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = article.content,
+                        text = article.content.toPersianDigits(),
                         fontSize = (13.5 * fontScale).sp,
                         lineHeight = (22 * fontScale).sp,
                         color = TextArabic,

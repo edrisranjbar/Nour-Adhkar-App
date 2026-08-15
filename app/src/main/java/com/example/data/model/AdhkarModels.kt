@@ -31,3 +31,25 @@ data class AyahOfTheDay(
     val translation: String,
     val reference: String
 )
+
+enum class UserFeeling(val storageKey: String, val title: String, val emoji: String) {
+    ANXIOUS("anxious", "نگرانم", "😟"),
+    SAD("sad", "غمگینم", "😔"),
+    REGRETFUL("regretful", "پشیمانم", "😞"),
+    ANGRY("angry", "عصبانی‌ام", "😠"),
+    OVERWHELMED("overwhelmed", "خسته و تحت فشارم", "😫"),
+    GRATEFUL("grateful", "آرام و شکرگزارم", "🙂");
+
+    companion object {
+        fun fromStorageKey(value: String?): UserFeeling? = entries.firstOrNull { it.storageKey == value }
+    }
+}
+
+data class EmotionalAyah(
+    val id: String,
+    val feeling: UserFeeling,
+    val text: String,
+    val translation: String,
+    val reference: String,
+    val reflection: String
+)

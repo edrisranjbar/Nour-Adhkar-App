@@ -23,6 +23,12 @@ interface DhikrProgressDao {
     @Query("DELETE FROM dhikr_progress WHERE categoryId = :categoryId")
     suspend fun deleteProgressForCategory(categoryId: String)
 
+    @Query(
+        "DELETE FROM dhikr_progress " +
+            "WHERE categoryId = :categoryId AND currentCount >= targetCount"
+    )
+    suspend fun deleteCompletedProgressForCategory(categoryId: String)
+
     @Query("DELETE FROM dhikr_progress WHERE id = :id")
     suspend fun deleteProgressById(id: String)
 
