@@ -35,6 +35,30 @@ class PreferenceRepository(context: Context) {
         prefs.edit().putFloat("font_scale", scale).apply()
     }
 
+    fun isDarkModeEnabled(): Boolean = prefs.getBoolean("dark_mode_enabled", false)
+
+    fun setDarkModeEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("dark_mode_enabled", enabled).apply()
+    }
+
+    fun getCustomDhikr(): List<String> =
+        prefs.getStringSet("custom_dhikr", emptySet()).orEmpty().sorted()
+
+    fun addCustomDhikr(text: String): List<String> {
+        val updated = getCustomDhikr().toMutableSet().apply { add(text.trim()) }
+        prefs.edit().putStringSet("custom_dhikr", updated).apply()
+        return updated.sorted()
+    }
+
+    fun getActivityDayKeys(): Set<Long> =
+        prefs.getStringSet("activity_day_keys", emptySet()).orEmpty().mapNotNull(String::toLongOrNull).toSet()
+
+    fun markActivityToday(): Set<Long> {
+        val updated = getActivityDayKeys().toMutableSet().apply { add(currentDayKey()) }
+        prefs.edit().putStringSet("activity_day_keys", updated.map(Long::toString).toSet()).apply()
+        return updated
+    }
+
     fun getSelectedFeeling(): String? {
         if (prefs.getLong("selected_feeling_day", Long.MIN_VALUE) != currentDayKey()) {
             clearSelectedFeeling()

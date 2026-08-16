@@ -3,8 +3,8 @@ package com.example.data.model
 object AdhkarData {
 
     val categories = listOf(
-        Category("morning", "اذکار صبحگاه", "روز خود را با یاد خدا و برکت معنوی آغاز کنید", "wb_sunny", 30),
-        Category("evening", "اذکار شامگاه", "پایان هر روز را با یاد پروردگار به آرامش برسانید", "nights_stay", 26),
+        Category("morning", "اذکار صبحگاه", "روز خود را با یاد خدا و برکت معنوی آغاز کنید", "wb_sunny", 10),
+        Category("evening", "اذکار شامگاه", "پایان هر روز را با یاد پروردگار به آرامش برسانید", "nights_stay", 10),
         Category("daily", "اذکار روزانه", "ذکرهای ساده و پرفضیلت برای همراهی در طول روز", "today", 10),
         Category("ramadan", "اذکار ماه رمضان", "دعاهای ویژه سحر، افطار و شب‌های پربرکت قدر", "brightness_3", 9),
         Category("sleep", "دعای خواب", "آرامش شبانه با تلاوت آیات الهی و دعاهای قبل از خواب", "bedtime", 7),

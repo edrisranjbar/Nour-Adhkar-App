@@ -3,6 +3,10 @@
 .kotlin
 /.idea/
 /.tooling/
+/tools/vendor/
+/.gradle-*/
+/device-*.png
+/device-*.xml
 /repo_main.zip
 /local.properties
 /.idea/caches

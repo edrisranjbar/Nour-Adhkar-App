@@ -26,8 +26,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -36,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -78,8 +81,9 @@ fun TasbihScreen(
     val selectedDhikr by viewModel.selectedTasbihDhikr.collectAsState()
     val recentSessions by viewModel.recentTasbihSessions.collectAsState()
     val fontScale by viewModel.fontScale.collectAsState()
+    val customDhikr by viewModel.customDhikr.collectAsState()
 
-    val options = listOf(
+    val defaultOptions = listOf(
         "سبحان الله",
         "الحمد لله",
         "لا إله إلا الله",
@@ -87,6 +91,37 @@ fun TasbihScreen(
         "أستغفر الله",
         "اللهم صل على محمد"
     )
+    val options = defaultOptions + customDhikr
+    var showAddDhikrDialog by remember { mutableStateOf(false) }
+    var customDhikrText by remember { mutableStateOf("") }
+
+    if (showAddDhikrDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddDhikrDialog = false },
+            title = { Text("افزودن ذکر دلخواه") },
+            text = {
+                OutlinedTextField(
+                    value = customDhikrText,
+                    onValueChange = { customDhikrText = it },
+                    label = { Text("متن ذکر") },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.addCustomDhikr(customDhikrText)
+                        customDhikrText = ""
+                        showAddDhikrDialog = false
+                    },
+                    enabled = customDhikrText.isNotBlank()
+                ) { Text("افزودن") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showAddDhikrDialog = false }) { Text("انصراف") }
+            }
+        )
+    }
 
     // Bead Press Scale effect
     var isPressed by remember { mutableStateOf(false) }
@@ -140,7 +175,7 @@ fun TasbihScreen(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(12.dp))
                                         .background(
-                                            if (isSelected) Color(0xFFE8F0E1) else MaterialTheme.colorScheme.surface
+                                            if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface
                                         )
                                         .border(
                                             1.dp,
@@ -159,6 +194,16 @@ fun TasbihScreen(
                                     )
                                 }
                             }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = { showAddDhikrDialog = true },
+                            border = BorderStroke(1.dp, SoftBorder),
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(17.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("افزودن ذکر دلخواه")
                         }
                     }
                 }
@@ -199,7 +244,7 @@ fun TasbihScreen(
                                     .background(
                                         Brush.radialGradient(
                                             colors = listOf(
-                                                Color(0xFFE8F0E1),
+                                                MaterialTheme.colorScheme.secondaryContainer,
                                                 SoftBorder
                                             )
                                         )
@@ -382,7 +427,7 @@ fun HistoryItemCard(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFE8F0E1)),
+                        .background(MaterialTheme.colorScheme.secondaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(

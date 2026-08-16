@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import android.app.TimePickerDialog
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,9 +20,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -38,11 +38,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -56,8 +56,8 @@ import com.example.ui.theme.SoftBorder
 import com.example.ui.theme.SunGold
 import com.example.ui.theme.TextArabic
 import com.example.ui.theme.TextPersian
-import com.example.ui.util.toPersianDigits
 import com.example.ui.viewmodel.AdhkarViewModel
+import java.util.Locale
 
 @Composable
 fun SettingsScreen(
@@ -65,14 +65,12 @@ fun SettingsScreen(
     innerPadding: PaddingValues
 ) {
     val fontScale by viewModel.fontScale.collectAsState()
+    val darkModeEnabled by viewModel.darkModeEnabled.collectAsState()
     val vibrationEnabled by viewModel.vibrationEnabled.collectAsState()
     val soundEnabled by viewModel.soundEnabled.collectAsState()
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
     val morningTime by viewModel.morningTime.collectAsState()
     val eveningTime by viewModel.eveningTime.collectAsState()
-
-    val morningSlots = listOf("05:00", "06:00", "07:00", "08:00", "09:00")
-    val eveningSlots = listOf("16:00", "17:00", "18:00", "19:00", "20:00")
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Column(
@@ -148,115 +146,26 @@ fun SettingsScreen(
                                 HorizontalDivider(color = SoftBorder)
                                 Spacer(modifier = Modifier.height(16.dp))
 
-                                // 2. Morning Notification Time Slots Selector
-                                Column {
-                                    Text(
-                                        text = "ساعت یادآوری صبحگاه:",
-                                        fontSize = (13 * fontScale).sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = SandDark
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        morningSlots.forEach { slot ->
-                                            val isSelected = slot == morningTime
-                                            Box(
-                                                modifier = Modifier
-                                                    .clip(RoundedCornerShape(12.dp))
-                                                    .background(
-                                                        color = if (isSelected) Color(0xFFE8F0E1) else MaterialTheme.colorScheme.surface
-                                                    )
-                                                    .border(
-                                                        1.dp,
-                                                        if (isSelected) SunGold else SoftBorder,
-                                                        shape = RoundedCornerShape(12.dp)
-                                                    )
-                                                    .clickable { viewModel.updateMorningTime(slot) }
-                                                    .padding(horizontal = 10.dp, vertical = 6.dp)
-                                            ) {
-                                                Text(
-                                                    text = slot.toPersianDigits(),
-                                                    color = if (isSelected) SunGold else SandDark,
-                                                    fontSize = 11.sp,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
+                                // 2. Morning Notification Time Picker
+                                NotificationTimePicker(
+                                    label = "ساعت یادآوری صبحگاه:",
+                                    time = morningTime,
+                                    fontScale = fontScale,
+                                    onTimeSelected = viewModel::updateMorningTime
+                                )
 
                                 Spacer(modifier = Modifier.height(16.dp))
                                 HorizontalDivider(color = SoftBorder)
                                 Spacer(modifier = Modifier.height(16.dp))
 
-                                // 3. Evening Notification Time Slots Selector
-                                Column {
-                                    Text(
-                                        text = "ساعت یادآوری شامگاه:",
-                                        fontSize = (13 * fontScale).sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = SandDark
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        eveningSlots.forEach { slot ->
-                                            val isSelected = slot == eveningTime
-                                            Box(
-                                                modifier = Modifier
-                                                    .clip(RoundedCornerShape(12.dp))
-                                                    .background(
-                                                        color = if (isSelected) Color(0xFFE8F0E1) else MaterialTheme.colorScheme.surface
-                                                    )
-                                                    .border(
-                                                        1.dp,
-                                                        if (isSelected) SunGold else SoftBorder,
-                                                        shape = RoundedCornerShape(12.dp)
-                                                    )
-                                                    .clickable { viewModel.updateEveningTime(slot) }
-                                                    .padding(horizontal = 10.dp, vertical = 6.dp)
-                                            ) {
-                                                Text(
-                                                    text = slot.toPersianDigits(),
-                                                    color = if (isSelected) SunGold else SandDark,
-                                                    fontSize = 11.sp,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
+                                // 3. Evening Notification Time Picker
+                                NotificationTimePicker(
+                                    label = "ساعت یادآوری شامگاه:",
+                                    time = eveningTime,
+                                    fontScale = fontScale,
+                                    onTimeSelected = viewModel::updateEveningTime
+                                )
 
-                                Spacer(modifier = Modifier.height(20.dp))
-
-                                // 4. Test Notification Button
-                                Button(
-                                    onClick = { viewModel.triggerTestNotification() },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = SunGold,
-                                        contentColor = Color.White
-                                    ),
-                                    shape = RoundedCornerShape(24.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Notifications,
-                                        contentDescription = "ارسال اعلان آزمایشی",
-                                        modifier = Modifier.size(16.dp),
-                                        tint = Color.White
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "تست آنی یادآوری (اعلان آزمایشی)",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
                             }
                         }
                     }
@@ -276,6 +185,35 @@ fun SettingsScreen(
                         elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.DarkMode,
+                                        contentDescription = null,
+                                        tint = SunGold,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Text("حالت تاریک", fontSize = (13 * fontScale).sp, fontWeight = FontWeight.SemiBold, color = SandDark)
+                                        Text("نمایش آرام‌تر در محیط کم‌نور", fontSize = 11.sp, color = NightBlue)
+                                    }
+                                }
+                                Switch(
+                                    checked = darkModeEnabled,
+                                    onCheckedChange = viewModel::setDarkModeEnabled,
+                                    colors = SwitchDefaults.colors(checkedTrackColor = SunGold)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+                            HorizontalDivider(color = SoftBorder)
+                            Spacer(modifier = Modifier.height(14.dp))
+
                             // 1. Vibration Switch
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -385,7 +323,7 @@ fun SettingsScreen(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .background(Color(0xFFE8F0E1).copy(alpha = 0.5f), shape = RoundedCornerShape(14.dp))
+                                        .background(MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(14.dp))
                                         .border(1.dp, SoftBorder, shape = RoundedCornerShape(14.dp))
                                         .padding(12.dp),
                                     contentAlignment = Alignment.Center
@@ -405,6 +343,59 @@ fun SettingsScreen(
                 }
 
             }
+        }
+    }
+}
+
+@Composable
+private fun NotificationTimePicker(
+    label: String,
+    time: String,
+    fontScale: Float,
+    onTimeSelected: (String) -> Unit
+) {
+    val context = LocalContext.current
+    val parts = time.split(":")
+    val initialHour = parts.getOrNull(0)?.toIntOrNull()?.coerceIn(0, 23) ?: 0
+    val initialMinute = parts.getOrNull(1)?.toIntOrNull()?.coerceIn(0, 59) ?: 0
+
+    Column {
+        Text(
+            text = label,
+            fontSize = (13 * fontScale).sp,
+            fontWeight = FontWeight.SemiBold,
+            color = SandDark
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedButton(
+            onClick = {
+                TimePickerDialog(
+                    context,
+                    { _, hour, minute ->
+                        onTimeSelected(String.format(Locale.US, "%02d:%02d", hour, minute))
+                    },
+                    initialHour,
+                    initialMinute,
+                    true
+                ).show()
+            },
+            modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, SoftBorder),
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = SandDark)
+        ) {
+            Icon(
+                imageVector = Icons.Default.AccessTime,
+                contentDescription = null,
+                tint = SunGold,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = String.format(Locale.US, "%02d:%02d", initialHour, initialMinute),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

@@ -89,7 +89,6 @@ import com.example.data.model.DhikrItem
 import com.example.data.model.UserFeeling
 import com.example.ui.theme.AmiriQuran
 import com.example.ui.theme.NightBlue
-import com.example.ui.theme.SandBackground
 import com.example.ui.theme.SandDark
 import com.example.ui.theme.SoftBorder
 import com.example.ui.theme.SunGold
@@ -122,7 +121,7 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .padding(top = 10.dp, bottom = 6.dp),
                 shape = RoundedCornerShape(24.dp),
-                color = Color(0xFFE8F0E1).copy(alpha = 0.7f),
+                color = MaterialTheme.colorScheme.secondaryContainer,
                 border = BorderStroke(1.dp, SoftBorder.copy(alpha = 0.9f))
             ) {
                 Row(
@@ -236,7 +235,7 @@ fun HomeScreen(
                                 // Morning Card
                                 SpecialAdhkarCard(
                                     title = "اذکار صبحگاه",
-                                    badgeText = "۳۰ ذکر",
+                                    badgeText = "${AdhkarData.adhkarList["morning"].orEmpty().size.toPersianDigits()} ذکر",
                                     icon = Icons.Default.WbSunny,
                                     accentColor = Color(0xFFD58B19),
                                     modifier = Modifier.weight(1f),
@@ -246,7 +245,7 @@ fun HomeScreen(
                                 // Evening Card
                                 SpecialAdhkarCard(
                                     title = "اذکار شامگاه",
-                                    badgeText = "۲۶ ذکر",
+                                    badgeText = "${AdhkarData.adhkarList["evening"].orEmpty().size.toPersianDigits()} ذکر",
                                     icon = Icons.Default.NightsStay,
                                     accentColor = Color(0xFF53699A),
                                     modifier = Modifier.weight(1f),
@@ -315,7 +314,7 @@ fun EmotionalAyahCard(viewModel: AdhkarViewModel, fontScale: Float) {
             ) {
                 Box(
                     modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFE8F0E1)),
+                        .background(MaterialTheme.colorScheme.secondaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(Icons.Default.MenuBook, contentDescription = null, tint = SunGold, modifier = Modifier.size(18.dp))
@@ -365,7 +364,11 @@ fun EmotionalAyahCard(viewModel: AdhkarViewModel, fontScale: Float) {
                                 showFeelingPicker = false
                             },
                             shape = RoundedCornerShape(14.dp),
-                            color = if (isSelected) SunGold.copy(alpha = 0.14f) else SandBackground.copy(alpha = 0.7f),
+                            color = if (isSelected) {
+                                MaterialTheme.colorScheme.secondaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant
+                            },
                             border = BorderStroke(
                                 if (isSelected) 1.5.dp else 0.5.dp,
                                 if (isSelected) SunGold else SoftBorder
@@ -462,7 +465,7 @@ fun AyahOfTheDayCard(viewModel: AdhkarViewModel, fontScale: Float) {
                     modifier = Modifier
                         .size(32.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFE8F0E1)),
+                        .background(MaterialTheme.colorScheme.secondaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -522,7 +525,7 @@ fun AyahOfTheDayCard(viewModel: AdhkarViewModel, fontScale: Float) {
             ) {
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = SandBackground,
+                    color = MaterialTheme.colorScheme.secondaryContainer,
                     border = BorderStroke(0.5.dp, SoftBorder)
                 ) {
                     Text(
@@ -547,15 +550,16 @@ fun StreakCalendarCard(
 ) {
     val allProgress by viewModel.allProgress.collectAsState()
     val recentSessions by viewModel.recentTasbihSessions.collectAsState()
+    val activityDayKeys by viewModel.activityDayKeys.collectAsState()
 
     // Generate last 7 days (from 6 days ago to today)
-    val days = remember(allProgress, recentSessions) {
+    val days = remember(allProgress, recentSessions, activityDayKeys) {
         val list = mutableListOf<DayActivity>()
         for (i in 6 downTo 0) {
             val cal = Calendar.getInstance()
             cal.add(Calendar.DAY_OF_YEAR, -i)
             val isToday = i == 0
-            val isActive = isDayActive(cal, allProgress, recentSessions)
+            val isActive = isDayActive(cal, allProgress, recentSessions, activityDayKeys)
             val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
             val dayLabel = getPersianDayAbbreviation(dayOfWeek)
             list.add(
@@ -571,23 +575,23 @@ fun StreakCalendarCard(
     }
 
     // Calculate current streak
-    val streak = remember(allProgress, recentSessions) {
+    val streak = remember(allProgress, recentSessions, activityDayKeys) {
         var s = 0
         val streakCal = Calendar.getInstance()
-        val todayActive = isDayActive(streakCal, allProgress, recentSessions)
+        val todayActive = isDayActive(streakCal, allProgress, recentSessions, activityDayKeys)
         if (todayActive) {
             s = 1
             streakCal.add(Calendar.DAY_OF_YEAR, -1)
-            while (isDayActive(streakCal, allProgress, recentSessions)) {
+            while (isDayActive(streakCal, allProgress, recentSessions, activityDayKeys)) {
                 s++
                 streakCal.add(Calendar.DAY_OF_YEAR, -1)
             }
         } else {
             streakCal.add(Calendar.DAY_OF_YEAR, -1)
-            if (isDayActive(streakCal, allProgress, recentSessions)) {
+            if (isDayActive(streakCal, allProgress, recentSessions, activityDayKeys)) {
                 s = 1
                 streakCal.add(Calendar.DAY_OF_YEAR, -1)
-                while (isDayActive(streakCal, allProgress, recentSessions)) {
+                while (isDayActive(streakCal, allProgress, recentSessions, activityDayKeys)) {
                     s++
                     streakCal.add(Calendar.DAY_OF_YEAR, -1)
                 }
@@ -633,7 +637,7 @@ fun StreakCalendarCard(
                         modifier = Modifier
                             .size(28.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFFFFF3E0)),
+                            .background(MaterialTheme.colorScheme.tertiaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -658,7 +662,7 @@ fun StreakCalendarCard(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .background(Color(0xFFFFF3E0), shape = RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.tertiaryContainer, shape = RoundedCornerShape(10.dp))
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Icon(
@@ -706,9 +710,9 @@ fun StreakCalendarCard(
                                 .clip(CircleShape)
                                 .background(
                                     when {
-                                        day.isActive -> Color(0xFFE8F5E9) // soft light green
-                                        day.isToday -> Color(0xFFFFFDE7) // soft light gold
-                                        else -> Color(0xFFF5F5F5) // grey
+                                        day.isActive -> MaterialTheme.colorScheme.secondaryContainer
+                                        day.isToday -> MaterialTheme.colorScheme.tertiaryContainer
+                                        else -> MaterialTheme.colorScheme.surfaceVariant
                                     }
                                 )
                                 .border(
@@ -764,7 +768,8 @@ data class DayActivity(
 fun isDayActive(
     cal: Calendar,
     progressList: List<DhikrProgressEntity>,
-    sessions: List<TasbihSessionEntity>
+    sessions: List<TasbihSessionEntity>,
+    activityDayKeys: Set<Long> = emptySet()
 ): Boolean {
     val testCal = cal.clone() as Calendar
 
@@ -787,7 +792,7 @@ fun isDayActive(
         it.timestamp in startMillis..endMillis
     }
 
-    return progressActive || sessionActive
+    return startMillis in activityDayKeys || progressActive || sessionActive
 }
 
 fun getPersianDayAbbreviation(calendarDayOfWeek: Int): String {
@@ -818,7 +823,7 @@ fun HomeSectionHeader(
             modifier = Modifier
                 .size(32.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(Color(0xFFE8F0E1)),
+                .background(MaterialTheme.colorScheme.secondaryContainer),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -981,7 +986,7 @@ fun CategoriesGrid(viewModel: AdhkarViewModel, fontScale: Float) {
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFFE8F0E1)),
+                                .background(MaterialTheme.colorScheme.secondaryContainer),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -1056,7 +1061,7 @@ fun CategoryTile(
                     modifier = Modifier
                         .size(32.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFE8F0E1)),
+                        .background(MaterialTheme.colorScheme.secondaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -1104,7 +1109,7 @@ fun SearchResultsView(
                 modifier = Modifier
                     .size(72.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFE8F0E1)),
+                    .background(MaterialTheme.colorScheme.secondaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -1160,7 +1165,7 @@ fun SearchResultsView(
                             Box(
                                 modifier = Modifier
                                     .background(
-                                        color = Color(0xFFE8F0E1),
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
                                         shape = RoundedCornerShape(8.dp)
                                     )
                                     .padding(horizontal = 10.dp, vertical = 4.dp)

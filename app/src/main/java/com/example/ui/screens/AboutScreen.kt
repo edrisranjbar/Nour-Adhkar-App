@@ -12,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -77,7 +76,7 @@ fun AboutScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(28.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         border = BorderStroke(1.dp, SoftBorder)
                     ) {
                         Column(
@@ -90,7 +89,7 @@ fun AboutScreen(
                                 modifier = Modifier
                                     .size(72.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFFF7FAF3)),
+                                    .background(MaterialTheme.colorScheme.secondaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text("🕌", fontSize = 36.sp)
@@ -106,7 +105,7 @@ fun AboutScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "نسخه ۱.۱.۱",
+                                text = "نسخه ۱.۲.۰",
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontSize = (12 * fontScale).sp,
                                     color = NightBlue.copy(alpha = 0.6f)
@@ -117,7 +116,8 @@ fun AboutScreen(
                             // Beautifully written description directly from adhkar.ir/about concepts
                             Text(
                                 text = "پروژه اذکار یک تلاش متن‌باز، عام‌المنفعه و غیرانتفاعی است که با هدف تسهیل قرائت ادعیه، اذکار روزانه و تسبیحات برای مسلمانان سراسر جهان شکل گرفته است.\n\n" +
-                                        "ما معتقدیم یاد و ذکر پروردگار باید در بستری زلال، ساده، زیبا و به دور از هرگونه هیاهو یا اهداف تجاری در دسترس همگان باشد. از این رو، تمام بخش‌های این نرم‌افزار به صورت کاملاً رایگان ارائه شده، فاقد هرگونه تبلیغ یا ردیابی است و به صورت کاملاً آفلاین کار می‌کند تا آرامش خاطر شما حفظ شود.",
+                                        "ما معتقدیم یاد و ذکر پروردگار باید در بستری زلال، ساده، زیبا و به دور از هرگونه هیاهو یا اهداف تجاری در دسترس همگان باشد. از این رو، تمام بخش‌های این نرم‌افزار به صورت کاملاً رایگان ارائه شده، فاقد هرگونه تبلیغ یا ردیابی است و محتوای اصلی آن بدون اینترنت در دسترس می‌ماند تا آرامش خاطر شما حفظ شود.\n\n" +
+                                        "فایل‌های صوتی با تلاوت مشاری راشد العفاسی از Makkah Live و Internet Archive تهیه شده‌اند.",
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontSize = (13.5 * fontScale).sp,
                                     color = TextPersian,
@@ -136,7 +136,7 @@ fun AboutScreen(
                             .fillMaxWidth()
                             .clickable { uriHandler.openUri("https://edrisranjbar.ir/donation") },
                         shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E7)),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
                         border = BorderStroke(1.dp, Color(0xFFE8C978))
                     ) {
                         Row(
@@ -149,7 +149,7 @@ fun AboutScreen(
                                 modifier = Modifier
                                     .size(44.dp)
                                     .clip(RoundedCornerShape(14.dp))
-                                    .background(Color(0xFFFFE7A8)),
+                                    .background(MaterialTheme.colorScheme.tertiaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -178,64 +178,12 @@ fun AboutScreen(
                     }
                 }
 
-                // Audio credits
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        border = BorderStroke(1.dp, SoftBorder)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 18.dp, vertical = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .background(Color(0xFFE8F0E1)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Headphones,
-                                    contentDescription = null,
-                                    tint = SunGold,
-                                    modifier = Modifier.size(23.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "منبع فایل‌های صوتی",
-                                    fontSize = (14 * fontScale).sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = SandDark
-                                )
-                                Spacer(modifier = Modifier.height(3.dp))
-                                Text(
-                                    text = "تلاوت با صدای مشاری راشد العفاسی",
-                                    fontSize = (12 * fontScale).sp,
-                                    color = TextPersian
-                                )
-                                Text(
-                                    text = "Makkah Live / Internet Archive",
-                                    fontSize = (11 * fontScale).sp,
-                                    color = NightBlue.copy(alpha = 0.75f)
-                                )
-                            }
-                        }
-                    }
-                }
-
                 // Contact, Telegram & Git Card (New Feature based on User Request)
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(28.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         border = BorderStroke(1.dp, SoftBorder)
                     ) {
                         Column(
@@ -267,7 +215,7 @@ fun AboutScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(16.dp))
-                                    .background(Color(0xFFECEFF1)) // Soft gray background
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
                                     .clickable { uriHandler.openUri("mailto:edrisranjbar.dev@gmail.com") }
                                     .padding(vertical = 12.dp, horizontal = 16.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -284,12 +232,12 @@ fun AboutScreen(
                                         text = "پست الکترونیکی",
                                         fontSize = (13 * fontScale).sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF37474F)
+                                        color = SandDark
                                     )
                                     Text(
                                         text = "edrisranjbar.dev@gmail.com",
                                         fontSize = 11.sp,
-                                        color = Color(0xFF455A64)
+                                        color = NightBlue
                                     )
                                 }
                             }
@@ -301,7 +249,7 @@ fun AboutScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(16.dp))
-                                    .background(Color(0xFFF1F8E9)) // Soft green/sage background
+                                    .background(MaterialTheme.colorScheme.secondaryContainer)
                                     .clickable { uriHandler.openUri("https://github.com/edrisranjbar/nour-adhkar") }
                                     .padding(vertical = 12.dp, horizontal = 16.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -318,7 +266,7 @@ fun AboutScreen(
                                         text = "مخزن متن‌باز پروژه در گیت‌هاب",
                                         fontSize = (13 * fontScale).sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF33691E)
+                                        color = SandDark
                                     )
                                     Text(
                                         text = "github.com/edrisranjbar/nour-adhkar",

@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.RotateLeft
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Warning
@@ -276,6 +277,9 @@ fun DhikrCounterScreen(
                         index = index + 1,
                         item = item,
                         fontScale = fontScale,
+                        onUndo = {
+                            viewModel.decrementDhikr(categoryId, item.id)
+                        },
                         onTap = {
                             val currentCount = item.currentCount
                             val targetCount = item.targetCount
@@ -360,7 +364,7 @@ fun DataMissingFallbackUI(
                     modifier = Modifier
                         .size(72.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFFFF3E0)),
+                        .background(MaterialTheme.colorScheme.tertiaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -421,11 +425,12 @@ fun DhikrItemCard(
     index: Int,
     item: DhikrItem,
     fontScale: Float,
+    onUndo: () -> Unit,
     onTap: () -> Unit
 ) {
     val isCompleted = item.currentCount >= item.targetCount
     val animatedCardBg by animateColorAsState(
-        targetValue = if (isCompleted) Color(0xFFF2F5ED) else MaterialTheme.colorScheme.surface,
+        targetValue = if (isCompleted) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
         label = "cardBg"
     )
     val animatedBorderColor by animateColorAsState(
@@ -469,20 +474,45 @@ fun DhikrItemCard(
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
-            // Item index
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFE8F0E1)),
-                contentAlignment = Alignment.Center
+            // Item index and per-item reset action
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = index.toPersianDigits(),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = SunGold
-                )
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.secondaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = index.toPersianDigits(),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = SunGold
+                    )
+                }
+
+                if (item.currentCount > 0) {
+                    IconButton(
+                        onClick = onUndo,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant,
+                                CircleShape
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.RotateLeft,
+                            contentDescription = "یک شماره کم کن",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -550,7 +580,7 @@ fun DhikrItemCard(
                             modifier = Modifier
                                 .size(50.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFFE8F5E9)),
+                                .background(MaterialTheme.colorScheme.secondaryContainer),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(

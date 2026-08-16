@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -33,6 +35,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.material3.Surface
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -53,9 +59,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -74,6 +85,8 @@ import com.example.ui.theme.SunGold
 import com.example.ui.theme.SoftBorder
 import com.example.ui.theme.NightBlue
 import com.example.ui.viewmodel.AdhkarViewModel
+import com.example.updates.AppUpdate
+import com.example.updates.UpdateChecker
 
 class MainActivity : ComponentActivity() {
 
@@ -99,8 +112,9 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            MyApplicationTheme {
-                val viewModel: AdhkarViewModel = viewModel()
+            val viewModel: AdhkarViewModel = viewModel()
+            val darkModeEnabled by viewModel.darkModeEnabled.collectAsState()
+            MyApplicationTheme(darkTheme = darkModeEnabled) {
                 AppMainScaffold(viewModel)
             }
         }
@@ -109,9 +123,35 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppMainScaffold(viewModel: AdhkarViewModel) {
+    val context = LocalContext.current
     val currentTab by viewModel.currentTab.collectAsState()
     val selectedCategoryId by viewModel.selectedCategoryId.collectAsState()
     val fontScale by viewModel.fontScale.collectAsState()
+    var availableUpdate by remember { mutableStateOf<AppUpdate?>(null) }
+
+    LaunchedEffect(Unit) {
+        availableUpdate = UpdateChecker.check()
+    }
+
+    availableUpdate?.let { update ->
+        AlertDialog(
+            onDismissRequest = { availableUpdate = null },
+            title = { Text("نسخه جدید در دسترس است") },
+            text = { Text("نسخه ${update.versionName} از کافه‌بازار قابل دریافت است.") },
+            confirmButton = {
+                Button(onClick = {
+                    val bazaarIntent = Intent(Intent.ACTION_VIEW, Uri.parse("bazaar://details?id=ir.adhkar.app"))
+                    runCatching { context.startActivity(bazaarIntent) }.onFailure {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://cafebazaar.ir/app/ir.adhkar.app")))
+                    }
+                    availableUpdate = null
+                }) { Text("به‌روزرسانی") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { availableUpdate = null }) { Text("بعداً") }
+            }
+        )
+    }
 
     // Setup RTL top-level scaffold wrapping
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -138,7 +178,7 @@ fun AppMainScaffold(viewModel: AdhkarViewModel) {
                                 .fillMaxWidth()
                                 .height(74.dp),
                             shape = RoundedCornerShape(37.dp),
-                            color = Color(0xF2E4EFE0), // Highly opaque light-sage frosted background
+                            color = MaterialTheme.colorScheme.surface,
                             border = BorderStroke(1.dp, SoftBorder.copy(alpha = 0.8f)),
                             tonalElevation = 0.dp, // Disable tonal elevation to prevent dark tint overlays
                             shadowElevation = 10.dp

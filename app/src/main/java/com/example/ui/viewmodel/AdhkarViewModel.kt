@@ -55,6 +55,15 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     private val _fontScale = MutableStateFlow(prefs.getFontScale())
     val fontScale: StateFlow<Float> = _fontScale.asStateFlow()
 
+    private val _darkModeEnabled = MutableStateFlow(prefs.isDarkModeEnabled())
+    val darkModeEnabled: StateFlow<Boolean> = _darkModeEnabled.asStateFlow()
+
+    private val _customDhikr = MutableStateFlow(prefs.getCustomDhikr())
+    val customDhikr: StateFlow<List<String>> = _customDhikr.asStateFlow()
+
+    private val _activityDayKeys = MutableStateFlow(prefs.getActivityDayKeys())
+    val activityDayKeys: StateFlow<Set<Long>> = _activityDayKeys.asStateFlow()
+
     private val _vibrationEnabled = MutableStateFlow(prefs.isVibrationEnabled())
     val vibrationEnabled: StateFlow<Boolean> = _vibrationEnabled.asStateFlow()
 
@@ -180,6 +189,7 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     // Count operations
     fun incrementDhikr(categoryId: String, dhikrId: Int, targetCount: Int) {
         viewModelScope.launch {
+            _activityDayKeys.value = prefs.markActivityToday()
             val categoryCompleted = repository.incrementDhikrCount(categoryId, dhikrId, targetCount)
             if (categoryCompleted) {
                 prefs.markAdhkarCompletedToday(categoryId)
@@ -200,6 +210,12 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun decrementDhikr(categoryId: String, dhikrId: Int) {
+        viewModelScope.launch {
+            repository.decrementDhikrCount(categoryId, dhikrId)
+        }
+    }
+
     // Tasbih triggers
     fun incrementTasbih() {
         _tasbihCount.value += 1
@@ -216,6 +232,7 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         if (count > 0) {
             viewModelScope.launch {
                 repository.saveTasbihSession(name, count)
+                _activityDayKeys.value = prefs.markActivityToday()
                 _tasbihCount.value = 0
             }
         }
@@ -232,10 +249,22 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         resetTasbih()
     }
 
+    fun addCustomDhikr(text: String) {
+        val normalized = text.trim()
+        if (normalized.isEmpty()) return
+        _customDhikr.value = prefs.addCustomDhikr(normalized)
+        selectTasbihDhikr(normalized)
+    }
+
     // Preferences controllers
     fun updateFontScale(scale: Float) {
         prefs.setFontScale(scale)
         _fontScale.value = scale
+    }
+
+    fun setDarkModeEnabled(enabled: Boolean) {
+        prefs.setDarkModeEnabled(enabled)
+        _darkModeEnabled.value = enabled
     }
 
     fun setVibrationEnabled(enabled: Boolean) {
@@ -277,6 +306,9 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
                 itemId = itemId,
                 completed = completed
             )
+        if (completed) {
+            _activityDayKeys.value = prefs.markActivityToday()
+        }
     }
 
     private fun currentChecklistDayKey(): Long = Calendar.getInstance().apply {
