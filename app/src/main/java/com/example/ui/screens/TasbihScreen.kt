@@ -94,6 +94,7 @@ fun TasbihScreen(
     val options = defaultOptions + customDhikr
     var showAddDhikrDialog by remember { mutableStateOf(false) }
     var customDhikrText by remember { mutableStateOf("") }
+    var dhikrPendingDeletion by remember { mutableStateOf<String?>(null) }
 
     if (showAddDhikrDialog) {
         AlertDialog(
@@ -119,6 +120,30 @@ fun TasbihScreen(
             },
             dismissButton = {
                 OutlinedButton(onClick = { showAddDhikrDialog = false }) { Text("انصراف") }
+            }
+        )
+    }
+
+    dhikrPendingDeletion?.let { phrase ->
+        AlertDialog(
+            onDismissRequest = { dhikrPendingDeletion = null },
+            title = { Text("حذف ذکر دلخواه") },
+            text = { Text("آیا از حذف «$phrase» مطمئن هستید؟") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.removeCustomDhikr(phrase, defaultOptions.first())
+                        dhikrPendingDeletion = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("حذف")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { dhikrPendingDeletion = null }) {
+                    Text("انصراف")
+                }
             }
         )
     }
@@ -171,6 +196,7 @@ fun TasbihScreen(
                         ) {
                             items(options) { phrase ->
                                 val isSelected = phrase == selectedDhikr
+                                val isCustom = phrase in customDhikr
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(12.dp))
@@ -182,8 +208,17 @@ fun TasbihScreen(
                                             if (isSelected) SunGold else SoftBorder,
                                             shape = RoundedCornerShape(12.dp)
                                         )
-                                        .clickable { viewModel.selectTasbihDhikr(phrase) }
-                                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                                        .pointerInput(phrase, isCustom) {
+                                            detectTapGestures(
+                                                onTap = { viewModel.selectTasbihDhikr(phrase) },
+                                                onLongPress = {
+                                                    if (isCustom) dhikrPendingDeletion = phrase
+                                                }
+                                            )
+                                        }
+                                        .height(40.dp)
+                                        .padding(horizontal = 14.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                         text = phrase,
@@ -194,16 +229,34 @@ fun TasbihScreen(
                                     )
                                 }
                             }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedButton(
-                            onClick = { showAddDhikrDialog = true },
-                            border = BorderStroke(1.dp, SoftBorder),
-                            shape = RoundedCornerShape(14.dp)
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(17.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("افزودن ذکر دلخواه")
+                            item(key = "add_custom_dhikr") {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(MaterialTheme.colorScheme.surface)
+                                        .border(1.dp, SoftBorder, RoundedCornerShape(12.dp))
+                                        .clickable { showAddDhikrDialog = true }
+                                        .height(40.dp)
+                                        .padding(horizontal = 14.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            Icons.Default.Add,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(17.dp),
+                                            tint = SunGold
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "افزودن ذکر دلخواه",
+                                            color = SandDark,
+                                            fontSize = (12 * fontScale).sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -290,7 +343,7 @@ fun TasbihScreen(
                                 // Reset button
                                 OutlinedButton(
                                     onClick = { viewModel.resetTasbih() },
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.weight(1f).height(48.dp),
                                     border = BorderStroke(1.dp, SoftBorder),
                                     colors = ButtonDefaults.outlinedButtonColors(
                                         contentColor = SandDark
@@ -310,7 +363,7 @@ fun TasbihScreen(
                                 // Save button
                                 Button(
                                     onClick = { viewModel.saveTasbihSession() },
-                                    modifier = Modifier.weight(1.5f),
+                                    modifier = Modifier.weight(1.5f).height(48.dp),
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = SunGold,
                                         contentColor = Color.White,

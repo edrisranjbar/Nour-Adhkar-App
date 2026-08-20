@@ -50,6 +50,23 @@ class PreferenceRepository(context: Context) {
         return updated.sorted()
     }
 
+    fun removeCustomDhikr(text: String): List<String> {
+        val updated = getCustomDhikr().toMutableSet().apply { remove(text) }
+        prefs.edit().putStringSet("custom_dhikr", updated).apply()
+        return updated.sorted()
+    }
+
+    fun getFavoriteDhikrKeys(): Set<String> =
+        prefs.getStringSet("favorite_dhikr_keys", emptySet())?.toSet().orEmpty()
+
+    fun toggleFavoriteDhikr(key: String): Set<String> {
+        val updated = getFavoriteDhikrKeys().toMutableSet().apply {
+            if (!add(key)) remove(key)
+        }
+        prefs.edit().putStringSet("favorite_dhikr_keys", updated).apply()
+        return updated.toSet()
+    }
+
     fun getActivityDayKeys(): Set<Long> =
         prefs.getStringSet("activity_day_keys", emptySet()).orEmpty().mapNotNull(String::toLongOrNull).toSet()
 
@@ -116,6 +133,22 @@ class PreferenceRepository(context: Context) {
     fun getDailyChecklistCompletedIds(dayKey: Long = currentDayKey()): Set<String> {
         migrateLegacyDailyChecklistIfNeeded()
         return prefs.getStringSet(checklistKey(dayKey), emptySet())?.toSet().orEmpty()
+    }
+
+    fun getChecklistCompletionCounts(days: Int): Map<Long, Int> {
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        return buildMap {
+            repeat(days) {
+                val dayKey = calendar.timeInMillis
+                put(dayKey, getDailyChecklistCompletedIds(dayKey).size)
+                calendar.add(Calendar.DAY_OF_YEAR, -1)
+            }
+        }
     }
 
     fun setDailyChecklistItemCompleted(

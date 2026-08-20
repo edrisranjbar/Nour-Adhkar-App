@@ -55,6 +55,33 @@ class AdhkarRepositoryTest {
         assertGroupedHistory("ramadan", "اذکار ماه رمضان")
     }
 
+    @Test
+    fun `every app adhkar category is recorded only as one whole collection`() = runTest {
+        AdhkarData.categories.forEach { category ->
+            val items = AdhkarData.adhkarList.getValue(category.id)
+            if (items.isNotEmpty()) {
+                assertGroupedHistory(
+                    categoryId = category.id,
+                    expectedTitle = if (category.id == "sleep") "اذکار خواب" else category.title
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `completed collection is not added to history twice`() = runTest {
+        val progressDao = FakeProgressDao()
+        val sessionDao = FakeSessionDao()
+        val repository = AdhkarRepository(progressDao, sessionDao)
+        val item = AdhkarData.adhkarList.getValue("waking_up").single()
+
+        repeat(item.targetCount + 1) {
+            repository.incrementDhikrCount("waking_up", item.id, item.targetCount)
+        }
+
+        assertEquals(1, sessionDao.sessions.size)
+    }
+
     private suspend fun assertGroupedHistory(categoryId: String, expectedTitle: String) {
         val progressDao = FakeProgressDao()
         val sessionDao = FakeSessionDao()

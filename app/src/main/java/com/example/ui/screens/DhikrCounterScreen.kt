@@ -29,6 +29,8 @@ import androidx.compose.material.icons.automirrored.filled.RotateLeft
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -103,6 +105,7 @@ fun DhikrCounterScreen(
 ) {
     val rawAdhkarList by viewModel.currentCategoryAdhkar.collectAsState()
     val fontScale by viewModel.fontScale.collectAsState()
+    val favoriteDhikrKeys by viewModel.favoriteDhikrKeys.collectAsState()
 
     // Validate data availability
     val category = remember(categoryId) { AdhkarData.categories.find { it.id == categoryId } }
@@ -277,6 +280,9 @@ fun DhikrCounterScreen(
                         index = index + 1,
                         item = item,
                         fontScale = fontScale,
+                        showSource = categoryId == "quran_prayers" || categoryId == "sunnah_prayers",
+                        isFavorite = "$categoryId:${item.id}" in favoriteDhikrKeys,
+                        onFavoriteClick = { viewModel.toggleFavoriteDhikr(categoryId, item.id) },
                         onUndo = {
                             viewModel.decrementDhikr(categoryId, item.id)
                         },
@@ -425,6 +431,9 @@ fun DhikrItemCard(
     index: Int,
     item: DhikrItem,
     fontScale: Float,
+    showSource: Boolean = false,
+    isFavorite: Boolean = false,
+    onFavoriteClick: () -> Unit = {},
     onUndo: () -> Unit,
     onTap: () -> Unit
 ) {
@@ -495,22 +504,29 @@ fun DhikrItemCard(
                     )
                 }
 
-                if (item.currentCount > 0) {
-                    IconButton(
-                        onClick = onUndo,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(
-                                MaterialTheme.colorScheme.surfaceVariant,
-                                CircleShape
-                            )
-                    ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onFavoriteClick, modifier = Modifier.size(36.dp)) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.RotateLeft,
-                            contentDescription = "یک شماره کم کن",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
+                            imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                            contentDescription = if (isFavorite) "حذف از علاقه‌مندی‌ها" else "افزودن به علاقه‌مندی‌ها",
+                            tint = if (isFavorite) Color(0xFFE05263) else NightBlue.copy(alpha = 0.65f),
+                            modifier = Modifier.size(20.dp)
                         )
+                    }
+                    if (item.currentCount > 0) {
+                        IconButton(
+                            onClick = onUndo,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.RotateLeft,
+                                contentDescription = "یک شماره کم کن",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -548,6 +564,19 @@ fun DhikrItemCard(
                 textAlign = TextAlign.Justify,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            if (showSource && item.source.isNotBlank()) {
+                Spacer(modifier = Modifier.height(9.dp))
+                Text(
+                    text = item.source.toPersianDigits(),
+                    fontSize = (10.5 * fontScale).sp,
+                    lineHeight = (17 * fontScale).sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = SunGold,
+                    textAlign = TextAlign.Right,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
 
 

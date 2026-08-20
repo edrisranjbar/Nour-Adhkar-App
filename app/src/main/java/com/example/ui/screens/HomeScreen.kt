@@ -10,6 +10,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -32,6 +33,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.Checkroom
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.FlightLand
+import androidx.compose.material.icons.filled.FlightTakeoff
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Login
+import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Mosque
+import androidx.compose.material.icons.filled.Nightlight
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.RestaurantMenu
+import androidx.compose.material.icons.filled.SelfImprovement
+import androidx.compose.material.icons.filled.Wc
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
@@ -259,7 +274,41 @@ fun HomeScreen(
                             EmotionalAyahCard(viewModel = viewModel, fontScale = fontScale)
                         }
 
-                        // 4. Grid Categories Header
+                        // 4. Prayer collections are intentionally separate from general categories.
+                        item {
+                            HomeSectionHeader(
+                                title = "دعا و نیایش",
+                                icon = Icons.Default.MenuBook,
+                                fontScale = fontScale,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                        }
+
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                SpecialAdhkarCard(
+                                    title = "دعاهای قرآنی",
+                                    badgeText = "${AdhkarData.adhkarList["quran_prayers"].orEmpty().size.toPersianDigits()} دعا",
+                                    icon = Icons.Default.MenuBook,
+                                    accentColor = Color(0xFF2E7D32),
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { viewModel.selectCategory("quran_prayers") }
+                                )
+                                SpecialAdhkarCard(
+                                    title = "دعاهایی از سنت رسول (ص)",
+                                    badgeText = "${AdhkarData.adhkarList["sunnah_prayers"].orEmpty().size.toPersianDigits()} دعا",
+                                    icon = Icons.Default.MenuBook,
+                                    accentColor = Color(0xFF6D4C41),
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { viewModel.selectCategory("sunnah_prayers") }
+                                )
+                            }
+                        }
+
+                        // 5. Grid Categories Header
                         item {
                             HomeSectionHeader(
                                 title = "دسته‌بندی‌ها",
@@ -269,9 +318,13 @@ fun HomeScreen(
                             )
                         }
 
-                        // 5. Grid list of general categories
+                        // 6. Grid list of general categories
                         item {
                             CategoriesGrid(viewModel = viewModel, fontScale = fontScale)
+                        }
+
+                        item {
+                            MonthlyActivityCard(viewModel = viewModel, fontScale = fontScale)
                         }
                     }
                 } else {
@@ -289,6 +342,124 @@ fun HomeScreen(
         }
     }
 }
+
+private data class ActivityCalendarDay(
+    val activityScore: Int,
+    val isToday: Boolean
+)
+
+@Composable
+private fun MonthlyActivityCard(
+    viewModel: AdhkarViewModel,
+    fontScale: Float
+) {
+    val allProgress by viewModel.allProgress.collectAsState()
+    val recentSessions by viewModel.recentTasbihSessions.collectAsState()
+    val checklistCounts by viewModel.checklistCompletionCounts.collectAsState()
+
+    val calendarRows = remember(allProgress, recentSessions, checklistCounts) {
+        val firstDay = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_YEAR, -29)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val days = mutableListOf<ActivityCalendarDay>()
+
+        repeat(30) { offset ->
+            val day = (firstDay.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, offset) }
+            val start = day.timeInMillis
+            val end = start + 86_400_000L - 1L
+            val dhikrCount = allProgress
+                .filter { it.lastUpdated in start..end }
+                .sumOf { it.currentCount.coerceAtLeast(0) }
+            val tasbihCount = recentSessions
+                .filter { it.timestamp in start..end }
+                .sumOf { it.count.coerceAtLeast(0) }
+            val checklistScore = checklistCounts[start].orZero() * 3
+
+            days += ActivityCalendarDay(
+                activityScore = dhikrCount + tasbihCount + checklistScore,
+                isToday = offset == 29
+            )
+        }
+        days.chunked(10)
+    }
+
+    val activityColor: @Composable (Int) -> Color = { score ->
+        when {
+            score <= 0 -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+            score <= 2 -> Color(0xFFDCECDD)
+            score <= 5 -> Color(0xFFA8D5AA)
+            score <= 10 -> Color(0xFF64AD68)
+            else -> Color(0xFF2E7D32)
+        }
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, SoftBorder.copy(alpha = 0.85f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarMonth,
+                        contentDescription = null,
+                        tint = SunGold,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(7.dp))
+                    Text(
+                        text = "فعالیت ۳۰ روز گذشته",
+                        fontSize = (13.5 * fontScale).sp,
+                        fontWeight = FontWeight.Bold,
+                        color = SandDark
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                calendarRows.forEach { rowDays ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        repeat(10) { column ->
+                            val day = rowDays.getOrNull(column)
+                            if (day == null) {
+                                Spacer(modifier = Modifier.weight(1f).aspectRatio(1f))
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .aspectRatio(1f)
+                                        .clip(RoundedCornerShape(5.dp))
+                                        .background(activityColor(day.activityScore))
+                                        .then(
+                                            if (day.isToday) Modifier.border(1.5.dp, SunGold, RoundedCornerShape(5.dp))
+                                            else Modifier
+                                        ),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun Int?.orZero(): Int = this ?: 0
 
 @Composable
 fun EmotionalAyahCard(viewModel: AdhkarViewModel, fontScale: Float) {
@@ -430,6 +601,13 @@ fun EmotionalAyahCard(viewModel: AdhkarViewModel, fontScale: Float) {
                             fontSize = (11 * fontScale).sp,
                             fontWeight = FontWeight.Bold,
                             color = SunGold,
+                            modifier = Modifier.align(Alignment.End)
+                        )
+                        Spacer(modifier = Modifier.height(3.dp))
+                        Text(
+                            text = emotionalAyah.translationSource,
+                            fontSize = (9.5 * fontScale).sp,
+                            color = TextPersian.copy(alpha = 0.72f),
                             modifier = Modifier.align(Alignment.End)
                         )
                     }
@@ -940,7 +1118,8 @@ fun SpecialAdhkarCard(
 @Composable
 fun CategoriesGrid(viewModel: AdhkarViewModel, fontScale: Float) {
     // Show rest of categories in a neat 2-column grid
-    val gridCategories = AdhkarData.categories.filter { it.id != "morning" && it.id != "evening" }
+    val separateSectionIds = setOf("morning", "evening", "quran_prayers", "sunnah_prayers")
+    val gridCategories = AdhkarData.categories.filterNot { it.id in separateSectionIds }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -953,7 +1132,7 @@ fun CategoriesGrid(viewModel: AdhkarViewModel, fontScale: Float) {
             ) {
                 rowItems.forEach { cat ->
                     CategoryTile(cat = cat, fontScale = fontScale, modifier = Modifier.weight(1f)) {
-                        viewModel.selectCategory(cat.id)
+                        if (cat.isEnabled) viewModel.selectCategory(cat.id)
                     }
                 }
                 // Placeholder to keep balance if odd items
@@ -1033,8 +1212,11 @@ fun CategoryTile(
     Card(
         modifier = modifier
             .height(104.dp)
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            .clickable(enabled = cat.isEnabled) { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = if (cat.isEnabled) MaterialTheme.colorScheme.surface
+            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+        ),
         shape = RoundedCornerShape(24.dp),
         border = BorderStroke(1.dp, SoftBorder),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
@@ -1052,6 +1234,19 @@ fun CategoryTile(
             ) {
                 val categoryIcon = when (cat.id) {
                     "daily" -> Icons.Default.CalendarMonth
+                    "waking_up" -> Icons.Default.Alarm
+                    "entering_bathroom", "leaving_bathroom" -> Icons.Default.Wc
+                    "clothing" -> Icons.Default.Checkroom
+                    "before_eating" -> Icons.Default.Restaurant
+                    "after_eating" -> Icons.Default.RestaurantMenu
+                    "leaving_home" -> Icons.Default.Logout
+                    "entering_home" -> Icons.Default.Login
+                    "entering_mosque", "leaving_mosque" -> Icons.Default.Mosque
+                    "after_salah" -> Icons.Default.SelfImprovement
+                    "riding_vehicle" -> Icons.Default.DirectionsCar
+                    "starting_journey" -> Icons.Default.FlightTakeoff
+                    "returning_travel" -> Icons.Default.FlightLand
+                    "night_restlessness" -> Icons.Default.Nightlight
                     "ramadan" -> Icons.Default.DarkMode
                     "sleep" -> Icons.Default.Bedtime
                     "istikhara" -> Icons.Default.Psychology
@@ -1072,10 +1267,14 @@ fun CategoryTile(
                     )
                 }
                 Text(
-                    text = "${cat.count.toPersianDigits()} ذکر",
+                    text = when {
+                        !cat.isEnabled -> "به‌زودی"
+                        cat.id == "quran_prayers" -> "${cat.count.toPersianDigits()} دعا"
+                        else -> "${cat.count.toPersianDigits()} ذکر"
+                    },
                     fontSize = (10 * fontScale).sp,
                     fontWeight = FontWeight.Bold,
-                    color = SunGold
+                    color = if (cat.isEnabled) SunGold else NightBlue.copy(alpha = 0.65f)
                 )
             }
 
@@ -1083,7 +1282,7 @@ fun CategoryTile(
                 text = cat.title,
                 fontSize = (13 * fontScale).sp,
                 fontWeight = FontWeight.SemiBold,
-                color = SandDark,
+                color = if (cat.isEnabled) SandDark else SandDark.copy(alpha = 0.55f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

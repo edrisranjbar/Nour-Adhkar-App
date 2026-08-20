@@ -5,7 +5,8 @@ data class Category(
     val title: String,
     val description: String,
     val iconName: String,
-    val count: Int
+    val count: Int,
+    val isEnabled: Boolean = true
 )
 
 data class DhikrItem(
@@ -51,5 +52,6 @@ data class EmotionalAyah(
     val text: String,
     val translation: String,
     val reference: String,
-    val reflection: String
+    val reflection: String,
+    val translationSource: String = "ترجمه: تفسیر نور، دکتر مصطفی خرمدل"
 )

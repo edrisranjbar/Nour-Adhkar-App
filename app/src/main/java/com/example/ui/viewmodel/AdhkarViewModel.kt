@@ -61,6 +61,9 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     private val _customDhikr = MutableStateFlow(prefs.getCustomDhikr())
     val customDhikr: StateFlow<List<String>> = _customDhikr.asStateFlow()
 
+    private val _favoriteDhikrKeys = MutableStateFlow(prefs.getFavoriteDhikrKeys())
+    val favoriteDhikrKeys: StateFlow<Set<String>> = _favoriteDhikrKeys.asStateFlow()
+
     private val _activityDayKeys = MutableStateFlow(prefs.getActivityDayKeys())
     val activityDayKeys: StateFlow<Set<Long>> = _activityDayKeys.asStateFlow()
 
@@ -81,6 +84,9 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _dailyChecklistCompletedIds = MutableStateFlow(prefs.getDailyChecklistCompletedIds())
     val dailyChecklistCompletedIds: StateFlow<Set<String>> = _dailyChecklistCompletedIds.asStateFlow()
+
+    private val _checklistCompletionCounts = MutableStateFlow(prefs.getChecklistCompletionCounts(30))
+    val checklistCompletionCounts: StateFlow<Map<Long, Int>> = _checklistCompletionCounts.asStateFlow()
 
     // Dynamic Ayah of the Day
     val ayahOfTheDay: AyahOfTheDay = getRotatedAyah()
@@ -161,6 +167,7 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
                 _selectedFeeling.value = null
                 _emotionalAyah.value = null
                 _dailyChecklistCompletedIds.value = prefs.getDailyChecklistCompletedIds()
+                _checklistCompletionCounts.value = prefs.getChecklistCompletionCounts(30)
             }
         }
     }
@@ -256,6 +263,17 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         selectTasbihDhikr(normalized)
     }
 
+    fun removeCustomDhikr(text: String, fallbackDhikr: String) {
+        _customDhikr.value = prefs.removeCustomDhikr(text)
+        if (_selectedTasbihDhikr.value == text) {
+            selectTasbihDhikr(fallbackDhikr)
+        }
+    }
+
+    fun toggleFavoriteDhikr(categoryId: String, dhikrId: Int) {
+        _favoriteDhikrKeys.value = prefs.toggleFavoriteDhikr("$categoryId:$dhikrId")
+    }
+
     // Preferences controllers
     fun updateFontScale(scale: Float) {
         prefs.setFontScale(scale)
@@ -306,6 +324,7 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
                 itemId = itemId,
                 completed = completed
             )
+        _checklistCompletionCounts.value = prefs.getChecklistCompletionCounts(30)
         if (completed) {
             _activityDayKeys.value = prefs.markActivityToday()
         }

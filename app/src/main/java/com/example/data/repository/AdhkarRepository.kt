@@ -19,11 +19,7 @@ class AdhkarRepository(
     private val tasbihSessionDao: TasbihSessionDao
 ) {
     private val progressMutex = Mutex()
-    private val groupedHistoryTitles = mapOf(
-        "morning" to "اذکار صبحگاه",
-        "evening" to "اذکار شامگاه",
-        "daily" to "اذکار روزانه",
-        "ramadan" to "اذکار ماه رمضان",
+    private val groupedHistoryTitles = AdhkarData.categories.associate { it.id to it.title } + mapOf(
         "sleep" to "اذکار خواب"
     )
 
@@ -44,6 +40,12 @@ class AdhkarRepository(
     suspend fun incrementDhikrCount(categoryId: String, dhikrId: Int, targetCount: Int): Boolean = progressMutex.withLock {
         val id = "${categoryId}_${dhikrId}"
         val existingProgress = dhikrProgressDao.getProgressById(id)
+        val categoryItems = AdhkarData.adhkarList[categoryId].orEmpty()
+        val progressBeforeIncrement = dhikrProgressDao.getProgressByCategory(categoryId).first()
+            .associateBy { it.dhikrId }
+        val wasCategoryCompleted = categoryItems.isNotEmpty() && categoryItems.all { item ->
+            (progressBeforeIncrement[item.id]?.currentCount ?: 0) >= item.targetCount
+        }
 
         val newCount = (existingProgress?.currentCount ?: 0) + 1
         val progressEntity = DhikrProgressEntity(
@@ -56,24 +58,12 @@ class AdhkarRepository(
         )
         dhikrProgressDao.insertOrUpdateProgress(progressEntity)
 
-        val categoryTitle = AdhkarData.categories.find { it.id == categoryId }?.title ?: categoryId
-        if (categoryId !in groupedHistoryTitles) {
-            tasbihSessionDao.insertSession(
-                TasbihSessionEntity(
-                    dhikrName = categoryTitle,
-                    count = 1,
-                    timestamp = System.currentTimeMillis()
-                )
-            )
-            return@withLock false
-        }
-
         val progressById = dhikrProgressDao.getProgressByCategory(categoryId).first()
             .associateBy { it.dhikrId }
-        val categoryCompleted = AdhkarData.adhkarList[categoryId].orEmpty().all { item ->
+        val categoryCompleted = categoryItems.isNotEmpty() && categoryItems.all { item ->
             (progressById[item.id]?.currentCount ?: 0) >= item.targetCount
         }
-        if (categoryCompleted) {
+        if (!wasCategoryCompleted && categoryCompleted) {
             recordGroupedCategoryCompletion(categoryId, System.currentTimeMillis())
         }
         categoryCompleted

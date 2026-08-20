@@ -96,7 +96,7 @@ fun AboutScreen(
                             }
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "پروژه متن‌باز اذکار (Adhkar.ir)",
+                                text = "پروژه متن‌باز اذکار نور",
                                 style = MaterialTheme.typography.titleLarge.copy(
                                     fontSize = (19 * fontScale).sp,
                                     fontWeight = FontWeight.Bold,
@@ -105,7 +105,7 @@ fun AboutScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "نسخه ۱.۲.۰",
+                                text = "نسخه ۱.۳.۰",
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontSize = (12 * fontScale).sp,
                                     color = NightBlue.copy(alpha = 0.6f)
