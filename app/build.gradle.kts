@@ -29,8 +29,8 @@ android {
     applicationId = "ir.adhkar.app"
     minSdk = 24
     targetSdk = 36
-    versionCode = 13
-    versionName = "1.3.0"
+    versionCode = 16
+    versionName = "1.4.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -64,6 +64,7 @@ android {
 
   buildTypes {
     release {
+      buildConfigField("boolean", "FORCE_UPDATE_PROMPT", "false")
       isCrunchPngs = false
       isMinifyEnabled = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -73,6 +74,8 @@ android {
     // testing never requires uninstalling the user's app or deleting its data.
     debug {
       applicationIdSuffix = ".debug"
+      // Keep the update UI visible in development so it can always be reviewed.
+      buildConfigField("boolean", "FORCE_UPDATE_PROMPT", "true")
     }
   }
   compileOptions {

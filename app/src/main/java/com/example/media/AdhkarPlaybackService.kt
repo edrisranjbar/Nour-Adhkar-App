@@ -159,7 +159,7 @@ class AdhkarPlaybackService : Service(), AudioManager.OnAudioFocusChangeListener
                     connectTimeout = 20_000
                     readTimeout = 30_000
                     instanceFollowRedirects = true
-                    setRequestProperty("User-Agent", "NourAdhkar/1.1.0")
+                    setRequestProperty("User-Agent", "NourAdhkar/1.4.0")
                 }
                 try {
                     connection.connect()

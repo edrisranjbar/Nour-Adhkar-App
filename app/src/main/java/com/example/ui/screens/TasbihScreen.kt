@@ -1,5 +1,9 @@
 package com.example.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -28,6 +32,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
@@ -41,11 +47,13 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,6 +63,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
@@ -71,6 +80,8 @@ import com.example.ui.theme.TextPersian
 import com.example.ui.util.formatPersianDateTime
 import com.example.ui.util.toPersianDigits
 import com.example.ui.viewmodel.AdhkarViewModel
+import com.example.voice.VoiceDhikrRecognizer
+import androidx.core.content.ContextCompat
 
 @Composable
 fun TasbihScreen(
@@ -95,6 +106,43 @@ fun TasbihScreen(
     var showAddDhikrDialog by remember { mutableStateOf(false) }
     var customDhikrText by remember { mutableStateOf("") }
     var dhikrPendingDeletion by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+    val latestSelectedDhikr by rememberUpdatedState(selectedDhikr)
+    var voiceModeEnabled by remember { mutableStateOf(false) }
+    var voiceStatus by remember { mutableStateOf("") }
+    val voiceRecognizer = remember {
+        VoiceDhikrRecognizer(
+            context = context,
+            currentDhikr = { latestSelectedDhikr },
+            onNewMatches = { matches -> repeat(matches) { viewModel.incrementTasbih() } },
+            onStatus = { voiceStatus = it },
+            onModeStopped = { voiceModeEnabled = false }
+        )
+    }
+    DisposableEffect(voiceRecognizer) {
+        onDispose { voiceRecognizer.destroy() }
+    }
+    val microphonePermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            voiceModeEnabled = true
+            voiceRecognizer.start()
+        } else voiceStatus = "برای شمارش صوتی، دسترسی میکروفون لازم است"
+    }
+
+    fun toggleVoiceMode() {
+        if (voiceModeEnabled) {
+            voiceModeEnabled = false
+            voiceStatus = ""
+            voiceRecognizer.stop()
+        } else if (!voiceRecognizer.isAvailable) {
+            voiceStatus = "تشخیص گفتار در این دستگاه در دسترس نیست"
+        } else if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            voiceModeEnabled = true
+            voiceRecognizer.start()
+        } else microphonePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+    }
 
     if (showAddDhikrDialog) {
         AlertDialog(
@@ -164,17 +212,6 @@ fun TasbihScreen(
                 .padding(top = innerPadding.calculateTopPadding())
                 .padding(horizontal = 16.dp)
         ) {
-            // Screen Header
-            Text(
-                text = "تسبیح شمار هوشمند",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontSize = (24 * fontScale).sp,
-                    fontWeight = FontWeight.Bold,
-                    color = SandDark
-                ),
-                modifier = Modifier.padding(vertical = 12.dp)
-            )
-
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -284,6 +321,39 @@ fun TasbihScreen(
                                 color = TextArabic,
                                 textAlign = TextAlign.Center
                             )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            IconButton(
+                                onClick = { toggleVoiceMode() },
+                                modifier = Modifier
+                                    .size(52.dp)
+                                    .clip(CircleShape)
+                                    .background(if (voiceModeEnabled) SunGold else MaterialTheme.colorScheme.secondaryContainer)
+                                    .border(1.dp, if (voiceModeEnabled) SunGold else SoftBorder, CircleShape)
+                            ) {
+                                Icon(
+                                    imageVector = if (voiceModeEnabled) Icons.Default.Mic else Icons.Default.MicOff,
+                                    contentDescription = if (voiceModeEnabled) "خاموش کردن شمارش صوتی" else "فعال کردن شمارش صوتی",
+                                    tint = if (voiceModeEnabled) Color.White else SandDark
+                                )
+                            }
+                            Text(
+                                text = if (voiceModeEnabled) "شمارش صوتی فعال است" else "شمارش صوتی",
+                                color = if (voiceModeEnabled) SunGold else NightBlue,
+                                fontSize = (12 * fontScale).sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(top = 6.dp)
+                            )
+                            if (voiceStatus.isNotBlank()) {
+                                Text(
+                                    text = voiceStatus,
+                                    color = NightBlue,
+                                    fontSize = (11 * fontScale).sp,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
 
                             Spacer(modifier = Modifier.height(24.dp))
 

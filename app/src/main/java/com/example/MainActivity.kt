@@ -33,12 +33,15 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -52,6 +55,9 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.VolunteerActivism
+import androidx.compose.material.icons.filled.SystemUpdateAlt
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.DrawerValue
@@ -73,6 +79,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -142,31 +149,36 @@ fun AppMainScaffold(viewModel: AdhkarViewModel) {
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        availableUpdate = UpdateChecker.check()
-    }
-
-    availableUpdate?.let { update ->
-        AlertDialog(
-            onDismissRequest = { availableUpdate = null },
-            title = { Text("نسخه جدید در دسترس است") },
-            text = { Text("نسخه ${update.versionName} از کافه‌بازار قابل دریافت است.") },
-            confirmButton = {
-                Button(onClick = {
-                    val bazaarIntent = Intent(Intent.ACTION_VIEW, Uri.parse("bazaar://details?id=ir.adhkar.app"))
-                    runCatching { context.startActivity(bazaarIntent) }.onFailure {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://cafebazaar.ir/app/ir.adhkar.app")))
-                    }
-                    availableUpdate = null
-                }) { Text("به‌روزرسانی") }
-            },
-            dismissButton = {
-                OutlinedButton(onClick = { availableUpdate = null }) { Text("بعداً") }
-            }
-        )
+        availableUpdate = if (BuildConfig.FORCE_UPDATE_PROMPT) {
+            AppUpdate(versionName = "۱.۴.۱ (پیش‌نمایش)", versionCode = BuildConfig.VERSION_CODE + 1)
+        } else {
+            UpdateChecker.check()
+        }
     }
 
     // Setup RTL top-level scaffold wrapping
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        availableUpdate?.let { update ->
+            UpdateAvailableBottomSheet(
+                update = update,
+                onDismiss = { availableUpdate = null },
+                onUpdate = {
+                    val bazaarIntent = Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("bazaar://details?id=ir.adhkar.app")
+                    )
+                    runCatching { context.startActivity(bazaarIntent) }.onFailure {
+                        context.startActivity(
+                            Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("https://cafebazaar.ir/app/ir.adhkar.app")
+                            )
+                        )
+                    }
+                    availableUpdate = null
+                }
+            )
+        }
         if (selectedCategoryId != null) {
             // Drill down view (full screen category counters)
             DhikrCounterScreen(
@@ -188,7 +200,7 @@ fun AppMainScaffold(viewModel: AdhkarViewModel) {
                                 .padding(horizontal = 16.dp, vertical = 24.dp)
                         ) {
                             Text(
-                                text = "نور اذکار",
+                                text = "اذکار نور",
                                 fontSize = (22 * fontScale).sp,
                                 fontWeight = FontWeight.Bold,
                                 color = NightBlue
@@ -203,9 +215,10 @@ fun AppMainScaffold(viewModel: AdhkarViewModel) {
                             val drawerItems = listOf(
                                 Triple("home", "خانه", Icons.Default.Home),
                                 Triple("checklist", "چک‌لیست روزانه", Icons.Default.Checklist),
-                                Triple("tasbih", "تسبیح‌شمار", null),
+                                Triple("tasbih", "ذکرشمار", null),
                                 Triple("articles", "مقالات", Icons.Default.Article),
                                 Triple("favorites", "علاقه‌مندی‌ها", Icons.Default.Favorite),
+                                Triple("donation", "حمایت مالی", Icons.Default.VolunteerActivism),
                                 Triple("share", "اشتراک‌گذاری برنامه", Icons.Default.Share),
                                 Triple("settings", "تنظیمات", Icons.Default.Settings),
                                 Triple("about", "درباره برنامه", Icons.Default.Info)
@@ -219,7 +232,7 @@ fun AppMainScaffold(viewModel: AdhkarViewModel) {
                                             fontWeight = if (currentTab == tab) FontWeight.Bold else FontWeight.Normal
                                         )
                                     },
-                                    selected = tab != "share" && currentTab == tab,
+                                    selected = tab !in setOf("share", "donation") && currentTab == tab,
                                     icon = {
                                         if (tab == "tasbih") {
                                             TasbihIcon(
@@ -235,7 +248,14 @@ fun AppMainScaffold(viewModel: AdhkarViewModel) {
                                         }
                                     },
                                     onClick = {
-                                        if (tab == "share") {
+                                        if (tab == "donation") {
+                                            context.startActivity(
+                                                Intent(
+                                                    Intent.ACTION_VIEW,
+                                                    Uri.parse("https://edrisranjbar.ir/donation")
+                                                )
+                                            )
+                                        } else if (tab == "share") {
                                             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                                 type = "text/plain"
                                                 putExtra(
@@ -243,7 +263,7 @@ fun AppMainScaffold(viewModel: AdhkarViewModel) {
                                                     "اذکار نور؛ همراه روزانه ذکر و نیایش، یادآوری اذکار و اعمال روزانه\nhttps://cafebazaar.ir/app/ir.adhkar.app"
                                                 )
                                             }
-                                            context.startActivity(Intent.createChooser(shareIntent, "اشتراک‌گذاری نور اذکار"))
+                                            context.startActivity(Intent.createChooser(shareIntent, "اشتراک‌گذاری اذکار نور"))
                                         } else {
                                             viewModel.selectTab(tab)
                                         }
@@ -274,15 +294,22 @@ fun AppMainScaffold(viewModel: AdhkarViewModel) {
                                 tint = NightBlue
                             )
                         }
+                        Image(
+                            painter = painterResource(R.drawable.ic_nour_adhkar_logo),
+                            contentDescription = "نشان اذکار نور",
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(11.dp))
+                        )
                         Text(
                             text = when (currentTab) {
                                 "checklist" -> "چک‌لیست روزانه"
-                                "tasbih" -> "تسبیح‌شمار"
+                                "tasbih" -> "ذکرشمار"
                                 "settings" -> "تنظیمات"
                                 "about" -> "درباره برنامه"
                                 "articles" -> "مقالات"
                                 "favorites" -> "علاقه‌مندی‌ها"
-                                else -> "نور اذکار"
+                                else -> "اذکار نور"
                             },
                             fontSize = (18 * fontScale).sp,
                             fontWeight = FontWeight.Bold,
@@ -417,6 +444,124 @@ fun AppMainScaffold(viewModel: AdhkarViewModel) {
             }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun UpdateAvailableBottomSheet(
+    update: AppUpdate,
+    onDismiss: () -> Unit,
+    onUpdate: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Color.Transparent,
+        scrimColor = Color(0xFF071321).copy(alpha = 0.72f),
+        dragHandle = null,
+        shape = RoundedCornerShape(topStart = 34.dp, topEnd = 34.dp)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp)
+                .navigationBarsPadding(),
+            shape = RoundedCornerShape(32.dp),
+            color = Color(0xF2FFFFFF),
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.9f)),
+            shadowElevation = 24.dp
+        ) {
+            Box(
+                modifier = Modifier.background(
+                    Brush.linearGradient(
+                        listOf(
+                            Color(0xFFF8FBFF).copy(alpha = 0.96f),
+                            Color(0xFFE7F0FF).copy(alpha = 0.92f),
+                            Color(0xFFFFF5D9).copy(alpha = 0.90f)
+                        )
+                    )
+                )
+            ) {
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(10.dp)
+                        .background(Color(0xFF10243B).copy(alpha = 0.08f), CircleShape)
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "بستن",
+                        tint = Color(0xFF10243B)
+                    )
+                }
+
+                Column(
+                    modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 26.dp, bottom = 22.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .shadow(12.dp, RoundedCornerShape(22.dp))
+                            .clip(RoundedCornerShape(22.dp))
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(Color(0xFF1677FF), Color(0xFF5B45E8))
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.SystemUpdateAlt,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                    Spacer(Modifier.height(18.dp))
+                    Text(
+                        text = "نسخه جدید آماده است",
+                        fontSize = 21.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF071B31)
+                    )
+                    Spacer(Modifier.height(7.dp))
+                    Text(
+                        text = "نسخه ${update.versionName} را از کافه‌بازار دریافت کنید و از تازه‌ترین بهبودها بهره ببرید.",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF29445F),
+                        lineHeight = 23.sp
+                    )
+                    Spacer(Modifier.height(22.dp))
+                    Button(
+                        onClick = onUpdate,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(54.dp),
+                        shape = RoundedCornerShape(18.dp)
+                    ) {
+                        Icon(Icons.Default.SystemUpdateAlt, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("دریافت به‌روزرسانی", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        border = BorderStroke(1.dp, Color(0xFF23405D).copy(alpha = 0.35f))
+                    ) {
+                        Text("بعداً یادآوری کن", color = Color(0xFF18324D), fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(10.dp))
     }
 }
 

@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import android.content.Intent
 import androidx.compose.animation.animateColorAsState
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -70,6 +72,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
@@ -437,6 +440,7 @@ fun DhikrItemCard(
     onUndo: () -> Unit,
     onTap: () -> Unit
 ) {
+    val context = LocalContext.current
     val isCompleted = item.currentCount >= item.targetCount
     val animatedCardBg by animateColorAsState(
         targetValue = if (isCompleted) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
@@ -513,6 +517,39 @@ fun DhikrItemCard(
                             modifier = Modifier.size(20.dp)
                         )
                     }
+                    IconButton(
+                        onClick = {
+                            val shareText = buildString {
+                                appendLine(item.arabicText.trim())
+                                appendLine()
+                                append(item.persianTranslation.trim())
+                                if (item.source.isNotBlank()) {
+                                    appendLine()
+                                    appendLine()
+                                    append(item.source.trim())
+                                }
+                                appendLine()
+                                appendLine()
+                                append("اذکار نور")
+                            }
+                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_SUBJECT, "ذکر از اذکار نور")
+                                putExtra(Intent.EXTRA_TEXT, shareText)
+                            }
+                            context.startActivity(
+                                Intent.createChooser(shareIntent, "اشتراک‌گذاری ذکر")
+                            )
+                        },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "اشتراک‌گذاری ذکر",
+                            tint = NightBlue.copy(alpha = 0.65f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                     if (item.currentCount > 0) {
                         IconButton(
                             onClick = onUndo,
@@ -564,7 +601,6 @@ fun DhikrItemCard(
                 textAlign = TextAlign.Justify,
                 modifier = Modifier.fillMaxWidth()
             )
-
             if (showSource && item.source.isNotBlank()) {
                 Spacer(modifier = Modifier.height(9.dp))
                 Text(

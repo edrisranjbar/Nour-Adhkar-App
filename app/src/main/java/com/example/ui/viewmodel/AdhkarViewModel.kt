@@ -11,6 +11,7 @@ import android.os.VibratorManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.AdhkarDatabase
+import com.example.audio.ChecklistCompletionSound
 import com.example.data.local.DhikrProgressEntity
 import com.example.data.local.TasbihSessionEntity
 import com.example.data.model.AdhkarData
@@ -171,6 +172,7 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
             }
         }
     }
+    private val checklistCompletionSound = ChecklistCompletionSound()
 
     // Navigation triggers
     fun selectTab(tab: String) {
@@ -327,6 +329,7 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         _checklistCompletionCounts.value = prefs.getChecklistCompletionCounts(30)
         if (completed) {
             _activityDayKeys.value = prefs.markActivityToday()
+            if (_soundEnabled.value) checklistCompletionSound.play()
         }
     }
 
@@ -397,5 +400,11 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
                 // ignore
             }
         }
+    }
+
+    override fun onCleared() {
+        checklistCompletionSound.release()
+        toneGenerator?.release()
+        super.onCleared()
     }
 }

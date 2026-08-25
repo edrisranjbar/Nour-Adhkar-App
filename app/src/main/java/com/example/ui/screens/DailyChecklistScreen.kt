@@ -35,10 +35,10 @@ import com.example.ui.theme.SunGold
 import com.example.ui.util.toPersianDigits
 import com.example.ui.viewmodel.AdhkarViewModel
 
-private data class DailyChecklistItem(val id: String, val title: String)
+internal data class DailyChecklistItem(val id: String, val title: String)
 private data class DailyChecklistSection(val title: String, val items: List<DailyChecklistItem>)
 
-private val obligatoryChecklistItems = listOf(
+internal val obligatoryChecklistItems = listOf(
     DailyChecklistItem("salah_fajr", "نماز صبح"),
     DailyChecklistItem("salah_dhuhr", "نماز ظهر"),
     DailyChecklistItem("salah_asr", "نماز عصر"),

@@ -65,7 +65,7 @@ class ReminderReceiver : BroadcastReceiver() {
                 val content = dhikr?.let { "«${it.arabicText}»\n\nترجمه: ${it.persianTranslation}" } 
                     ?: "ألا بذکر الله تطمئن القلوب..."
                 Triple(
-                    "✨ نور اذکار: آرامش روزانه",
+                    "✨ اذکار نور: آرامش روزانه",
                     "هم‌اکنون زمان تلاوت اذکار روزانه است.",
                     "$intro\n\n$content"
                 )
