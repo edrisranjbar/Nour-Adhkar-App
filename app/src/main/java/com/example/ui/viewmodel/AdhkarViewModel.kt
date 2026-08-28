@@ -22,6 +22,7 @@ import com.example.data.model.UserFeeling
 import com.example.data.repository.AdhkarRepository
 import com.example.data.repository.PreferenceRepository
 import com.example.notifications.AdhkarNotificationManager
+import com.example.widget.ChecklistWidgetProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -82,6 +83,12 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _eveningTime = MutableStateFlow(prefs.getEveningNotificationTime())
     val eveningTime: StateFlow<String> = _eveningTime.asStateFlow()
+
+    private val _fridayKahfReminderEnabled = MutableStateFlow(prefs.isFridayKahfReminderEnabled())
+    val fridayKahfReminderEnabled: StateFlow<Boolean> = _fridayKahfReminderEnabled.asStateFlow()
+
+    private val _fridayKahfReminderTime = MutableStateFlow(prefs.getFridayKahfReminderTime())
+    val fridayKahfReminderTime: StateFlow<String> = _fridayKahfReminderTime.asStateFlow()
 
     private val _dailyChecklistCompletedIds = MutableStateFlow(prefs.getDailyChecklistCompletedIds())
     val dailyChecklistCompletedIds: StateFlow<Set<String>> = _dailyChecklistCompletedIds.asStateFlow()
@@ -319,6 +326,18 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         notificationManager.triggerTestNotification()
     }
 
+    fun setFridayKahfReminderEnabled(enabled: Boolean) {
+        prefs.setFridayKahfReminderEnabled(enabled)
+        _fridayKahfReminderEnabled.value = enabled
+        notificationManager.scheduleReminders()
+    }
+
+    fun updateFridayKahfReminderTime(time: String) {
+        prefs.setFridayKahfReminderTime(time)
+        _fridayKahfReminderTime.value = time
+        notificationManager.scheduleReminders()
+    }
+
     fun setDailyChecklistItemCompleted(itemId: String, completed: Boolean) {
         _dailyChecklistCompletedIds.value =
             prefs.setDailyChecklistItemCompleted(
@@ -327,6 +346,7 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
                 completed = completed
             )
         _checklistCompletionCounts.value = prefs.getChecklistCompletionCounts(30)
+        ChecklistWidgetProvider.updateAll(getApplication())
         if (completed) {
             _activityDayKeys.value = prefs.markActivityToday()
             if (_soundEnabled.value) checklistCompletionSound.play()

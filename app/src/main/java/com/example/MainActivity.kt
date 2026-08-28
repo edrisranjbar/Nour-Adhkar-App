@@ -102,10 +102,15 @@ import com.example.ui.theme.NightBlue
 import com.example.ui.viewmodel.AdhkarViewModel
 import com.example.updates.AppUpdate
 import com.example.updates.UpdateChecker
+import com.example.notifications.AdhkarNotificationManager
+import com.example.widget.ChecklistWidgetProvider
 import androidx.compose.material3.rememberDrawerState
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+
+    private var notificationCategory by mutableStateOf<String?>(null)
+    private var openChecklistFromWidget by mutableStateOf(false)
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -115,6 +120,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        notificationCategory = intent.getStringExtra(AdhkarNotificationManager.EXTRA_OPEN_CATEGORY)
+        openChecklistFromWidget = intent.getBooleanExtra(ChecklistWidgetProvider.EXTRA_OPEN_CHECKLIST, false)
         enableEdgeToEdge()
 
         // Proactively request Notification permissions on Android 13+
@@ -132,14 +139,33 @@ class MainActivity : ComponentActivity() {
             val viewModel: AdhkarViewModel = viewModel()
             val darkModeEnabled by viewModel.darkModeEnabled.collectAsState()
             MyApplicationTheme(darkTheme = darkModeEnabled) {
-                AppMainScaffold(viewModel)
+                AppMainScaffold(
+                    viewModel = viewModel,
+                    notificationCategory = notificationCategory,
+                    onNotificationCategoryConsumed = { notificationCategory = null },
+                    openChecklistFromWidget = openChecklistFromWidget,
+                    onChecklistWidgetIntentConsumed = { openChecklistFromWidget = false }
+                )
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        notificationCategory = intent.getStringExtra(AdhkarNotificationManager.EXTRA_OPEN_CATEGORY)
+        openChecklistFromWidget = intent.getBooleanExtra(ChecklistWidgetProvider.EXTRA_OPEN_CHECKLIST, false)
     }
 }
 
 @Composable
-fun AppMainScaffold(viewModel: AdhkarViewModel) {
+fun AppMainScaffold(
+    viewModel: AdhkarViewModel,
+    notificationCategory: String? = null,
+    onNotificationCategoryConsumed: () -> Unit = {},
+    openChecklistFromWidget: Boolean = false,
+    onChecklistWidgetIntentConsumed: () -> Unit = {}
+) {
     val context = LocalContext.current
     val currentTab by viewModel.currentTab.collectAsState()
     val selectedCategoryId by viewModel.selectedCategoryId.collectAsState()
@@ -148,9 +174,23 @@ fun AppMainScaffold(viewModel: AdhkarViewModel) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
 
+    LaunchedEffect(notificationCategory) {
+        if (notificationCategory == "morning" || notificationCategory == "evening") {
+            viewModel.selectCategory(notificationCategory)
+            onNotificationCategoryConsumed()
+        }
+    }
+
+    LaunchedEffect(openChecklistFromWidget) {
+        if (openChecklistFromWidget) {
+            viewModel.selectTab("checklist")
+            onChecklistWidgetIntentConsumed()
+        }
+    }
+
     LaunchedEffect(Unit) {
         availableUpdate = if (BuildConfig.FORCE_UPDATE_PROMPT) {
-            AppUpdate(versionName = "۱.۴.۱ (پیش‌نمایش)", versionCode = BuildConfig.VERSION_CODE + 1)
+            AppUpdate(versionName = "۱.۵.۱ (پیش‌نمایش)", versionCode = BuildConfig.VERSION_CODE + 1)
         } else {
             UpdateChecker.check()
         }

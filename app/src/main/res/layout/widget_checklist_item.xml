@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_item_root"
+    android:layout_width="match_parent"
+    android:layout_height="40dp"
+    android:layoutDirection="rtl"
+    android:background="@drawable/bg_widget_row"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="10dp"
+    android:paddingEnd="10dp">
+
+    <ImageView
+        android:id="@+id/widget_item_status"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:contentDescription="وضعیت عمل" />
+
+    <TextView
+        android:id="@+id/widget_item_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="9dp"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:fontFamily="@font/vazirmatn_regular"
+        android:maxLines="1"
+        android:textColor="@color/widget_text_primary"
+        android:textSize="12sp" />
+</LinearLayout>

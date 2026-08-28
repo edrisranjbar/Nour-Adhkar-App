@@ -8,94 +8,130 @@ import com.example.data.repository.PreferenceRepository
 import java.util.Calendar
 
 class AdhkarNotificationManager(private val context: Context) {
-
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
     private val prefs = PreferenceRepository(context)
 
     fun scheduleReminders() {
         try {
-            if (!prefs.isNotificationsEnabled()) {
-                cancelAllReminders()
-                return
-            }
-
-            scheduleReminder("morning", prefs.getMorningNotificationTime(), 101)
-            scheduleReminder("evening", prefs.getEveningNotificationTime(), 102)
-        } catch (e: Exception) {
-            // Prevent any alarm or security exception from crashing app initialization
+            cancelAllReminders()
+            if (!prefs.isNotificationsEnabled()) return
+            scheduleNext("morning")
+            scheduleNext("evening")
+            if (prefs.isFridayKahfReminderEnabled()) scheduleNext("friday_kahf")
+        } catch (_: Exception) {
+            // Alarm restrictions must never crash app startup.
         }
     }
 
-    private fun scheduleReminder(type: String, timeStr: String, requestCode: Int) {
+    fun scheduleNext(type: String) {
         try {
-            val parts = timeStr.split(":")
-            val hour = parts.getOrNull(0)?.toIntOrNull() ?: if (type == "morning") 7 else 18
-            val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
+            if (!prefs.isNotificationsEnabled()) return
+            val (time, days, requestCode) = when (type) {
+                "morning" -> Triple(prefs.getMorningNotificationTime(), ALL_DAYS, REQUEST_MORNING)
+                "evening" -> Triple(prefs.getEveningNotificationTime(), ALL_DAYS, REQUEST_EVENING)
+                "friday_kahf" -> {
+                    if (!prefs.isFridayKahfReminderEnabled()) return
+                    Triple(prefs.getFridayKahfReminderTime(), setOf(Calendar.FRIDAY), REQUEST_FRIDAY_KAHF)
+                }
+                else -> return
+            }
+            if (days.isEmpty()) {
+                cancelReminder(requestCode)
+                return
+            }
+            val pendingIntent = reminderPendingIntent(type, requestCode)
+            alarmManager.cancel(pendingIntent)
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, nextTrigger(time, days), pendingIntent)
+        } catch (_: Exception) {
+            // Safe fallback for vendor-specific alarm restrictions.
+        }
+    }
 
-            val calendar = Calendar.getInstance().apply {
+    fun scheduleSnooze(type: String, delayMinutes: Int = 60) {
+        try {
+            val requestCode = when (type) {
+                "morning" -> REQUEST_SNOOZE_MORNING
+                "evening" -> REQUEST_SNOOZE_EVENING
+                "friday_kahf" -> REQUEST_SNOOZE_FRIDAY
+                else -> return
+            }
+            val pendingIntent = reminderPendingIntent(type, requestCode)
+            alarmManager.cancel(pendingIntent)
+            alarmManager.setAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                System.currentTimeMillis() + delayMinutes * 60_000L,
+                pendingIntent
+            )
+        } catch (_: Exception) {
+            // Snoozing is optional; failure must not crash the receiver.
+        }
+    }
+
+    fun cancelAllReminders() {
+        listOf(101, 102, 103, 201, 202, 203).forEach(::cancelReminder)
+    }
+
+    private fun nextTrigger(time: String, allowedDays: Set<Int>): Long {
+        val parts = time.split(":")
+        val hour = parts.getOrNull(0)?.toIntOrNull()?.coerceIn(0, 23) ?: 9
+        val minute = parts.getOrNull(1)?.toIntOrNull()?.coerceIn(0, 59) ?: 0
+        val now = Calendar.getInstance()
+        repeat(8) { dayOffset ->
+            val candidate = (now.clone() as Calendar).apply {
+                add(Calendar.DAY_OF_YEAR, dayOffset)
                 set(Calendar.HOUR_OF_DAY, hour)
                 set(Calendar.MINUTE, minute)
                 set(Calendar.SECOND, 0)
                 set(Calendar.MILLISECOND, 0)
             }
-
-            // If time has already passed today, schedule for tomorrow
-            if (calendar.timeInMillis <= System.currentTimeMillis()) {
-                calendar.add(Calendar.DAY_OF_YEAR, 1)
+            if (candidate.get(Calendar.DAY_OF_WEEK) in allowedDays && candidate.timeInMillis > now.timeInMillis) {
+                return candidate.timeInMillis
             }
-
-            val intent = Intent(context, ReminderReceiver::class.java).apply {
-                putExtra("REMINDER_TYPE", type)
-            }
-
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                requestCode,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-
-            // Cancel previous if any
-            alarmManager.cancel(pendingIntent)
-
-            // Schedule repeating
-            alarmManager.setInexactRepeating(
-                AlarmManager.RTC_WAKEUP,
-                calendar.timeInMillis,
-                AlarmManager.INTERVAL_DAY,
-                pendingIntent
-            )
-        } catch (e: Exception) {
-            // Catch security or alarm permissions exceptions
         }
+        return now.timeInMillis + AlarmManager.INTERVAL_DAY
     }
 
-    fun cancelAllReminders() {
-        try {
-            cancelReminder(101)
-            cancelReminder(102)
-        } catch (e: Exception) {
-            // Safe fallback
+    private fun reminderPendingIntent(type: String, requestCode: Int): PendingIntent {
+        val intent = Intent(context, ReminderReceiver::class.java).apply {
+            action = ACTION_SHOW_REMINDER
+            putExtra(EXTRA_REMINDER_TYPE, type)
         }
+        return PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
     }
 
     private fun cancelReminder(requestCode: Int) {
-        val intent = Intent(context, ReminderReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
+        val intent = Intent(context, ReminderReceiver::class.java).apply { action = ACTION_SHOW_REMINDER }
+        PendingIntent.getBroadcast(
             context,
             requestCode,
             intent,
             PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
-        )
-        if (pendingIntent != null) {
-            alarmManager.cancel(pendingIntent)
-        }
+        )?.let(alarmManager::cancel)
     }
 
     fun triggerTestNotification() {
-        val intent = Intent(context, ReminderReceiver::class.java).apply {
-            putExtra("REMINDER_TYPE", "test")
-        }
-        context.sendBroadcast(intent)
+        context.sendBroadcast(Intent(context, ReminderReceiver::class.java).apply {
+            action = ACTION_SHOW_REMINDER
+            putExtra(EXTRA_REMINDER_TYPE, "test")
+        })
+    }
+
+    companion object {
+        const val ACTION_SHOW_REMINDER = "ir.adhkar.app.action.SHOW_REMINDER"
+        const val ACTION_SNOOZE_REMINDER = "ir.adhkar.app.action.SNOOZE_REMINDER"
+        const val EXTRA_REMINDER_TYPE = "REMINDER_TYPE"
+        const val EXTRA_OPEN_CATEGORY = "OPEN_CATEGORY"
+        private const val REQUEST_MORNING = 101
+        private const val REQUEST_EVENING = 102
+        private const val REQUEST_FRIDAY_KAHF = 103
+        private const val REQUEST_SNOOZE_MORNING = 201
+        private const val REQUEST_SNOOZE_EVENING = 202
+        private const val REQUEST_SNOOZE_FRIDAY = 203
+        private val ALL_DAYS = (Calendar.SUNDAY..Calendar.SATURDAY).toSet()
     }
 }

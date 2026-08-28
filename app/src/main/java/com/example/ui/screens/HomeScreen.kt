@@ -966,12 +966,6 @@ fun StreakCalendarCard(
                                     tint = Color(0xFF4CAF50),
                                     modifier = Modifier.size(14.dp)
                                 )
-                            } else if (day.isToday) {
-                                Text(
-                                    text = "●",
-                                    fontSize = 8.sp,
-                                    color = SunGold.copy(alpha = 0.7f)
-                                )
                             }
                         }
 

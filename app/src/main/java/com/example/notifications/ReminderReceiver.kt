@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.MainActivity
@@ -19,8 +20,18 @@ class ReminderReceiver : BroadcastReceiver() {
         val prefs = PreferenceRepository(context)
         if (!prefs.isNotificationsEnabled()) return
 
-        val type = intent.getStringExtra("REMINDER_TYPE") ?: "general"
-        if ((type == "morning" || type == "evening") && prefs.isAdhkarCompletedToday(type)) return
+        val type = intent.getStringExtra(AdhkarNotificationManager.EXTRA_REMINDER_TYPE) ?: "general"
+        val scheduler = AdhkarNotificationManager(context)
+        if (intent.action == AdhkarNotificationManager.ACTION_SNOOZE_REMINDER) {
+            scheduler.scheduleSnooze(type)
+            (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+                .cancel(notificationId(type))
+            return
+        }
+        if ((type == "morning" || type == "evening") && prefs.isAdhkarCompletedToday(type)) {
+            scheduler.scheduleNext(type)
+            return
+        }
         
         val channelId = "nour_adhkar_reminders"
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -31,7 +42,7 @@ class ReminderReceiver : BroadcastReceiver() {
                 "اذکار نور - یادآوری روزانه",
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
-                description = "کانال ارسال یادآوری‌های اذکار صبحگاه و شامگاه"
+                description = "یادآوری اذکار صبحگاه، شامگاه و تلاوت سوره کهف در جمعه"
             }
             notificationManager.createNotificationChannel(channel)
         }
@@ -59,6 +70,11 @@ class ReminderReceiver : BroadcastReceiver() {
                     "$intro\n\n$content"
                 )
             }
+            "friday_kahf" -> Triple(
+                "📖 جمعه با سوره کهف",
+                "یادآوری تلاوت سوره مبارکه کهف",
+                "امروز جمعه است؛ فرصتی آرام برای تلاوت سوره مبارکه کهف. برای شروع، روی دکمه زیر بزنید."
+            )
             else -> {
                 val dhikr = AdhkarData.adhkarList["daily"]?.randomOrNull()
                 val intro = "دل‌ها با یاد الهی به آرامش حقیقی می‌رسند. یادآوری تلاوت اذکار روزانه:"
@@ -72,13 +88,29 @@ class ReminderReceiver : BroadcastReceiver() {
             }
         }
 
-        val mainIntent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        val startIntent = if (type == "friday_kahf") {
+            Intent(Intent.ACTION_VIEW, Uri.parse("https://quran.com/18"))
+        } else {
+            Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                if (type == "morning" || type == "evening") {
+                    putExtra(AdhkarNotificationManager.EXTRA_OPEN_CATEGORY, type)
+                }
+            }
         }
-        val pendingIntent = PendingIntent.getActivity(
+        val startPendingIntent = PendingIntent.getActivity(
             context,
-            if (type == "morning") 101 else 102,
-            mainIntent,
+            notificationId(type),
+            startIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val snoozePendingIntent = PendingIntent.getBroadcast(
+            context,
+            notificationId(type) + 100,
+            Intent(context, ReminderReceiver::class.java).apply {
+                action = AdhkarNotificationManager.ACTION_SNOOZE_REMINDER
+                putExtra(AdhkarNotificationManager.EXTRA_REMINDER_TYPE, type)
+            },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -88,10 +120,20 @@ class ReminderReceiver : BroadcastReceiver() {
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(pendingIntent)
+            .setContentIntent(startPendingIntent)
+            .addAction(0, if (type == "friday_kahf") "باز کردن سوره" else "شروع", startPendingIntent)
+            .addAction(0, "یک ساعت بعد", snoozePendingIntent)
             .setAutoCancel(true)
             .build()
 
-        notificationManager.notify(if (type == "morning") 1001 else 1002, notification)
+        notificationManager.notify(notificationId(type), notification)
+        if (type in setOf("morning", "evening", "friday_kahf")) scheduler.scheduleNext(type)
+    }
+
+    private fun notificationId(type: String): Int = when (type) {
+        "morning" -> 1001
+        "evening" -> 1002
+        "friday_kahf" -> 1003
+        else -> 1004
     }
 }

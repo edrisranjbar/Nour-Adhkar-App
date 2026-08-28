@@ -105,7 +105,7 @@ fun AboutScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "نسخه ۱.۴.۰",
+                        text = "نسخه ۱.۵.۰",
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontSize = (12 * fontScale).sp,
                                     color = NightBlue.copy(alpha = 0.6f)

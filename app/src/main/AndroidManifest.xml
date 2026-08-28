@@ -41,6 +41,23 @@
             android:enabled="true"
             android:exported="false" />
 
+        <receiver
+            android:name=".widget.ChecklistWidgetProvider"
+            android:label="@string/checklist_widget_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/daily_checklist_widget_info" />
+        </receiver>
+
+        <service
+            android:name=".widget.ChecklistWidgetService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+
         <service
             android:name=".media.AdhkarPlaybackService"
             android:exported="false"

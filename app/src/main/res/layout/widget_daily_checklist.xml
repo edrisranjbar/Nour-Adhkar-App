@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layoutDirection="rtl"
+    android:orientation="vertical"
+    android:padding="14dp"
+    android:background="@drawable/bg_checklist_widget">
+
+    <LinearLayout
+        android:id="@+id/widget_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_nour_adhkar_logo" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="9dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="چک‌لیست امروز"
+                android:fontFamily="@font/vazirmatn_bold"
+                android:textColor="#173A2B"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/widget_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="قدم‌های کوچک، استمرار زیبا"
+                android:fontFamily="@font/vazirmatn_regular"
+                android:textColor="#6B7D73"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/widget_progress_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_widget_progress_badge"
+            android:fontFamily="@font/vazirmatn_bold"
+            android:paddingHorizontal="9dp"
+            android:paddingVertical="5dp"
+            android:textColor="#2E7058"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/widget_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="5dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="9dp"
+        android:max="15"
+        android:progressBackgroundTint="#E3EBE6"
+        android:progressTint="#2E7058" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ListView
+            android:id="@+id/widget_task_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:divider="@android:color/transparent"
+            android:dividerHeight="4dp"
+            android:overScrollMode="never"
+            android:scrollbars="none" />
+
+        <TextView
+            android:id="@+id/widget_empty_text"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fontFamily="@font/vazirmatn_regular"
+            android:gravity="center"
+            android:text="در حال آماده‌سازی فهرست…"
+            android:textColor="#6B7D73"
+            android:textSize="12sp" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/widget_open_button"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/bg_widget_open_button"
+        android:fontFamily="@font/vazirmatn_bold"
+        android:gravity="center"
+        android:text="مشاهده همه اعمال  ←"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+</LinearLayout>

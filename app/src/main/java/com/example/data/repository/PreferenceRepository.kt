@@ -122,6 +122,20 @@ class PreferenceRepository(context: Context) {
         prefs.edit().putString("evening_notif_time", time).apply()
     }
 
+    fun isFridayKahfReminderEnabled(): Boolean =
+        prefs.getBoolean("friday_kahf_reminder_enabled", true)
+
+    fun setFridayKahfReminderEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("friday_kahf_reminder_enabled", enabled).apply()
+    }
+
+    fun getFridayKahfReminderTime(): String =
+        prefs.getString("friday_kahf_reminder_time", "09:00") ?: "09:00"
+
+    fun setFridayKahfReminderTime(time: String) {
+        prefs.edit().putString("friday_kahf_reminder_time", time).apply()
+    }
+
     fun markAdhkarCompletedToday(categoryId: String) {
         prefs.edit().putLong(completionKey(categoryId), currentDayKey()).apply()
     }

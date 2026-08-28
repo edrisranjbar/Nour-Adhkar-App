@@ -71,6 +71,8 @@ fun SettingsScreen(
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
     val morningTime by viewModel.morningTime.collectAsState()
     val eveningTime by viewModel.eveningTime.collectAsState()
+    val fridayKahfReminderEnabled by viewModel.fridayKahfReminderEnabled.collectAsState()
+    val fridayKahfReminderTime by viewModel.fridayKahfReminderTime.collectAsState()
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Column(
@@ -165,6 +167,34 @@ fun SettingsScreen(
                                     fontScale = fontScale,
                                     onTimeSelected = viewModel::updateEveningTime
                                 )
+
+                                Spacer(modifier = Modifier.height(16.dp))
+                                HorizontalDivider(color = SoftBorder)
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text("یادآوری سوره کهف در جمعه", fontSize = (13 * fontScale).sp, fontWeight = FontWeight.SemiBold, color = SandDark)
+                                        Text("باز کردن مستقیم سوره برای تلاوت", fontSize = 11.sp, color = NightBlue)
+                                    }
+                                    Switch(
+                                        checked = fridayKahfReminderEnabled,
+                                        onCheckedChange = viewModel::setFridayKahfReminderEnabled,
+                                        colors = SwitchDefaults.colors(checkedTrackColor = SunGold)
+                                    )
+                                }
+                                if (fridayKahfReminderEnabled) {
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    NotificationTimePicker(
+                                        label = "ساعت یادآوری جمعه:",
+                                        time = fridayKahfReminderTime,
+                                        fontScale = fontScale,
+                                        onTimeSelected = viewModel::updateFridayKahfReminderTime
+                                    )
+                                }
 
                             }
                         }
