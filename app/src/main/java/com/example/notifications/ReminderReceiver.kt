@@ -1,4 +1,5 @@
 package com.example.notifications
+import com.example.ui.language.text
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -18,6 +19,7 @@ class ReminderReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val prefs = PreferenceRepository(context)
+        val language = prefs.getAppLanguage()
         if (!prefs.isNotificationsEnabled()) return
 
         val type = intent.getStringExtra(AdhkarNotificationManager.EXTRA_REMINDER_TYPE) ?: "general"
@@ -32,17 +34,17 @@ class ReminderReceiver : BroadcastReceiver() {
             scheduler.scheduleNext(type)
             return
         }
-        
+
         val channelId = "nour_adhkar_reminders"
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
-                "اذکار نور - یادآوری روزانه",
+                language.text("اذکار نور - یادآوری روزانه"),
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
-                description = "یادآوری اذکار صبحگاه، شامگاه و تلاوت سوره کهف در جمعه"
+                description = language.text("یادآوری اذکار صبحگاه، شامگاه و تلاوت سوره کهف در جمعه")
             }
             notificationManager.createNotificationChannel(channel)
         }
@@ -51,7 +53,7 @@ class ReminderReceiver : BroadcastReceiver() {
             "morning" -> {
                 val dhikr = AdhkarData.adhkarList["morning"]?.randomOrNull()
                 val intro = "امروز خود را با تلاوت اذکار مبارک صبحگاه متبرک و نورانی کنید. زمان تلاوت فرا رسیده است:"
-                val content = dhikr?.let { "«${it.arabicText}»\n\nترجمه: ${it.persianTranslation}" } 
+                val content = dhikr?.let { if (language.showPersianTranslation) "«${it.arabicText}»\n\nترجمه: ${it.persianTranslation}" else "«${it.arabicText}»" }
                     ?: "روز خود را با یاد خدا و تلاوت اذکار صبحگاه نورانی کنید."
                 Triple(
                     "☀️ نسیم صبحگاه: یاد خدا",
@@ -62,7 +64,7 @@ class ReminderReceiver : BroadcastReceiver() {
             "evening" -> {
                 val dhikr = AdhkarData.adhkarList["evening"]?.randomOrNull()
                 val intro = "غروبی سرشار از آرامش با یاد پروردگار مهربان. زمان قرائت اذکار مبارک شامگاه فرا رسیده است:"
-                val content = dhikr?.let { "«${it.arabicText}»\n\nترجمه: ${it.persianTranslation}" } 
+                val content = dhikr?.let { if (language.showPersianTranslation) "«${it.arabicText}»\n\nترجمه: ${it.persianTranslation}" else "«${it.arabicText}»" }
                     ?: "پایان روز را با یاد پروردگار به آرامش برسانید."
                 Triple(
                     "🌙 نور شامگاه: آرامش دل‌ها",
@@ -78,7 +80,7 @@ class ReminderReceiver : BroadcastReceiver() {
             else -> {
                 val dhikr = AdhkarData.adhkarList["daily"]?.randomOrNull()
                 val intro = "دل‌ها با یاد الهی به آرامش حقیقی می‌رسند. یادآوری تلاوت اذکار روزانه:"
-                val content = dhikr?.let { "«${it.arabicText}»\n\nترجمه: ${it.persianTranslation}" } 
+                val content = dhikr?.let { if (language.showPersianTranslation) "«${it.arabicText}»\n\nترجمه: ${it.persianTranslation}" else "«${it.arabicText}»" }
                     ?: "ألا بذکر الله تطمئن القلوب..."
                 Triple(
                     "✨ اذکار نور: آرامش روزانه",
@@ -116,13 +118,13 @@ class ReminderReceiver : BroadcastReceiver() {
 
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_notification_adhkar)
-            .setContentTitle(title)
-            .setContentText(text)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
+            .setContentTitle(language.text(title))
+            .setContentText(language.text(text))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(bigText.split("\n\n").joinToString("\n\n") { language.text(it) }))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(startPendingIntent)
-            .addAction(0, if (type == "friday_kahf") "باز کردن سوره" else "شروع", startPendingIntent)
-            .addAction(0, "یک ساعت بعد", snoozePendingIntent)
+            .addAction(0, language.text(if (type == "friday_kahf") "باز کردن سوره" else "شروع"), startPendingIntent)
+            .addAction(0, language.text("یک ساعت بعد"), snoozePendingIntent)
             .setAutoCancel(true)
             .build()
 

@@ -1,0 +1,5 @@
+undefined
+
+Tool: built-in image_gen.
+Sources: existing real screenshot panels in marketing/cafebazaar-covers/nour-cover-01-overview.jpg and app/src/main/res/drawable/ic_nour_adhkar_logo.png.
+These screenshots depict an earlier app version. Current installed home screen could not be captured because it crashes with PatternSyntaxException in ArabicCatalog.

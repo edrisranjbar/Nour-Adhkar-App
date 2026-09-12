@@ -1,4 +1,5 @@
 package com.example.media
+import com.example.ui.language.text
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -159,7 +160,7 @@ class AdhkarPlaybackService : Service(), AudioManager.OnAudioFocusChangeListener
                     connectTimeout = 20_000
                     readTimeout = 30_000
                     instanceFollowRedirects = true
-            setRequestProperty("User-Agent", "NourAdhkar/1.5.0")
+                    setRequestProperty("User-Agent", "NourAdhkar/${com.example.BuildConfig.VERSION_NAME}")
                 }
                 try {
                     connection.connect()
@@ -358,8 +359,8 @@ class AdhkarPlaybackService : Service(), AudioManager.OnAudioFocusChangeListener
     private fun updateMediaMetadata(track: Track) {
         mediaSession.setMetadata(
             MediaMetadata.Builder()
-                .putString(MediaMetadata.METADATA_KEY_TITLE, track.title)
-                .putString(MediaMetadata.METADATA_KEY_ARTIST, "مشاری راشد العفاسی")
+                .putString(MediaMetadata.METADATA_KEY_TITLE, PreferenceRepository(this).getAppLanguage().text(track.title))
+                .putString(MediaMetadata.METADATA_KEY_ARTIST, PreferenceRepository(this).getAppLanguage().text("مشاری راشد العفاسی"))
                 .build()
         )
     }
@@ -401,6 +402,7 @@ class AdhkarPlaybackService : Service(), AudioManager.OnAudioFocusChangeListener
     }
 
     private fun buildNotification(): Notification {
+        val language = PreferenceRepository(this).getAppLanguage()
         val current = state.value
         val track = activeTrack
         val toggleAction = if (current.isPlaying) ACTION_PAUSE else ACTION_RESUME
@@ -431,13 +433,13 @@ class AdhkarPlaybackService : Service(), AudioManager.OnAudioFocusChangeListener
         }
         return Notification.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification_adhkar)
-            .setContentTitle(track?.title ?: "اذکار نور")
-            .setContentText(status)
+            .setContentTitle(language.text(track?.title ?: "اذکار نور"))
+            .setContentText(language.text(status))
             .setContentIntent(contentIntent)
             .setOngoing(current.isPlaying || current.isDownloading)
             .setOnlyAlertOnce(true)
-            .addAction(Notification.Action.Builder(toggleIcon, toggleLabel, toggleIntent).build())
-            .addAction(Notification.Action.Builder(android.R.drawable.ic_menu_close_clear_cancel, "بستن", stopIntent).build())
+            .addAction(Notification.Action.Builder(toggleIcon, language.text(toggleLabel), toggleIntent).build())
+            .addAction(Notification.Action.Builder(android.R.drawable.ic_menu_close_clear_cancel, language.text("بستن"), stopIntent).build())
             .setStyle(Notification.MediaStyle().setMediaSession(mediaSession.sessionToken).setShowActionsInCompactView(0))
             .build()
     }
@@ -445,7 +447,7 @@ class AdhkarPlaybackService : Service(), AudioManager.OnAudioFocusChangeListener
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             getSystemService(NotificationManager::class.java).createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, "پخش صوتی اذکار", NotificationManager.IMPORTANCE_LOW)
+                NotificationChannel(CHANNEL_ID, PreferenceRepository(this).getAppLanguage().text("پخش صوتی اذکار"), NotificationManager.IMPORTANCE_LOW)
             )
         }
     }

@@ -6,10 +6,52 @@ import java.util.Calendar
 
 class PreferenceRepository(context: Context) {
 
+    fun getAppLanguage() = com.example.ui.language.AppLanguage.fromCode(prefs.getString("app_language", "fa"))
+
+    fun setAppLanguage(language: com.example.ui.language.AppLanguage) {
+        prefs.edit().putString("app_language", language.code).apply()
+    }
+
     private val prefs: SharedPreferences = context.getSharedPreferences(
         "nour_adhkar_prefs",
         Context.MODE_PRIVATE
     )
+
+    fun getPrayerSettings(): com.example.prayer.PrayerSettings = runCatching {
+        com.example.prayer.PrayerSettings(prefs.getString("prayer_location", "").orEmpty(),
+            prefs.getString("prayer_lat", "0")!!.toDouble(), prefs.getString("prayer_lon", "0")!!.toDouble(),
+            prefs.getString("prayer_zone", "Asia/Tehran")!!, prefs.getString("prayer_method", "MUSLIM_WORLD_LEAGUE")!!,
+            prefs.getBoolean("prayer_hanafi", false),
+            prefs.getBoolean("prayer_automatic_location", prefs.getString("prayer_location", "").orEmpty() in listOf("", "موقعیت فعلی")))
+    }.getOrDefault(com.example.prayer.PrayerSettings())
+    fun setPrayerSettings(value: com.example.prayer.PrayerSettings) {
+        prefs.edit().putString("prayer_location", value.location).putString("prayer_lat", value.latitude.toString())
+            .putString("prayer_lon", value.longitude.toString()).putString("prayer_zone", value.zone)
+            .putString("prayer_method", value.method).putBoolean("prayer_hanafi", value.hanafi)
+            .putBoolean("prayer_automatic_location", value.automaticLocation).apply()
+    }
+
+    fun getAdhanSound(): com.example.prayer.AdhanSound {
+        val saved = com.example.prayer.AdhanSound(prefs.getString("adhan_sound_id", "").orEmpty())
+        return saved.takeIf { it.isSelected } ?: com.example.prayer.AdhanSound()
+    }
+
+    fun setAdhanSound(sound: com.example.prayer.AdhanSound) {
+        require(sound.id.isEmpty() || sound.isSelected)
+        prefs.edit().putString("adhan_sound_id", sound.id)
+            .remove("adhan_sound_uri").remove("adhan_sound_name").apply()
+    }
+
+    fun getAdhanPrayers(): Set<com.example.prayer.AdhanPrayer> =
+        prefs.getStringSet("adhan_prayers", emptySet()).orEmpty().mapNotNull { id ->
+            com.example.prayer.AdhanPrayer.entries.firstOrNull { it.name == id }
+        }.toSet()
+
+    fun setAdhanPrayer(prayer: com.example.prayer.AdhanPrayer, enabled: Boolean) {
+        val selected = getAdhanPrayers().toMutableSet()
+        if (enabled) selected.add(prayer) else selected.remove(prayer)
+        prefs.edit().putStringSet("adhan_prayers", selected.map { it.name }.toSet()).apply()
+    }
 
     fun isVibrationEnabled(): Boolean {
         return prefs.getBoolean("vibration_enabled", true)

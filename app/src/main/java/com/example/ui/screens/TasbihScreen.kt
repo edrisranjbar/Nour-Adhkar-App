@@ -40,12 +40,12 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
+import com.example.ui.language.LocalizedIcon as Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
+import com.example.ui.language.LocalizedText as Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.CompositionLocalProvider
@@ -590,6 +590,12 @@ fun HistoryItemCard(
     }
 }
 
+@Composable
 private fun formatTimestamp(timestamp: Long): String {
+    if (com.example.ui.language.LocalAppLanguage.current == com.example.ui.language.AppLanguage.ARABIC) {
+        return java.text.SimpleDateFormat("d MMMM yyyy - HH:mm", java.util.Locale("ar")).apply {
+            timeZone = java.util.TimeZone.getTimeZone("Asia/Tehran")
+        }.format(java.util.Date(timestamp))
+    }
     return formatPersianDateTime(timestamp)
 }

@@ -1,4 +1,18 @@
 package com.example.ui.screens
+import com.example.ui.language.LocalAppLanguage
+import com.example.ui.language.inLanguage
+import com.example.ui.language.text
+
+import android.content.Intent
+import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
+import com.example.ui.language.LocalizedIcon as Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.foundation.lazy.rememberLazyListState
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -23,7 +37,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import com.example.ui.language.LocalizedText as Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -55,9 +69,17 @@ fun ArticlesScreen(
     innerPadding: PaddingValues
 ) {
     val fontScale by viewModel.fontScale.collectAsState()
-    val articles = AdhkarData.articles
+    val language = LocalAppLanguage.current
+    val articles = AdhkarData.articles.map { it.inLanguage(language) }
 
-    var expandedArticleId by remember { mutableStateOf<String?>(null) }
+    var expandedArticleId by rememberSaveable { mutableStateOf<String?>(null) }
+    val selected = articles.firstOrNull { it.id == expandedArticleId }
+    val listState = rememberLazyListState()
+    BackHandler(enabled = selected != null) { expandedArticleId = null }
+    if (selected != null) {
+        ArticleDetailPage(selected, fontScale, innerPadding) { expandedArticleId = null }
+        return
+    }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Column(
@@ -67,35 +89,16 @@ fun ArticlesScreen(
                 .padding(top = innerPadding.calculateTopPadding())
                 .padding(horizontal = 16.dp)
         ) {
-            // Header
-            Text(
-                text = "مقالات",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontSize = (24 * fontScale).sp,
-                    fontWeight = FontWeight.Bold,
-                    color = SandDark
-                ),
-                modifier = Modifier.padding(vertical = 12.dp)
-            )
 
             LazyColumn(
+                state = listState,
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 16.dp)
             ) {
-                // Intro text
-                item {
-                    Text(
-                        text = "با مطالعه فضیلت‌ها و آداب قلبی ذکر، تأثیر معنوی عبادت‌های خود را عمق ببخشید.",
-                        fontSize = (13 * fontScale).sp,
-                        lineHeight = 18.sp,
-                        color = SandDark.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
-                }
 
                 // Articles List
-                items(articles) { article ->
+                items(articles, key = { it.id }) { article ->
                     val isExpanded = expandedArticleId == article.id
                     ArticleCard(
                         article = article,
@@ -106,6 +109,41 @@ fun ArticlesScreen(
                         }
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ArticleDetailPage(article: ArticleItem, fontScale: Float, innerPadding: PaddingValues, onBack: () -> Unit) {
+    val language = LocalAppLanguage.current
+    val context = LocalContext.current
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+            .padding(top = innerPadding.calculateTopPadding())) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = onBack) { Text("بازگشت به مقالات") }
+                IconButton(onClick = {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_SUBJECT, article.title)
+                        putExtra(Intent.EXTRA_TEXT, "${article.title}\n\n${article.content}\n\n${language.text("اذکار نور")}")
+                    }
+                    context.startActivity(Intent.createChooser(intent, language.text("اشتراک‌گذاری مقاله")))
+                }) { Icon(Icons.Default.Share, "اشتراک‌گذاری مقاله") }
+            }
+            LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp,
+                    bottom = innerPadding.calculateBottomPadding() + 20.dp)) {
+                item { Text(article.title.toPersianDigits(), fontSize = (22 * fontScale).sp,
+                    lineHeight = (32 * fontScale).sp, fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground) }
+                item { Text(article.readTime.toPersianDigits(), fontSize = (12 * fontScale).sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                item { Text(article.content.toPersianDigits(), fontSize = (16 * fontScale).sp,
+                    lineHeight = (28 * fontScale).sp, color = MaterialTheme.colorScheme.onBackground) }
             }
         }
     }

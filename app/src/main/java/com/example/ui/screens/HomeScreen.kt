@@ -66,13 +66,13 @@ import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
+import com.example.ui.language.LocalizedIcon as Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import com.example.ui.language.LocalizedText as Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
@@ -158,6 +158,8 @@ fun HomeScreen(
                             )
                         }
 
+                        item { PrayerTimesCard(viewModel) }
+
                         // 1. Special Daily Adhkar Header
                         item {
                             HomeSectionHeader(
@@ -194,6 +196,33 @@ fun HomeScreen(
                                     artworkRes = R.drawable.adhkar_evening_card,
                                     modifier = Modifier.weight(1f),
                                     onClick = { viewModel.selectCategory("evening") }
+                                )
+                            }
+                        }
+
+                        // Bedtime and daily adhkar share the row beneath morning and evening.
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                SpecialAdhkarCard(
+                                    title = "اذکار خواب",
+                                    badgeText = "${AdhkarData.adhkarList["sleep"].orEmpty().size.toPersianDigits()} ذکر",
+                                    icon = Icons.Default.Bedtime,
+                                    accentColor = Color(0xFF59658F),
+                                    artworkRes = R.drawable.adhkar_sleep_card,
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { viewModel.selectCategory("sleep") }
+                                )
+                                SpecialAdhkarCard(
+                                    title = "اذکار روزانه",
+                                    badgeText = "${AdhkarData.adhkarList["daily"].orEmpty().size.toPersianDigits()} ذکر",
+                                    icon = Icons.Default.WbSunny,
+                                    accentColor = Color(0xFF6B9678),
+                                    artworkRes = R.drawable.adhkar_daily_card,
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { viewModel.selectCategory("daily") }
                                 )
                             }
                         }
@@ -245,20 +274,6 @@ fun HomeScreen(
                             )
                         }
 
-                        // 5. Grid Categories Header
-                        item {
-                            HomeSectionHeader(
-                                title = "دسته‌بندی‌ها",
-                                icon = Icons.Default.GridView,
-                                fontScale = fontScale,
-                                modifier = Modifier.padding(top = 8.dp)
-                            )
-                        }
-
-                        // 6. Grid list of general categories
-                        item {
-                            CategoriesGrid(viewModel = viewModel, fontScale = fontScale)
-                        }
 
                         item {
                             MonthlyActivityCard(viewModel = viewModel, fontScale = fontScale)
@@ -642,6 +657,7 @@ fun EmotionalAyahCard(viewModel: AdhkarViewModel, fontScale: Float) {
                             modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(modifier = Modifier.height(8.dp))
+                        if (com.example.ui.language.LocalAppLanguage.current.showPersianTranslation) {
                         Text(
                             text = emotionalAyah.translation.toPersianDigits(),
                             fontSize = (12.5 * fontScale).sp,
@@ -650,6 +666,7 @@ fun EmotionalAyahCard(viewModel: AdhkarViewModel, fontScale: Float) {
                             textAlign = TextAlign.Right,
                             modifier = Modifier.fillMaxWidth()
                         )
+                        }
                         Spacer(modifier = Modifier.height(9.dp))
                         Text(
                             text = emotionalAyah.reference.toPersianDigits(),
@@ -659,12 +676,14 @@ fun EmotionalAyahCard(viewModel: AdhkarViewModel, fontScale: Float) {
                             modifier = Modifier.align(Alignment.End)
                         )
                         Spacer(modifier = Modifier.height(3.dp))
+                        if (com.example.ui.language.LocalAppLanguage.current.showPersianTranslation) {
                         Text(
                             text = emotionalAyah.translationSource,
                             fontSize = (9.5 * fontScale).sp,
                             color = TextPersian.copy(alpha = 0.72f),
                             modifier = Modifier.align(Alignment.End)
                         )
+                        }
                     }
                 }
             }
@@ -738,6 +757,7 @@ fun AyahOfTheDayCard(viewModel: AdhkarViewModel, fontScale: Float) {
             Spacer(modifier = Modifier.height(8.dp))
 
             // Persian Translation
+            if (com.example.ui.language.LocalAppLanguage.current.showPersianTranslation) {
             Text(
                         text = ayah.translation.toPersianDigits(),
                 style = MaterialTheme.typography.bodyMedium.copy(
@@ -748,6 +768,7 @@ fun AyahOfTheDayCard(viewModel: AdhkarViewModel, fontScale: Float) {
                 textAlign = TextAlign.Right,
                 modifier = Modifier.fillMaxWidth()
             )
+            }
 
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -1281,7 +1302,7 @@ private fun IllustratedAdhkarCard(
 @Composable
 fun CategoriesGrid(viewModel: AdhkarViewModel, fontScale: Float) {
     // Show rest of categories in a neat 2-column grid
-    val separateSectionIds = setOf("morning", "evening", "quran_prayers", "sunnah_prayers")
+    val separateSectionIds = setOf("morning", "evening", "sleep", "daily", "quran_prayers", "sunnah_prayers")
     val gridCategories = AdhkarData.categories.filterNot { it.id in separateSectionIds }
 
     Column(
@@ -1509,6 +1530,7 @@ fun SearchResultsView(
                     "اذکار شامگاه" -> "evening"
                     "اذکار روزانه" -> "daily"
                     "اذکار ماه رمضان" -> "ramadan"
+                    "اذکار خواب" -> "sleep"
                     "دعای خواب" -> "sleep"
                     "دعای استخاره" -> "istikhara"
                     else -> "morning"
@@ -1560,6 +1582,7 @@ fun SearchResultsView(
                             overflow = TextOverflow.Ellipsis
                         )
                         Spacer(modifier = Modifier.height(6.dp))
+                        if (com.example.ui.language.LocalAppLanguage.current.showPersianTranslation) {
                         Text(
                             text = dhikr.persianTranslation,
                             fontSize = (12 * fontScale).sp,
@@ -1568,6 +1591,7 @@ fun SearchResultsView(
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
+                        }
                     }
                 }
             }

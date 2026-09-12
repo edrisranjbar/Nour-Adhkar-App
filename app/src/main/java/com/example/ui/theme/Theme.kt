@@ -7,6 +7,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
+    primaryContainer = Color(0xFF24451F),
+    onPrimaryContainer = Color(0xFFDCE6D5),
     primary = Color(0xFFDCE6D5),       // Sage green
     secondary = Color(0xFF30352F),     // Dark gray-green divider
     tertiary = Color(0xFFA3D899),      // Lighter green accent
@@ -24,6 +26,8 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
+    primaryContainer = Color(0xFFE8F0E1),
+    onPrimaryContainer = Color(0xFF24451F),
     primary = Color(0xFF191C1A),
     secondary = Color(0xFFDCE6D5),
     tertiary = SunGold,

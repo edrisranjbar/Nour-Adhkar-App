@@ -1,4 +1,7 @@
 package com.example.ui.screens
+import com.example.ui.language.text
+import com.example.ui.language.shareText
+import com.example.ui.language.reference
 
 import android.content.Intent
 import androidx.compose.animation.animateColorAsState
@@ -38,7 +41,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
+import com.example.ui.language.LocalizedIcon as Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -52,7 +55,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.material3.Text
+import com.example.ui.language.LocalizedText as Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -440,6 +443,7 @@ fun DhikrItemCard(
     onUndo: () -> Unit,
     onTap: () -> Unit
 ) {
+    val language = com.example.ui.language.LocalAppLanguage.current
     val context = LocalContext.current
     val isCompleted = item.currentCount >= item.targetCount
     val animatedCardBg by animateColorAsState(
@@ -519,26 +523,14 @@ fun DhikrItemCard(
                     }
                     IconButton(
                         onClick = {
-                            val shareText = buildString {
-                                appendLine(item.arabicText.trim())
-                                appendLine()
-                                append(item.persianTranslation.trim())
-                                if (item.source.isNotBlank()) {
-                                    appendLine()
-                                    appendLine()
-                                    append(item.source.trim())
-                                }
-                                appendLine()
-                                appendLine()
-                                append("اذکار نور")
-                            }
+                            val shareText = item.shareText(language)
                             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                 type = "text/plain"
-                                putExtra(Intent.EXTRA_SUBJECT, "ذکر از اذکار نور")
+                                putExtra(Intent.EXTRA_SUBJECT, language.text("ذکر از اذکار نور"))
                                 putExtra(Intent.EXTRA_TEXT, shareText)
                             }
                             context.startActivity(
-                                Intent.createChooser(shareIntent, "اشتراک‌گذاری ذکر")
+                                Intent.createChooser(shareIntent, language.text("اشتراک‌گذاری ذکر"))
                             )
                         },
                         modifier = Modifier.size(36.dp)
@@ -586,6 +578,7 @@ fun DhikrItemCard(
             )
 
             Spacer(modifier = Modifier.height(14.dp))
+            if (language.showPersianTranslation) {
             HorizontalDivider(color = SoftBorder, thickness = 1.dp)
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -601,10 +594,11 @@ fun DhikrItemCard(
                 textAlign = TextAlign.Justify,
                 modifier = Modifier.fillMaxWidth()
             )
+            }
             if (showSource && item.source.isNotBlank()) {
                 Spacer(modifier = Modifier.height(9.dp))
                 Text(
-                    text = item.source.toPersianDigits(),
+                    text = language.reference(item.source.toPersianDigits()),
                     fontSize = (10.5 * fontScale).sp,
                     lineHeight = (17 * fontScale).sp,
                     fontWeight = FontWeight.SemiBold,
@@ -691,11 +685,6 @@ fun DhikrItemCard(
                                     fontWeight = FontWeight.Bold
                                 )
                             }
-                            Text(
-                                text = "تکرار",
-                                fontSize = 9.sp,
-                                color = SandDark.copy(alpha = 0.5f)
-                            )
                         }
                     }
                 }

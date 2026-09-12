@@ -1,4 +1,7 @@
 package com.example
+import com.example.ui.language.LocalAppLanguage
+import com.example.ui.language.AppLanguage
+import com.example.ui.language.text
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -48,6 +51,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Explore
+import com.example.ui.screens.QiblaScreen
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Info
@@ -58,14 +63,14 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.filled.SystemUpdateAlt
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Icon
+import com.example.ui.language.LocalizedIcon as Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import com.example.ui.language.LocalizedText as Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -82,6 +87,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -93,6 +99,7 @@ import com.example.ui.screens.SettingsScreen
 import com.example.ui.screens.TasbihScreen
 import com.example.ui.screens.AboutScreen
 import com.example.ui.screens.ArticlesScreen
+import com.example.ui.screens.AdhkarCollectionsScreen
 import com.example.ui.screens.FavoritesScreen
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.SandDark
@@ -138,6 +145,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             val viewModel: AdhkarViewModel = viewModel()
             val darkModeEnabled by viewModel.darkModeEnabled.collectAsState()
+            val appLanguage by viewModel.appLanguage.collectAsState()
+            com.example.ui.language.LanguageProvider(appLanguage) {
             MyApplicationTheme(darkTheme = darkModeEnabled) {
                 AppMainScaffold(
                     viewModel = viewModel,
@@ -147,7 +156,13 @@ class MainActivity : ComponentActivity() {
                     onChecklistWidgetIntentConsumed = { openChecklistFromWidget = false }
                 )
             }
+            }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        com.example.prayer.AdhanScheduler(this).reschedule()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -167,6 +182,7 @@ fun AppMainScaffold(
     onChecklistWidgetIntentConsumed: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val language = LocalAppLanguage.current
     val currentTab by viewModel.currentTab.collectAsState()
     val selectedCategoryId by viewModel.selectedCategoryId.collectAsState()
     val fontScale by viewModel.fontScale.collectAsState()
@@ -236,26 +252,15 @@ fun AppMainScaffold(
                     ) {
                         Column(
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .fillMaxSize()
                                 .padding(horizontal = 16.dp, vertical = 24.dp)
                         ) {
-                            Text(
-                                text = "اذکار نور",
-                                fontSize = (22 * fontScale).sp,
-                                fontWeight = FontWeight.Bold,
-                                color = NightBlue
-                            )
-                            Text(
-                                text = "همراه روزانه ذکر و نیایش",
-                                fontSize = (12 * fontScale).sp,
-                                color = NightBlue.copy(alpha = 0.65f),
-                                modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
-                            )
-
                             val drawerItems = listOf(
                                 Triple("home", "خانه", Icons.Default.Home),
+                                Triple("adhkar", "اذکار و ادعیه", Icons.Default.Article),
                                 Triple("checklist", "چک‌لیست روزانه", Icons.Default.Checklist),
                                 Triple("tasbih", "ذکرشمار", null),
+                                Triple("qibla", "قبله‌نما", Icons.Default.Explore),
                                 Triple("articles", "مقالات", Icons.Default.Article),
                                 Triple("favorites", "علاقه‌مندی‌ها", Icons.Default.Favorite),
                                 Triple("donation", "حمایت مالی", Icons.Default.VolunteerActivism),
@@ -300,10 +305,11 @@ fun AppMainScaffold(
                                                 type = "text/plain"
                                                 putExtra(
                                                     Intent.EXTRA_TEXT,
-                                                    "اذکار نور؛ همراه روزانه ذکر و نیایش، یادآوری اذکار و اعمال روزانه\nhttps://cafebazaar.ir/app/ir.adhkar.app"
+                                                    if (language == AppLanguage.ARABIC) "أذكار نور؛ رفيقك اليومي للذكر والدعاء والتذكير بالأعمال اليومية\nhttps://cafebazaar.ir/app/ir.adhkar.app"
+                                                    else "اذکار نور؛ همراه روزانه ذکر و نیایش، یادآوری اذکار و اعمال روزانه\nhttps://cafebazaar.ir/app/ir.adhkar.app"
                                                 )
                                             }
-                                            context.startActivity(Intent.createChooser(shareIntent, "اشتراک‌گذاری اذکار نور"))
+                                            context.startActivity(Intent.createChooser(shareIntent, language.text("اشتراک‌گذاری اذکار نور")))
                                         } else {
                                             viewModel.selectTab(tab)
                                         }
@@ -312,6 +318,14 @@ fun AppMainScaffold(
                                     modifier = Modifier.padding(vertical = 2.dp)
                                 )
                             }
+                            Spacer(Modifier.weight(1f))
+                            Text(
+                                text = "نسخه ${BuildConfig.VERSION_NAME}",
+                                fontSize = (10 * fontScale).sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                                textAlign = TextAlign.Center
+                            )
                         }
                     }
                 }
@@ -336,7 +350,7 @@ fun AppMainScaffold(
                         }
                         Image(
                             painter = painterResource(R.drawable.ic_nour_adhkar_logo),
-                            contentDescription = "نشان اذکار نور",
+                            contentDescription = language.text("نشان اذکار نور"),
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(RoundedCornerShape(11.dp))
@@ -345,9 +359,11 @@ fun AppMainScaffold(
                             text = when (currentTab) {
                                 "checklist" -> "چک‌لیست روزانه"
                                 "tasbih" -> "ذکرشمار"
+                                "qibla" -> "قبله‌نما"
                                 "settings" -> "تنظیمات"
                                 "about" -> "درباره برنامه"
                                 "articles" -> "مقالات"
+                                "adhkar" -> "اذکار و ادعیه"
                                 "favorites" -> "علاقه‌مندی‌ها"
                                 else -> "اذکار نور"
                             },
@@ -407,7 +423,33 @@ fun AppMainScaffold(
                                     )
                                 }
 
-                                // 2. Tasbih Tab (Center Gradient Circular Button)
+                                // 2. Adhkar Tab (right side in the RTL bottom bar)
+                                val isAdhkarSelected = currentTab == "adhkar"
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .clickable { viewModel.selectTab("adhkar") }
+                                        .padding(vertical = 8.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Article,
+                                        contentDescription = "اذکار و ادعیه",
+                                        tint = if (isAdhkarSelected) SunGold else NightBlue.copy(alpha = 0.75f),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "اذکار",
+                                        fontSize = (10 * fontScale).sp,
+                                        fontWeight = if (isAdhkarSelected) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isAdhkarSelected) SunGold else NightBlue.copy(alpha = 0.75f)
+                                    )
+                                }
+
+                                // 3. Tasbih Tab (Center Gradient Circular Button)
                                 val isTasbihSelected = currentTab == "tasbih"
                                 Box(
                                     modifier = Modifier
@@ -432,7 +474,7 @@ fun AppMainScaffold(
                                     )
                                 }
 
-                                // 3. Daily Checklist Tab
+                                // 4. Daily Checklist Tab
                                 val isChecklistSelected = currentTab == "checklist"
                                 Column(
                                     modifier = Modifier
@@ -457,6 +499,32 @@ fun AppMainScaffold(
                                         color = if (isChecklistSelected) SunGold else NightBlue.copy(alpha = 0.75f)
                                     )
                                 }
+
+                                // 5. Settings Tab (left side in the RTL bottom bar)
+                                val isSettingsSelected = currentTab == "settings"
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .clickable { viewModel.selectTab("settings") }
+                                        .padding(vertical = 8.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Settings,
+                                        contentDescription = "تنظیمات",
+                                        tint = if (isSettingsSelected) SunGold else NightBlue.copy(alpha = 0.75f),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "تنظیمات",
+                                        fontSize = (10 * fontScale).sp,
+                                        fontWeight = if (isSettingsSelected) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isSettingsSelected) SunGold else NightBlue.copy(alpha = 0.75f)
+                                    )
+                                }
                             }
                         }
                     }
@@ -476,6 +544,8 @@ fun AppMainScaffold(
                         "tasbih" -> TasbihScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "about" -> AboutScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "articles" -> ArticlesScreen(viewModel = viewModel, innerPadding = innerPadding)
+                        "adhkar" -> AdhkarCollectionsScreen(viewModel = viewModel, innerPadding = innerPadding)
+                        "qibla" -> QiblaScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "favorites" -> FavoritesScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "settings" -> SettingsScreen(viewModel = viewModel, innerPadding = innerPadding)
                         else -> HomeScreen(viewModel = viewModel, innerPadding = innerPadding)

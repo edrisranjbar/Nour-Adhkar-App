@@ -14,9 +14,9 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
+import com.example.ui.language.LocalizedIcon as Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import com.example.ui.language.LocalizedText as Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -105,7 +105,9 @@ fun AboutScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                        text = "نسخه ۱.۵.۰",
+                        text = "نسخه " + com.example.BuildConfig.VERSION_NAME.map {
+                            if (it in '0'..'9') ('۰'.code + (it - '0')).toChar() else it
+                        }.joinToString(""),
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontSize = (12 * fontScale).sp,
                                     color = NightBlue.copy(alpha = 0.6f)
@@ -115,7 +117,9 @@ fun AboutScreen(
                             
                             // Beautifully written description directly from adhkar.ir/about concepts
                             Text(
-                                text = "پروژه اذکار یک تلاش متن‌باز، عام‌المنفعه و غیرانتفاعی است که با هدف تسهیل قرائت ادعیه، اذکار روزانه و تسبیحات برای مسلمانان سراسر جهان شکل گرفته است.\n\n" +
+                                text = if (com.example.ui.language.LocalAppLanguage.current == com.example.ui.language.AppLanguage.ARABIC)
+                                    "أذكار نور مشروع مفتوح المصدر وغير ربحي يهدف إلى تيسير قراءة الأدعية والأذكار والتسبيح للمسلمين حول العالم.\n\nنؤمن بأن ذكر الله ينبغي أن يكون متاحًا للجميع في بيئة بسيطة وجميلة، بعيدًا عن الأهداف التجارية. جميع أقسام التطبيق مجانية بالكامل، بلا إعلانات أو تتبع، ومحتواه الأساسي متاح دون إنترنت.\n\nالتسجيلات بصوت مشاري راشد العفاسي من Makkah Live وInternet Archive."
+                                else "پروژه اذکار یک تلاش متن‌باز، عام‌المنفعه و غیرانتفاعی است که با هدف تسهیل قرائت ادعیه، اذکار روزانه و تسبیحات برای مسلمانان سراسر جهان شکل گرفته است.\n\n" +
                                         "ما معتقدیم یاد و ذکر پروردگار باید در بستری زلال، ساده، زیبا و به دور از هرگونه هیاهو یا اهداف تجاری در دسترس همگان باشد. از این رو، تمام بخش‌های این نرم‌افزار به صورت کاملاً رایگان ارائه شده، فاقد هرگونه تبلیغ یا ردیابی است و محتوای اصلی آن بدون اینترنت در دسترس می‌ماند تا آرامش خاطر شما حفظ شود.\n\n" +
                                         "فایل‌های صوتی با تلاوت مشاری راشد العفاسی از Makkah Live و Internet Archive تهیه شده‌اند.",
                                 style = MaterialTheme.typography.bodyMedium.copy(

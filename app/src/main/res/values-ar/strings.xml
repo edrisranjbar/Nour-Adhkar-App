@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">أذكار نور</string>
+    <string name="checklist_widget_name">الأعمال اليومية</string>
+    <string name="checklist_widget_description">عرض الأعمال اليومية وتسجيلها من الشاشة الرئيسية</string>
+</resources>

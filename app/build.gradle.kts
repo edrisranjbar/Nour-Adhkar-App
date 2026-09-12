@@ -29,8 +29,8 @@ android {
     applicationId = "ir.adhkar.app"
     minSdk = 24
     targetSdk = 36
-        versionCode = 17
-        versionName = "1.5.0"
+        versionCode = 18
+        versionName = "2.0.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -92,6 +92,7 @@ android {
 // Some unused dependencies are commented out below instead of being removed.
 // This makes it easy to add them back in the future if needed.
 dependencies {
+  implementation("com.batoulapps.adhan:adhan:1.2.1")
   implementation(platform(libs.androidx.compose.bom))
   // implementation(libs.accompanist.permissions)
   implementation(libs.androidx.activity.compose)

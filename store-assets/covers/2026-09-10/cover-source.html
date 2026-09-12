@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <style>
+    @font-face { font-family: Vazirmatn; src: url("../../../app/src/main/res/font/vazirmatn_regular.ttf"); font-weight: 400; }
+    @font-face { font-family: Vazirmatn; src: url("../../../app/src/main/res/font/vazirmatn_bold.ttf"); font-weight: 700; }
+    * { box-sizing: border-box; }
+    html, body { width: 3072px; height: 1500px; margin: 0; overflow: hidden; }
+    body { font-family: Vazirmatn, sans-serif; color: #24451f; background: #f7faf3; }
+    .cover {
+      position: relative; width: 3072px; height: 1500px; overflow: hidden;
+      background: #f7faf3;
+    }
+    .cover::before {
+      content: ""; position: absolute; left: 0; top: 0; width: 47%; height: 100%;
+      border-radius: 0 180px 180px 0; background: #24451f;
+    }
+    .copy { position: absolute; right: 290px; top: 305px; width: 1400px; text-align: right; }
+    .brand { display: flex; align-items: center; justify-content: flex-start; gap: 44px; margin-bottom: 52px; }
+    .logo { width: 176px; height: 176px; border-radius: 44px; box-shadow: 0 24px 52px rgba(36,69,31,.14); }
+    h1 { margin: 0; font-size: 184px; line-height: 1; font-weight: 700; letter-spacing: -6px; color: #3a6931; }
+    .subtitle { margin: 0; font-size: 78px; line-height: 1.55; color: #191c1a; font-weight: 400; }
+    .rule { width: 780px; height: 6px; margin: 62px 0 48px auto; border-radius: 9px; background: #dce6d5; }
+    .features { margin: 0; font-size: 46px; line-height: 1.8; color: #3a6931; font-weight: 700; white-space: nowrap; }
+    .screens { position: absolute; left: 155px; top: 90px; width: 1320px; height: 1320px; direction: ltr; }
+    .screens::before {
+      content: ""; position: absolute; left: 790px; top: -170px; width: 650px; height: 650px;
+      border: 5px solid rgba(220,230,213,.16); border-radius: 50%;
+    }
+    .screen {
+      position: absolute; overflow: hidden; background-color: #fff; border: 12px solid rgba(255,255,255,.96);
+      box-shadow: 0 44px 100px rgba(4,12,5,.32);
+    }
+    .screen::after { content: ""; position: absolute; inset: 0; border: 3px solid rgba(58,105,49,.10); pointer-events: none; }
+    .screen-a {
+      left: 76px; top: 34px; width: 574px; height: 1218px; border-radius: 72px;
+      background-image: url("../../../marketing/cafebazaar-covers/nour-cover-01-overview.jpg");
+      background-repeat: no-repeat; background-size: 2710px 1549px; background-position: -153px -219px;
+      transform: rotate(-2deg); z-index: 2;
+    }
+    .screen-b {
+      left: 640px; top: 174px; width: 468px; height: 1015px; border-radius: 62px;
+      background-image: url("../../../marketing/cafebazaar-covers/nour-cover-01-overview.jpg");
+      background-repeat: no-repeat; background-size: 2375px 1357px; background-position: -721px -259px;
+      transform: rotate(3deg); z-index: 1;
+    }
+    .mark { position: absolute; right: 292px; bottom: 118px; width: 15px; height: 15px; border-radius: 50%;
+      background: #3a6931; box-shadow: 34px 0 #94b88c, 68px 0 #dce6d5; }
+  </style>
+</head>
+<body>
+  <main class="cover" aria-label="کاور فروشگاهی اذکار نور">
+    <section class="copy">
+      <div class="brand">
+        <img class="logo" src="../../../app/src/main/res/drawable/ic_nour_adhkar_logo.png" alt="">
+        <h1>اذکار نور</h1>
+      </div>
+      <p class="subtitle">ذکر، دعا و آرامش روزانه</p>
+      <div class="rule"></div>
+      <p class="features">اذکار روزانه&nbsp;&nbsp;•&nbsp;&nbsp; ذکرشمار&nbsp;&nbsp;•&nbsp;&nbsp; اوقات شرعی</p>
+    </section>
+    <section class="screens" aria-hidden="true">
+      <div class="screen screen-a"></div>
+      <div class="screen screen-b"></div>
+    </section>
+    <div class="mark" aria-hidden="true"></div>
+  </main>
+</body>
+</html>

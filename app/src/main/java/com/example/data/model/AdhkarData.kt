@@ -22,7 +22,7 @@ object AdhkarData {
         Category("returning_travel", "ذکر بازگشت از سفر", "بازگشت با توبه، بندگی و سپاس", "flight_land", 1),
         Category("night_restlessness", "دعای بی‌قراری شبانه", "ذکر هنگام غلت‌زدن و بی‌قراری در شب", "nightlight", 1),
         Category("ramadan", "اذکار ماه رمضان", "دعاهای ویژه سحر، افطار و شب‌های پربرکت قدر", "brightness_3", 9),
-        Category("sleep", "دعای خواب", "آرامش شبانه با تلاوت آیات الهی و دعاهای قبل از خواب", "bedtime", 7),
+        Category("sleep", "اذکار خواب", "آرامش شبانه با تلاوت آیات الهی و دعاهای قبل از خواب", "bedtime", 7),
         Category("istikhara", "دعای استخاره", "طلب خیر و مشورت با خالق یکتا در تصمیم‌های زندگی", "psychology", 1),
         Category("quran_prayers", "دعا و نیایش‌های قرآنی", "گزیده‌ای از دعاهای قرآن کریم", "menu_book", 16),
         Category("sunnah_prayers", "دعاهایی از سنت رسول (ص)", "دعاهای صحیح و مأثور پیامبر اکرم (ص)", "menu_book", 10)

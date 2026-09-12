@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import com.example.ui.language.LocalAppLanguage
+import com.example.ui.language.text
 import android.app.TimePickerDialog
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -26,14 +28,14 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
+import com.example.ui.language.LocalizedIcon as Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
+import com.example.ui.language.LocalizedText as Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -58,12 +60,18 @@ import com.example.ui.theme.TextArabic
 import com.example.ui.theme.TextPersian
 import com.example.ui.viewmodel.AdhkarViewModel
 import java.util.Locale
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 
 @Composable
 fun SettingsScreen(
     viewModel: AdhkarViewModel,
     innerPadding: PaddingValues
 ) {
+    val section by viewModel.settingsSection.collectAsState()
     val fontScale by viewModel.fontScale.collectAsState()
     val darkModeEnabled by viewModel.darkModeEnabled.collectAsState()
     val vibrationEnabled by viewModel.vibrationEnabled.collectAsState()
@@ -82,22 +90,18 @@ fun SettingsScreen(
                 .padding(top = innerPadding.calculateTopPadding())
                 .padding(horizontal = 16.dp)
         ) {
-            // Screen Header
-            Text(
-                text = "تنظیمات برنامه",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontSize = (24 * fontScale).sp,
-                    fontWeight = FontWeight.Bold,
-                    color = SandDark
-                ),
-                modifier = Modifier.padding(vertical = 12.dp)
-            )
-
+            TabRow(modifier = Modifier.padding(bottom = 24.dp), selectedTabIndex = section, containerColor = MaterialTheme.colorScheme.background, contentColor = SunGold) {
+                listOf("عمومی", "اعلان‌ها", "اوقات شرعی").forEachIndexed { index, title ->
+                    Tab(selected = section == index, onClick = { viewModel.selectSettingsSection(index) }, text = { Text(title) }, selectedContentColor = SunGold, unselectedContentColor = NightBlue)
+                }
+            }
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
                 contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 16.dp)
             ) {
+                if (section == 2) { item { PrayerSettingsEditor(viewModel) } }
+                if (section == 1) {
                 // SECTION 1: Notifications & Reminders
                 item {
                     SettingsSectionHeader(title = "یادآوری‌های روزانه (اعلان‌ها)")
@@ -183,7 +187,7 @@ fun SettingsScreen(
                                     Switch(
                                         checked = fridayKahfReminderEnabled,
                                         onCheckedChange = viewModel::setFridayKahfReminderEnabled,
-                                        colors = SwitchDefaults.colors(checkedTrackColor = SunGold)
+                                        colors = SwitchDefaults.colors(checkedTrackColor = SunGold, checkedThumbColor = Color.White, uncheckedThumbColor = NightBlue, uncheckedTrackColor = SoftBorder, uncheckedBorderColor = SoftBorder)
                                     )
                                 }
                                 if (fridayKahfReminderEnabled) {
@@ -201,6 +205,9 @@ fun SettingsScreen(
                     }
                 }
 
+                }
+                if (section == 0) {
+                item { LanguageSettings(viewModel) }
                 // SECTION 2: UI Preferences
                 item {
                     SettingsSectionHeader(title = "بازخورد لمسی و اندازه قلم")
@@ -236,7 +243,7 @@ fun SettingsScreen(
                                 Switch(
                                     checked = darkModeEnabled,
                                     onCheckedChange = viewModel::setDarkModeEnabled,
-                                    colors = SwitchDefaults.colors(checkedTrackColor = SunGold)
+                                    colors = SwitchDefaults.colors(checkedTrackColor = SunGold, checkedThumbColor = Color.White, uncheckedThumbColor = NightBlue, uncheckedTrackColor = SoftBorder, uncheckedBorderColor = SoftBorder)
                                 )
                             }
 
@@ -372,6 +379,7 @@ fun SettingsScreen(
                     }
                 }
 
+                }
             }
         }
     }
@@ -433,7 +441,7 @@ private fun NotificationTimePicker(
 @Composable
 fun SettingsSectionHeader(title: String) {
     Text(
-        text = "│ $title",
+        text = "│ ${LocalAppLanguage.current.text(title)}",
         style = MaterialTheme.typography.titleMedium.copy(
             fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold,

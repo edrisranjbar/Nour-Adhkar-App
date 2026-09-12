@@ -1,0 +1,15 @@
+# Qibla compass
+
+The drawer item «قبله‌نما» opens a separate screen after the counter. It uses the saved prayer location or an explicitly requested foreground GPS fix. A GPS fix on this screen is temporary and does not change prayer settings or alert schedules.
+
+Bearing is calculated offline using the installed Adhan library's Qibla implementation. The phone heading uses a north-referenced rotation vector (never the game rotation vector), with accelerometer/magnetometer fallback, display rotation remapping, and Android GeomagneticField declination correction to true north. Circular filtering crosses north by the shortest route. Listeners run only while the screen is resumed and are removed on pause or disposal.
+
+The compact screen shows the compass and direction status, with one GPS icon at the upper left and the city beside it. Geographic bearing, saved-location prose and the manual-settings link are removed. Tapping GPS requests a foreground fix and looks up its city using Android Geocoder in the selected language, off the main thread. Geocoder may require network service; when unavailable, the fix still works and the compact label says current location. Saved manually entered city names can be displayed before refresh. Without supported sensors or location it shows the corresponding status and does not invent a direction. The arrow is faded while off direction and becomes fully highlighted with a subtle theme-color halo only when sensor accuracy is usable, the phone is level, and alignment is within five degrees. Compass accuracy remains dependent on hardware and local magnetic interference.
+
+References: [Android position sensors](https://developer.android.com/develop/sensors-and-location/sensors/sensors_position), [Adhan library](https://github.com/batoulapps/adhan-java).
+
+Focused verification: `QiblaDirectionTest` covers north wraparound, geographic bearings, and invalid coordinates. Actual calibration and heading accuracy require comparison on a physical device.
+
+Sensor compatibility: try all rotation-vector and geomagnetic rotation-vector providers, then accelerometer/magnetometer and gravity/magnetometer pairs. Failed registrations are fully unregistered before trying the next provider. A provider that registers but produces no usable orientation within three seconds also falls back. Exhausting available providers is shown as a connection failure with a retry action, not as missing hardware. Pausing or leaving the screen cancels the pending fallback. Game rotation vectors remain excluded because they do not provide magnetic north.
+
+Device verification (2026-09-10): release 2.0.0 (18) built and installed as a data-preserving update on Xiaomi 23129RAA4G. QiblaDirectionTest and AppLanguageTest passed (six tests). The Qibla screen received a heading and displayed a seven-degree right turn instead of the unavailable-sensor message. Physical heading accuracy and calibration were not independently measured. Release lint was skipped using the documented local-build flags.

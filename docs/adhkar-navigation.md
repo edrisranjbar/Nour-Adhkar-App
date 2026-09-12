@@ -1,0 +1,3 @@
+# Adhkar collection navigation
+
+The drawer's second item after Home is اذکار و ادعیه (`adhkar`). It opens a separate scrollable collection page using the existing category tiles and selection behavior. Morning, evening, sleep, daily, Quran prayers, and Sunnah prayers remain on Home and are excluded from this grid. Sleep and daily adhkar appear side by side in equal-width illustrated cards beneath morning and evening. Sleep uses a night illustration and daily adhkar uses a daytime landscape. All other categories and the existing counter shortcut move from Home to this page. Streak, prayer times, emotional verse, checklist and activity sections are unchanged. Opening a collection does not change the active tab, so leaving it returns to the collections page.

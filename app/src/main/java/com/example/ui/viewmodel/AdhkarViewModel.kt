@@ -43,6 +43,46 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     private val prefs = PreferenceRepository(application)
     private val notificationManager = AdhkarNotificationManager(application)
 
+    private val _appLanguage = MutableStateFlow(prefs.getAppLanguage())
+    val appLanguage = _appLanguage.asStateFlow()
+    fun setAppLanguage(language: com.example.ui.language.AppLanguage) {
+        prefs.setAppLanguage(language)
+        _appLanguage.value = language
+        ChecklistWidgetProvider.updateAll(getApplication())
+    }
+
+    private val _adhanSound = MutableStateFlow(prefs.getAdhanSound())
+    val adhanSound = _adhanSound.asStateFlow()
+    fun setAdhanSound(sound: com.example.prayer.AdhanSound) {
+        prefs.setAdhanSound(sound)
+        _adhanSound.value = sound
+        com.example.prayer.AdhanScheduler(getApplication()).reschedule()
+    }
+
+    private val _adhanPrayers = MutableStateFlow(prefs.getAdhanPrayers())
+    val adhanPrayers = _adhanPrayers.asStateFlow()
+    fun setAdhanPrayer(prayer: com.example.prayer.AdhanPrayer, enabled: Boolean) {
+        prefs.setAdhanPrayer(prayer, enabled)
+        _adhanPrayers.value = prefs.getAdhanPrayers()
+        com.example.prayer.AdhanScheduler(getApplication()).reschedule()
+    }
+
+    private val _prayerSettings = MutableStateFlow(prefs.getPrayerSettings())
+    val prayerSettings = _prayerSettings.asStateFlow()
+    private val _settingsSection = MutableStateFlow(0)
+    val settingsSection = _settingsSection.asStateFlow()
+    fun selectSettingsSection(index: Int) { _settingsSection.value = index.coerceIn(0, 2) }
+    fun openPrayerSettings() {
+        _settingsSection.value = 2
+        selectTab("settings")
+    }
+    fun updatePrayerSettings(value: com.example.prayer.PrayerSettings) {
+        require(value.isValid())
+        prefs.setPrayerSettings(value)
+        _prayerSettings.value = value
+        com.example.prayer.AdhanScheduler(getApplication()).reschedule()
+    }
+
     // Navigation and Search State
     private val _currentTab = MutableStateFlow("home")
     val currentTab: StateFlow<String> = _currentTab.asStateFlow()
@@ -120,7 +160,7 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Search Results for global search
-    val searchResults: Flow<List<Pair<String, DhikrItem>>> = _searchQuery.flatMapLatest { query ->
+    val searchResults: Flow<List<Pair<String, DhikrItem>>> = kotlinx.coroutines.flow.combine(_searchQuery, _appLanguage) { query, language -> query to language }.flatMapLatest { (query, language) ->
         if (query.isBlank()) {
             flowOf(emptyList())
         } else {
@@ -134,7 +174,7 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
                     val catTitle = AdhkarData.categories.find { it.id == catId }?.title ?: ""
                     items.filter { 
                         it.arabicText.contains(query, ignoreCase = true) || 
-                        it.persianTranslation.contains(query, ignoreCase = true) 
+                        (language.showPersianTranslation && it.persianTranslation.contains(query, ignoreCase = true))
                     }.map { catTitle to it }
                 }
             )

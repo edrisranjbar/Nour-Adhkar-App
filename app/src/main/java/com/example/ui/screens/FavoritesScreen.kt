@@ -17,10 +17,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
+import com.example.ui.language.LocalizedIcon as Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import com.example.ui.language.LocalizedText as Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -78,7 +78,9 @@ fun FavoritesScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
                     }
                     Text(item.arabicText, color = TextArabic, fontFamily = AmiriQuran, fontWeight = FontWeight.Bold, fontSize = (19 * fontScale).sp, lineHeight = (34 * fontScale).sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
-                    Text(item.persianTranslation, color = TextPersian, fontSize = (13 * fontScale).sp, lineHeight = (21 * fontScale).sp, textAlign = TextAlign.Right, modifier = Modifier.fillMaxWidth())
+                    if (com.example.ui.language.LocalAppLanguage.current.showPersianTranslation) {
+                        Text(item.persianTranslation, color = TextPersian, fontSize = (13 * fontScale).sp, lineHeight = (21 * fontScale).sp, textAlign = TextAlign.Right, modifier = Modifier.fillMaxWidth())
+                    }
                 }
             }
         }
