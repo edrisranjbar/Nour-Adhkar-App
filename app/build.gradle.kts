@@ -36,6 +36,12 @@ android {
   }
 
   signingConfigs {
+    create("debugConfig") {
+      storeFile = file("${rootDir}/debug.keystore")
+      storePassword = "android"
+      keyAlias = "androiddebugkey"
+      keyPassword = "android"
+    }
     create("release") {
       val keystorePath = releaseSecret("KEYSTORE_PATH", "storeFile")
       val signingStorePassword = releaseSecret("STORE_PASSWORD", "storePassword")
@@ -73,6 +79,7 @@ android {
     // Keep development builds separate from a release-signed installation so local
     // testing never requires uninstalling the user's app or deleting its data.
     debug {
+      signingConfig = signingConfigs.getByName("debugConfig")
       applicationIdSuffix = ".debug"
       // Keep the update UI visible in development so it can always be reviewed.
       buildConfigField("boolean", "FORCE_UPDATE_PROMPT", "true")
