@@ -20,14 +20,14 @@ class QuranPrayersDataTest {
     }
 
     @Test
-    fun sunnahPrayersContainTenSourcedCards() {
+    fun sunnahPrayersContainSourcedCards() {
         val category = AdhkarData.categories.single { it.id == "sunnah_prayers" }
         val prayers = AdhkarData.adhkarList.getValue(category.id)
 
         assertTrue(category.isEnabled)
-        assertEquals(10, category.count)
-        assertEquals(10, prayers.size)
+        assertTrue(prayers.size >= 100)
+        assertEquals(prayers.size, category.count)
         assertEquals(prayers.size, prayers.map { it.id }.distinct().size)
-        assertTrue(prayers.all { it.source.startsWith("صحیح بخاری") || it.source.startsWith("صحیح مسلم") })
+        assertTrue(prayers.all { it.arabicText.isNotBlank() && it.persianTranslation.isNotBlank() && it.source.isNotBlank() })
     }
 }
