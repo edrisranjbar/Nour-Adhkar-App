@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.widget.RemoteViews
 import com.example.MainActivity
 import com.example.R
@@ -23,8 +24,13 @@ class ChecklistWidgetProvider : AppWidgetProvider() {
         if (intent.action == ACTION_TOGGLE_ITEM) {
             val itemId = intent.getStringExtra(EXTRA_ITEM_ID) ?: return
             val prefs = PreferenceRepository(context)
-            val completed = prefs.getDailyChecklistCompletedIds()
-            prefs.setDailyChecklistItemCompleted(todayKey(), itemId, itemId !in completed)
+            val today = todayKey()
+            val completed = prefs.getDailyChecklistCompletedIds(today)
+            val willComplete = itemId !in completed
+            prefs.setDailyChecklistItemCompleted(today, itemId, willComplete)
+            if (willComplete) {
+                prefs.markActivityToday()
+            }
             updateAll(context)
         } else if (intent.action == ACTION_REFRESH_WIDGET) {
             updateAll(context)
@@ -32,7 +38,7 @@ class ChecklistWidgetProvider : AppWidgetProvider() {
     }
 
     private fun buildViews(context: Context, widgetId: Int): RemoteViews {
-        val completed = PreferenceRepository(context).getDailyChecklistCompletedIds()
+        val completed = PreferenceRepository(context).getDailyChecklistCompletedIds(todayKey())
         val total = DailyChecklistData.items.size
         return RemoteViews(context.packageName, R.layout.widget_daily_checklist).apply {
             setTextViewText(R.id.widget_title, WidgetTypography.vazirmatn(context, "چک‌لیست امروز", bold = true))
@@ -68,15 +74,22 @@ class ChecklistWidgetProvider : AppWidgetProvider() {
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
-    private fun toggleTemplate(context: Context, widgetId: Int): PendingIntent =
-        PendingIntent.getBroadcast(
+    private fun toggleTemplate(context: Context, widgetId: Int): PendingIntent {
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+        } else {
+            PendingIntent.FLAG_UPDATE_CURRENT
+        }
+        return PendingIntent.getBroadcast(
             context,
             8000 + widgetId,
             Intent(context, ChecklistWidgetProvider::class.java).apply {
                 action = ACTION_TOGGLE_ITEM
+                setPackage(context.packageName)
             },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            flags
         )
+    }
 
     companion object {
         const val EXTRA_OPEN_CHECKLIST = "OPEN_DAILY_CHECKLIST"
@@ -89,9 +102,9 @@ class ChecklistWidgetProvider : AppWidgetProvider() {
             val component = ComponentName(context, ChecklistWidgetProvider::class.java)
             val ids = manager.getAppWidgetIds(component)
             if (ids.isNotEmpty()) {
-                manager.notifyAppWidgetViewDataChanged(ids, R.id.widget_task_list)
                 val provider = ChecklistWidgetProvider()
                 ids.forEach { id -> manager.updateAppWidget(id, provider.buildViews(context, id)) }
+                manager.notifyAppWidgetViewDataChanged(ids, R.id.widget_task_list)
             }
         }
 

@@ -378,6 +378,12 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         notificationManager.scheduleReminders()
     }
 
+    fun refreshDailyChecklist() {
+        _dailyChecklistCompletedIds.value = prefs.getDailyChecklistCompletedIds()
+        _checklistCompletionCounts.value = prefs.getChecklistCompletionCounts(30)
+        _activityDayKeys.value = prefs.getActivityDayKeys()
+    }
+
     fun setDailyChecklistItemCompleted(itemId: String, completed: Boolean) {
         _dailyChecklistCompletedIds.value =
             prefs.setDailyChecklistItemCompleted(

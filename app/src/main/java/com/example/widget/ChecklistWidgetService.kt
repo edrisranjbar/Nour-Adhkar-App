@@ -36,16 +36,17 @@ private class ChecklistWidgetFactory(private val context: Context) : RemoteViews
                 "setTextColor",
                 context.getColor(if (completed) R.color.widget_text_completed else R.color.widget_text_primary)
             )
-            setOnClickFillInIntent(
-                R.id.widget_item_root,
-                Intent().putExtra(ChecklistWidgetProvider.EXTRA_ITEM_ID, item.id)
-            )
+            val fillInIntent = Intent().putExtra(ChecklistWidgetProvider.EXTRA_ITEM_ID, item.id)
+            setOnClickFillInIntent(R.id.widget_item_root, fillInIntent)
+            setOnClickFillInIntent(R.id.widget_item_status, fillInIntent)
+            setOnClickFillInIntent(R.id.widget_item_title, fillInIntent)
         }
     }
 
     override fun getLoadingView(): RemoteViews? = null
     override fun getViewTypeCount(): Int = 1
-    override fun getItemId(position: Int): Long = items.getOrNull(position)?.id?.hashCode()?.toLong() ?: position.toLong()
+    override fun getItemId(position: Int): Long =
+        items.getOrNull(position)?.id?.hashCode()?.toLong()?.let { kotlin.math.abs(it) } ?: position.toLong()
     override fun hasStableIds(): Boolean = true
 
     private fun reload() {
