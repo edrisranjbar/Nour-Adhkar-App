@@ -115,6 +115,12 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     private val _soundEnabled = MutableStateFlow(prefs.isSoundEnabled())
     val soundEnabled: StateFlow<Boolean> = _soundEnabled.asStateFlow()
 
+    private val _volumeKeyCountingEnabled = MutableStateFlow(prefs.isVolumeKeyCountingEnabled())
+    val volumeKeyCountingEnabled: StateFlow<Boolean> = _volumeKeyCountingEnabled.asStateFlow()
+
+    private val _volumeCountButton = MutableStateFlow(prefs.getVolumeCountButton())
+    val volumeCountButton: StateFlow<com.example.data.model.VolumeCountButton> = _volumeCountButton.asStateFlow()
+
     private val _notificationsEnabled = MutableStateFlow(prefs.isNotificationsEnabled())
     val notificationsEnabled: StateFlow<Boolean> = _notificationsEnabled.asStateFlow()
 
@@ -342,6 +348,33 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     fun setSoundEnabled(enabled: Boolean) {
         prefs.setSoundEnabled(enabled)
         _soundEnabled.value = enabled
+    }
+
+    fun setVolumeKeyCountingEnabled(enabled: Boolean) {
+        prefs.setVolumeKeyCountingEnabled(enabled)
+        _volumeKeyCountingEnabled.value = enabled
+    }
+
+    fun setVolumeCountButton(button: com.example.data.model.VolumeCountButton) {
+        prefs.setVolumeCountButton(button)
+        _volumeCountButton.value = button
+    }
+
+    fun shouldInterceptVolumeKey(isVolumeUp: Boolean): Boolean {
+        if (!_volumeKeyCountingEnabled.value) return false
+        val matches = when (_volumeCountButton.value) {
+            com.example.data.model.VolumeCountButton.BOTH -> true
+            com.example.data.model.VolumeCountButton.UP -> isVolumeUp
+            com.example.data.model.VolumeCountButton.DOWN -> !isVolumeUp
+        }
+        if (!matches) return false
+        return _currentTab.value == "tasbih" && _selectedCategoryId.value == null
+    }
+
+    fun onVolumeKeyPressed(isVolumeUp: Boolean): Boolean {
+        if (!shouldInterceptVolumeKey(isVolumeUp)) return false
+        incrementTasbih()
+        return true
     }
 
     fun setNotificationsEnabled(enabled: Boolean) {

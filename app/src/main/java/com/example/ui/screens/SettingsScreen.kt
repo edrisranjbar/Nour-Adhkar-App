@@ -23,7 +23,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Headphones
+import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.VolumeDown
+import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -33,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import com.example.ui.language.LocalizedText as Text
@@ -81,6 +88,8 @@ fun SettingsScreen(
     val eveningTime by viewModel.eveningTime.collectAsState()
     val fridayKahfReminderEnabled by viewModel.fridayKahfReminderEnabled.collectAsState()
     val fridayKahfReminderTime by viewModel.fridayKahfReminderTime.collectAsState()
+    val volumeKeyCountingEnabled by viewModel.volumeKeyCountingEnabled.collectAsState()
+    val volumeCountButton by viewModel.volumeCountButton.collectAsState()
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Column(
@@ -373,6 +382,218 @@ fun SettingsScreen(
                                         color = TextArabic,
                                         textAlign = TextAlign.Center
                                     )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // SECTION 3: Tasbih Volume Key Settings
+                item {
+                    SettingsSectionHeader(title = "تنظیمات ذکرشمار")
+                }
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        shape = RoundedCornerShape(28.dp),
+                        border = BorderStroke(1.dp, SoftBorder),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            // 1. Warning Notice (Red)
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                color = if (darkModeEnabled) Color(0xFF331616) else Color(0xFFFEF2F2),
+                                border = BorderStroke(1.dp, if (darkModeEnabled) Color(0xFF6B2828) else Color(0xFFFCA5A5))
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Warning,
+                                        contentDescription = null,
+                                        tint = if (darkModeEnabled) Color(0xFFF87171) else Color(0xFFDC2626),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "هشدار احتمال استهلاک کلیدها",
+                                            fontSize = (12 * fontScale).sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (darkModeEnabled) Color(0xFFF87171) else Color(0xFFB91C1C)
+                                        )
+                                        Spacer(modifier = Modifier.height(3.dp))
+                                        Text(
+                                            text = "فشردن مکرر و طولانی دکمه‌های ولوم برای ذکرشماری ممکن است به کلیدهای فیزیکی گوشی آسیب بزند.",
+                                            fontSize = (11 * fontScale).sp,
+                                            color = if (darkModeEnabled) Color(0xFFFCA5A5) else Color(0xFF7F1D1D),
+                                            lineHeight = (16 * fontScale).sp
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // 2. Solution Notice (Green)
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                color = if (darkModeEnabled) Color(0xFF142E1B) else Color(0xFFF0FDF4),
+                                border = BorderStroke(1.dp, if (darkModeEnabled) Color(0xFF285C36) else Color(0xFF86EFAC))
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Headphones,
+                                        contentDescription = null,
+                                        tint = if (darkModeEnabled) Color(0xFF4ADE80) else Color(0xFF16A34A),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "راهکار پیشنهادی",
+                                            fontSize = (12 * fontScale).sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (darkModeEnabled) Color(0xFF4ADE80) else Color(0xFF15803D)
+                                        )
+                                        Spacer(modifier = Modifier.height(3.dp))
+                                        Text(
+                                            text = "می‌توانید به‌جای دکمه‌های کم و زیاد صدای خود گوشی، از هندزفری یا هدست‌های دارای دکمه تنظیم صدا استفاده کنید.",
+                                            fontSize = (11 * fontScale).sp,
+                                            color = if (darkModeEnabled) Color(0xFF86EFAC) else Color(0xFF14532D),
+                                            lineHeight = (16 * fontScale).sp
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+                            HorizontalDivider(color = SoftBorder)
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.VolumeUp,
+                                        contentDescription = null,
+                                        tint = SunGold,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Text(
+                                            text = "شمارش با دکمه‌های صدا",
+                                            fontSize = (13 * fontScale).sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = SandDark
+                                        )
+                                        Text(
+                                            text = "استفاده از کلید فیزیکی ولوم برای شمارش ذکر در بخش ذکرشمار",
+                                            fontSize = 11.sp,
+                                            color = NightBlue
+                                        )
+                                    }
+                                }
+                                Switch(
+                                    checked = volumeKeyCountingEnabled,
+                                    onCheckedChange = viewModel::setVolumeKeyCountingEnabled,
+                                    colors = SwitchDefaults.colors(
+                                        checkedTrackColor = SunGold,
+                                        checkedThumbColor = Color.White,
+                                        uncheckedThumbColor = NightBlue,
+                                        uncheckedTrackColor = SoftBorder,
+                                        uncheckedBorderColor = SoftBorder
+                                    )
+                                )
+                            }
+
+                            if (volumeKeyCountingEnabled) {
+                                Spacer(modifier = Modifier.height(14.dp))
+                                HorizontalDivider(color = SoftBorder)
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                Text(
+                                    text = "تعیین دکمه برای ذکرشماری:",
+                                    fontSize = (12 * fontScale).sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = SandDark
+                                )
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    com.example.data.model.VolumeCountButton.entries.forEach { option ->
+                                        val isSelected = volumeCountButton == option
+                                        Surface(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clip(RoundedCornerShape(14.dp))
+                                                .clickable { viewModel.setVolumeCountButton(option) },
+                                            color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
+                                            shape = RoundedCornerShape(14.dp),
+                                            border = BorderStroke(
+                                                1.dp,
+                                                if (isSelected) SunGold else SoftBorder
+                                            )
+                                        ) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.weight(1f),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Icon(
+                                                        imageVector = when (option) {
+                                                            com.example.data.model.VolumeCountButton.BOTH -> Icons.Default.SwapVert
+                                                            com.example.data.model.VolumeCountButton.UP -> Icons.Default.VolumeUp
+                                                            com.example.data.model.VolumeCountButton.DOWN -> Icons.Default.VolumeDown
+                                                        },
+                                                        contentDescription = null,
+                                                        tint = if (isSelected) SunGold else SandDark,
+                                                        modifier = Modifier.size(20.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(10.dp))
+                                                    Text(
+                                                        text = option.titlePersian,
+                                                        fontSize = (12 * fontScale).sp,
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                        color = if (isSelected) SunGold else SandDark
+                                                    )
+                                                }
+                                                if (isSelected) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Check,
+                                                        contentDescription = "انتخاب شده",
+                                                        tint = SunGold,
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

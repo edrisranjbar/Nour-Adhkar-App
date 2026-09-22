@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
@@ -45,6 +46,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import com.example.ui.language.LocalizedText as Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -93,6 +95,8 @@ fun TasbihScreen(
     val recentSessions by viewModel.recentTasbihSessions.collectAsState()
     val fontScale by viewModel.fontScale.collectAsState()
     val customDhikr by viewModel.customDhikr.collectAsState()
+    val volumeKeyEnabled by viewModel.volumeKeyCountingEnabled.collectAsState()
+    val volumeButtonOption by viewModel.volumeCountButton.collectAsState()
 
     val defaultOptions = listOf(
         "سبحان الله",
@@ -198,6 +202,13 @@ fun TasbihScreen(
 
     // Bead Press Scale effect
     var isPressed by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(count) {
+        if (count > 0) {
+            isPressed = true
+            kotlinx.coroutines.delay(80)
+            isPressed = false
+        }
+    }
     val pressScale by animateFloatAsState(
         targetValue = if (isPressed) 0.92f else 1.0f,
         animationSpec = tween(100),
@@ -353,6 +364,38 @@ fun TasbihScreen(
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.padding(top = 4.dp)
                                 )
+                            }
+
+                            if (volumeKeyEnabled) {
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    border = BorderStroke(1.dp, SoftBorder)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.VolumeUp,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(15.dp),
+                                            tint = SunGold
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = when (volumeButtonOption) {
+                                                com.example.data.model.VolumeCountButton.BOTH -> "شمارش با دکمه‌های صدا (+ و -) فعال است"
+                                                com.example.data.model.VolumeCountButton.UP -> "شمارش با دکمه افزایش صدا (+) فعال است"
+                                                com.example.data.model.VolumeCountButton.DOWN -> "شمارش با دکمه کاهش صدا (-) فعال است"
+                                            },
+                                            fontSize = (11 * fontScale).sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = SandDark
+                                        )
+                                    }
+                                }
                             }
 
                             Spacer(modifier = Modifier.height(24.dp))

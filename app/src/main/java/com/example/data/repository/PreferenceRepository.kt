@@ -83,6 +83,23 @@ class PreferenceRepository(context: Context) {
         prefs.edit().putBoolean("dark_mode_enabled", enabled).apply()
     }
 
+    fun isVolumeKeyCountingEnabled(): Boolean {
+        return prefs.getBoolean("volume_key_counting_enabled", false)
+    }
+
+    fun setVolumeKeyCountingEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("volume_key_counting_enabled", enabled).apply()
+    }
+
+    fun getVolumeCountButton(): com.example.data.model.VolumeCountButton {
+        val raw = prefs.getString("volume_count_button", com.example.data.model.VolumeCountButton.BOTH.id)
+        return com.example.data.model.VolumeCountButton.fromId(raw)
+    }
+
+    fun setVolumeCountButton(button: com.example.data.model.VolumeCountButton) {
+        prefs.edit().putString("volume_count_button", button.id).apply()
+    }
+
     fun getCustomDhikr(): List<String> =
         prefs.getStringSet("custom_dhikr", emptySet()).orEmpty().sorted()
 

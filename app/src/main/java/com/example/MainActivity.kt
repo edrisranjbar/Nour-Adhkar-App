@@ -117,6 +117,10 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
+    private val viewModel: AdhkarViewModel by lazy {
+        androidx.lifecycle.ViewModelProvider(this)[AdhkarViewModel::class.java]
+    }
+
     private var notificationCategory by mutableStateOf<String?>(null)
     private var openChecklistFromWidget by mutableStateOf(false)
 
@@ -144,7 +148,6 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            val viewModel: AdhkarViewModel = viewModel()
             val darkModeEnabled by viewModel.darkModeEnabled.collectAsState()
             val appLanguage by viewModel.appLanguage.collectAsState()
             com.example.ui.language.LanguageProvider(appLanguage) {
@@ -159,6 +162,20 @@ class MainActivity : ComponentActivity() {
             }
             }
         }
+    }
+
+    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        val isVolumeUp = event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP
+        val isVolumeDown = event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN
+        if (isVolumeUp || isVolumeDown) {
+            if (viewModel.shouldInterceptVolumeKey(isVolumeUp)) {
+                if (event.action == android.view.KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                    viewModel.onVolumeKeyPressed(isVolumeUp)
+                }
+                return true
+            }
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onResume() {

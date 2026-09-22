@@ -55,3 +55,14 @@ data class EmotionalAyah(
     val reflection: String,
     val translationSource: String = "ترجمه: تفسیر نور، دکتر مصطفی خرمدل"
 )
+
+enum class VolumeCountButton(val id: String, val titlePersian: String) {
+    BOTH("both", "هر دو دکمه (افزایش و کاهش صدا)"),
+    UP("up", "فقط دکمه افزایش صدا (+)"),
+    DOWN("down", "فقط دکمه کاهش صدا (-)");
+
+    companion object {
+        fun fromId(value: String?): VolumeCountButton =
+            entries.firstOrNull { it.id.equals(value, ignoreCase = true) } ?: BOTH
+    }
+}
