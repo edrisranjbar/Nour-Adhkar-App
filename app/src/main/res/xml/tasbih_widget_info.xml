@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/tasbih_widget_description"
+    android:initialLayout="@layout/widget_tasbih"
+    android:minWidth="180dp"
+    android:minHeight="140dp"
+    android:previewLayout="@layout/widget_tasbih"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellWidth="3"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />

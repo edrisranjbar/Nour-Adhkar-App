@@ -112,6 +112,7 @@ import com.example.updates.AppUpdate
 import com.example.updates.UpdateChecker
 import com.example.notifications.AdhkarNotificationManager
 import com.example.widget.ChecklistWidgetProvider
+import com.example.widget.TasbihWidgetProvider
 import androidx.compose.material3.rememberDrawerState
 import kotlinx.coroutines.launch
 
@@ -123,6 +124,7 @@ class MainActivity : ComponentActivity() {
 
     private var notificationCategory by mutableStateOf<String?>(null)
     private var openChecklistFromWidget by mutableStateOf(false)
+    private var openTasbihFromWidget by mutableStateOf(false)
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -134,6 +136,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         notificationCategory = intent.getStringExtra(AdhkarNotificationManager.EXTRA_OPEN_CATEGORY)
         openChecklistFromWidget = intent.getBooleanExtra(ChecklistWidgetProvider.EXTRA_OPEN_CHECKLIST, false)
+        openTasbihFromWidget = intent.getBooleanExtra(TasbihWidgetProvider.EXTRA_OPEN_TASBIH, false)
         enableEdgeToEdge()
 
         // Proactively request Notification permissions on Android 13+
@@ -157,7 +160,9 @@ class MainActivity : ComponentActivity() {
                     notificationCategory = notificationCategory,
                     onNotificationCategoryConsumed = { notificationCategory = null },
                     openChecklistFromWidget = openChecklistFromWidget,
-                    onChecklistWidgetIntentConsumed = { openChecklistFromWidget = false }
+                    onChecklistWidgetIntentConsumed = { openChecklistFromWidget = false },
+                    openTasbihFromWidget = openTasbihFromWidget,
+                    onTasbihWidgetIntentConsumed = { openTasbihFromWidget = false }
                 )
             }
             }
@@ -188,6 +193,7 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         notificationCategory = intent.getStringExtra(AdhkarNotificationManager.EXTRA_OPEN_CATEGORY)
         openChecklistFromWidget = intent.getBooleanExtra(ChecklistWidgetProvider.EXTRA_OPEN_CHECKLIST, false)
+        openTasbihFromWidget = intent.getBooleanExtra(TasbihWidgetProvider.EXTRA_OPEN_TASBIH, false)
     }
 }
 
@@ -197,7 +203,9 @@ fun AppMainScaffold(
     notificationCategory: String? = null,
     onNotificationCategoryConsumed: () -> Unit = {},
     openChecklistFromWidget: Boolean = false,
-    onChecklistWidgetIntentConsumed: () -> Unit = {}
+    onChecklistWidgetIntentConsumed: () -> Unit = {},
+    openTasbihFromWidget: Boolean = false,
+    onTasbihWidgetIntentConsumed: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val language = LocalAppLanguage.current
@@ -222,6 +230,13 @@ fun AppMainScaffold(
         }
     }
 
+    LaunchedEffect(openTasbihFromWidget) {
+        if (openTasbihFromWidget) {
+            viewModel.selectTab("tasbih")
+            onTasbihWidgetIntentConsumed()
+        }
+    }
+
     LaunchedEffect(Unit) {
         availableUpdate = if (BuildConfig.FORCE_UPDATE_PROMPT) {
             AppUpdate(versionName = "۱.۵.۱ (پیش‌نمایش)", versionCode = BuildConfig.VERSION_CODE + 1)
@@ -235,6 +250,7 @@ fun AppMainScaffold(
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
             if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
                 viewModel.refreshDailyChecklist()
+                viewModel.refreshTasbihState()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)

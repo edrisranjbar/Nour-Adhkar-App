@@ -22,4 +22,16 @@ internal object WidgetTypography {
             setSpan(TypefaceSpan(font), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
     }
+
+    fun amiri(context: Context, text: CharSequence): CharSequence {
+        val localized = PreferenceRepository(context).getAppLanguage().text(text.toString())
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return localized
+        val font = ResourcesCompat.getFont(
+            context,
+            R.font.amiri_quran_regular
+        ) ?: return localized
+        return SpannableString(localized).apply {
+            setSpan(TypefaceSpan(font), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+    }
 }

@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Headphones
@@ -90,6 +91,7 @@ fun SettingsScreen(
     val fridayKahfReminderTime by viewModel.fridayKahfReminderTime.collectAsState()
     val volumeKeyCountingEnabled by viewModel.volumeKeyCountingEnabled.collectAsState()
     val volumeCountButton by viewModel.volumeCountButton.collectAsState()
+    val tasbihAutosaveEnabled by viewModel.tasbihAutosaveEnabled.collectAsState()
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Column(
@@ -401,7 +403,55 @@ fun SettingsScreen(
                         elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            // 1. Warning Notice (Red)
+                            // 1. Autosave Toggle
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Bookmark,
+                                        contentDescription = null,
+                                        tint = SunGold,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Text(
+                                            text = "ذخیره خودکار شمارنده",
+                                            fontSize = (13 * fontScale).sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = SandDark
+                                        )
+                                        Text(
+                                            text = "حفظ شمارش هر ذکر هنگام جابه‌جایی بین اذکار و عدم صفر شدن آن",
+                                            fontSize = 11.sp,
+                                            color = NightBlue
+                                        )
+                                    }
+                                }
+                                Switch(
+                                    checked = tasbihAutosaveEnabled,
+                                    onCheckedChange = viewModel::setTasbihAutosaveEnabled,
+                                    colors = SwitchDefaults.colors(
+                                        checkedTrackColor = SunGold,
+                                        checkedThumbColor = Color.White,
+                                        uncheckedThumbColor = NightBlue,
+                                        uncheckedTrackColor = SoftBorder,
+                                        uncheckedBorderColor = SoftBorder
+                                    )
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+                            HorizontalDivider(color = SoftBorder)
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            // 2. Warning Notice (Red)
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),

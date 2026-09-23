@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layoutDirection="rtl"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@drawable/bg_tasbih_widget">
+
+    <!-- Top Header Bar -->
+    <LinearLayout
+        android:id="@+id/widget_tasbih_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_nour_adhkar_logo" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_tasbih_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ذکرشمار"
+                android:fontFamily="@font/vazirmatn_bold"
+                android:textColor="#173A2B"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/widget_tasbih_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="تسبیح و اذکار روزانه"
+                android:fontFamily="@font/vazirmatn_regular"
+                android:textColor="#6B7D73"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <!-- Reset Button in Header -->
+        <LinearLayout
+            android:id="@+id/widget_tasbih_reset_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="28dp"
+            android:background="@drawable/bg_tasbih_btn_small"
+            android:gravity="center"
+            android:paddingHorizontal="8dp"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_widget_refresh"
+                android:contentDescription="بازنشانی" />
+
+            <TextView
+                android:id="@+id/widget_tasbih_reset_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:fontFamily="@font/vazirmatn_bold"
+                android:text="صفر"
+                android:textColor="#3A6931"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Dhikr Selector Banner with Next / Prev buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="34dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_tasbih_dhikr_banner"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="4dp">
+
+        <ImageView
+            android:id="@+id/widget_tasbih_prev_dhikr"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/bg_tasbih_btn_small"
+            android:padding="5dp"
+            android:src="@drawable/ic_widget_chevron_right"
+            android:contentDescription="ذکر قبلی" />
+
+        <TextView
+            android:id="@+id/widget_tasbih_dhikr_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="@font/amiri_quran_regular"
+            android:gravity="center"
+            android:text="سبحان الله"
+            android:textColor="#173A2B"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/widget_tasbih_next_dhikr"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/bg_tasbih_btn_small"
+            android:padding="5dp"
+            android:src="@drawable/ic_widget_chevron_left"
+            android:contentDescription="ذکر بعدی" />
+    </LinearLayout>
+
+    <!-- Main Counter Interactive Bead Area -->
+    <LinearLayout
+        android:id="@+id/widget_tasbih_count_btn"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginVertical="6dp"
+        android:background="@drawable/bg_tasbih_bead"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/widget_tasbih_count_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/vazirmatn_bold"
+            android:text="۰"
+            android:textColor="#173A2B"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/widget_tasbih_hint_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/vazirmatn_regular"
+            android:text="برای شمارش ضربه بزنید (+۱)"
+            android:textColor="#3A6931"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+    <!-- Bottom Action Button to Open Tasbih in App -->
+    <TextView
+        android:id="@+id/widget_tasbih_open_btn"
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:background="@drawable/bg_tasbih_btn_action"
+        android:fontFamily="@font/vazirmatn_bold"
+        android:gravity="center"
+        android:text="باز کردن ذکرشمار در برنامه  ←"
+        android:textColor="#FFFFFF"
+        android:textSize="11sp"
+        android:textStyle="bold" />
+</LinearLayout>

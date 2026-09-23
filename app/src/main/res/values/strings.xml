@@ -1,5 +1,7 @@
 <resources>
     <string name="checklist_widget_name">چک‌لیست روزانه</string>
     <string name="checklist_widget_description">نمایش و ثبت اعمال روزانه از صفحه اصلی</string>
+    <string name="tasbih_widget_name">ذکرشمار</string>
+    <string name="tasbih_widget_description">شمارش و ثبت ذکرها مستقیم از صفحه اصلی</string>
     <string name="app_name">اذکار نور</string>
 </resources>

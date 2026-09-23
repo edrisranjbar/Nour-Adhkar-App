@@ -188,11 +188,25 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     // Virtual Tasbih State
-    private val _tasbihCount = MutableStateFlow(0)
-    val tasbihCount: StateFlow<Int> = _tasbihCount.asStateFlow()
+    private val _tasbihAutosaveEnabled = MutableStateFlow(prefs.isTasbihAutosaveEnabled())
+    val tasbihAutosaveEnabled: StateFlow<Boolean> = _tasbihAutosaveEnabled.asStateFlow()
 
     private val _selectedTasbihDhikr = MutableStateFlow("سبحان الله")
     val selectedTasbihDhikr: StateFlow<String> = _selectedTasbihDhikr.asStateFlow()
+
+    private val _tasbihCounts = MutableStateFlow<Map<String, Int>>(
+        if (prefs.isTasbihAutosaveEnabled()) prefs.getAllTasbihCounts() else emptyMap()
+    )
+    val tasbihCounts: StateFlow<Map<String, Int>> = _tasbihCounts.asStateFlow()
+
+    private val _tasbihCount = MutableStateFlow(
+        if (prefs.isTasbihAutosaveEnabled()) {
+            prefs.getTasbihCount("سبحان الله")
+        } else {
+            0
+        }
+    )
+    val tasbihCount: StateFlow<Int> = _tasbihCount.asStateFlow()
 
     val recentTasbihSessions: StateFlow<List<TasbihSessionEntity>> = repository.getRecentTasbihSessions()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -280,12 +294,23 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
 
     // Tasbih triggers
     fun incrementTasbih() {
-        _tasbihCount.value += 1
+        val newCount = _tasbihCount.value + 1
+        _tasbihCount.value = newCount
+        if (_tasbihAutosaveEnabled.value) {
+            val dhikr = _selectedTasbihDhikr.value
+            prefs.setTasbihCount(dhikr, newCount)
+            _tasbihCounts.value = _tasbihCounts.value + (dhikr to newCount)
+        }
         playHapticAndAudio()
     }
 
     fun resetTasbih() {
+        val dhikr = _selectedTasbihDhikr.value
         _tasbihCount.value = 0
+        if (_tasbihAutosaveEnabled.value) {
+            prefs.setTasbihCount(dhikr, 0)
+            _tasbihCounts.value = _tasbihCounts.value - dhikr
+        }
     }
 
     fun saveTasbihSession() {
@@ -296,6 +321,10 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
                 repository.saveTasbihSession(name, count)
                 _activityDayKeys.value = prefs.markActivityToday()
                 _tasbihCount.value = 0
+                if (_tasbihAutosaveEnabled.value) {
+                    prefs.setTasbihCount(name, 0)
+                    _tasbihCounts.value = _tasbihCounts.value - name
+                }
             }
         }
     }
@@ -307,8 +336,25 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun selectTasbihDhikr(dhikr: String) {
-        _selectedTasbihDhikr.value = dhikr
-        resetTasbih()
+        if (_selectedTasbihDhikr.value == dhikr) return
+        val oldDhikr = _selectedTasbihDhikr.value
+
+        if (_tasbihAutosaveEnabled.value) {
+            val currentCount = _tasbihCount.value
+            prefs.setTasbihCount(oldDhikr, currentCount)
+            val updatedCounts = if (currentCount > 0) {
+                _tasbihCounts.value + (oldDhikr to currentCount)
+            } else {
+                _tasbihCounts.value - oldDhikr
+            }
+            _tasbihCounts.value = updatedCounts
+            _selectedTasbihDhikr.value = dhikr
+            val restoredCount = updatedCounts[dhikr] ?: prefs.getTasbihCount(dhikr)
+            _tasbihCount.value = restoredCount
+        } else {
+            _selectedTasbihDhikr.value = dhikr
+            resetTasbih()
+        }
     }
 
     fun addCustomDhikr(text: String) {
@@ -320,6 +366,8 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
 
     fun removeCustomDhikr(text: String, fallbackDhikr: String) {
         _customDhikr.value = prefs.removeCustomDhikr(text)
+        prefs.setTasbihCount(text, 0)
+        _tasbihCounts.value = _tasbihCounts.value - text
         if (_selectedTasbihDhikr.value == text) {
             selectTasbihDhikr(fallbackDhikr)
         }
@@ -353,6 +401,19 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     fun setVolumeKeyCountingEnabled(enabled: Boolean) {
         prefs.setVolumeKeyCountingEnabled(enabled)
         _volumeKeyCountingEnabled.value = enabled
+    }
+
+    fun setTasbihAutosaveEnabled(enabled: Boolean) {
+        prefs.setTasbihAutosaveEnabled(enabled)
+        _tasbihAutosaveEnabled.value = enabled
+        if (enabled) {
+            val currentDhikr = _selectedTasbihDhikr.value
+            val currentCount = _tasbihCount.value
+            if (currentCount > 0) {
+                prefs.setTasbihCount(currentDhikr, currentCount)
+            }
+            _tasbihCounts.value = prefs.getAllTasbihCounts()
+        }
     }
 
     fun setVolumeCountButton(button: com.example.data.model.VolumeCountButton) {
@@ -449,6 +510,8 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             repository.resetAllProgress()
             repository.clearTasbihHistory()
+            prefs.clearAllTasbihCounts()
+            _tasbihCounts.value = emptyMap()
             _tasbihCount.value = 0
         }
     }

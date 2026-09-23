@@ -91,6 +91,45 @@ class PreferenceRepository(context: Context) {
         prefs.edit().putBoolean("volume_key_counting_enabled", enabled).apply()
     }
 
+    fun isTasbihAutosaveEnabled(): Boolean {
+        return prefs.getBoolean("tasbih_autosave_enabled", false)
+    }
+
+    fun setTasbihAutosaveEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("tasbih_autosave_enabled", enabled).apply()
+    }
+
+    fun getTasbihCount(dhikr: String): Int {
+        return prefs.getInt("tasbih_count_$dhikr", 0)
+    }
+
+    fun setTasbihCount(dhikr: String, count: Int) {
+        if (count <= 0) {
+            prefs.edit().remove("tasbih_count_$dhikr").apply()
+        } else {
+            prefs.edit().putInt("tasbih_count_$dhikr", count).apply()
+        }
+    }
+
+    fun getAllTasbihCounts(): Map<String, Int> {
+        val prefix = "tasbih_count_"
+        return prefs.all.filterKeys { it.startsWith(prefix) }
+            .mapNotNull { (key, value) ->
+                val dhikrName = key.removePrefix(prefix)
+                val count = (value as? Int) ?: (value as? Long)?.toInt() ?: (value as? String)?.toIntOrNull() ?: 0
+                if (count > 0) dhikrName to count else null
+            }.toMap()
+    }
+
+    fun clearAllTasbihCounts() {
+        val editor = prefs.edit()
+        val prefix = "tasbih_count_"
+        prefs.all.keys.filter { it.startsWith(prefix) }.forEach {
+            editor.remove(it)
+        }
+        editor.apply()
+    }
+
     fun getVolumeCountButton(): com.example.data.model.VolumeCountButton {
         val raw = prefs.getString("volume_count_button", com.example.data.model.VolumeCountButton.BOTH.id)
         return com.example.data.model.VolumeCountButton.fromId(raw)

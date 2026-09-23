@@ -31,6 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
@@ -97,6 +98,8 @@ fun TasbihScreen(
     val customDhikr by viewModel.customDhikr.collectAsState()
     val volumeKeyEnabled by viewModel.volumeKeyCountingEnabled.collectAsState()
     val volumeButtonOption by viewModel.volumeCountButton.collectAsState()
+    val tasbihAutosaveEnabled by viewModel.tasbihAutosaveEnabled.collectAsState()
+    val tasbihCounts by viewModel.tasbihCounts.collectAsState()
 
     val defaultOptions = listOf(
         "سبحان الله",
@@ -245,6 +248,9 @@ fun TasbihScreen(
                             items(options) { phrase ->
                                 val isSelected = phrase == selectedDhikr
                                 val isCustom = phrase in customDhikr
+                                val phraseCount = if (tasbihAutosaveEnabled) {
+                                    if (isSelected) count else (tasbihCounts[phrase] ?: 0)
+                                } else 0
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(12.dp))
@@ -268,13 +274,32 @@ fun TasbihScreen(
                                         .padding(horizontal = 14.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = phrase,
-                                        fontFamily = AmiriQuran,
-                                        color = if (isSelected) SunGold else SandDark,
-                                        fontSize = (12 * fontScale).sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = phrase,
+                                            fontFamily = AmiriQuran,
+                                            color = if (isSelected) SunGold else SandDark,
+                                            fontSize = (12 * fontScale).sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        if (tasbihAutosaveEnabled && phraseCount > 0) {
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Box(
+                                                modifier = Modifier
+                                                    .clip(CircleShape)
+                                                    .background(if (isSelected) SunGold else MaterialTheme.colorScheme.secondaryContainer)
+                                                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = phraseCount.toPersianDigits(),
+                                                    color = if (isSelected) Color.White else SunGold,
+                                                    fontSize = (10 * fontScale).sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             item(key = "add_custom_dhikr") {
@@ -364,6 +389,34 @@ fun TasbihScreen(
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.padding(top = 4.dp)
                                 )
+                            }
+
+                            if (tasbihAutosaveEnabled) {
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    border = BorderStroke(1.dp, SoftBorder)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Bookmark,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(15.dp),
+                                            tint = SunGold
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "ذخیره خودکار شمارش فعال است",
+                                            fontSize = (11 * fontScale).sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = SandDark
+                                        )
+                                    }
+                                }
                             }
 
                             if (volumeKeyEnabled) {

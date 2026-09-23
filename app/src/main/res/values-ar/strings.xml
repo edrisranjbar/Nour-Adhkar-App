@@ -2,4 +2,6 @@
     <string name="app_name">أذكار نور</string>
     <string name="checklist_widget_name">الأعمال اليومية</string>
     <string name="checklist_widget_description">عرض الأعمال اليومية وتسجيلها من الشاشة الرئيسية</string>
+    <string name="tasbih_widget_name">السبحة الإلكترونية</string>
+    <string name="tasbih_widget_description">عداد الأذكار والتسبيح مباشرة من الشاشة الرئيسية</string>
 </resources>
