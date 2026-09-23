@@ -36,10 +36,10 @@ private class ChecklistWidgetFactory(private val context: Context) : RemoteViews
                 "setTextColor",
                 context.getColor(if (completed) R.color.widget_text_completed else R.color.widget_text_primary)
             )
-            setOnClickFillInIntent(
-                R.id.widget_item_root,
-                Intent().putExtra(ChecklistWidgetProvider.EXTRA_ITEM_ID, item.id)
-            )
+            val toggle = Intent().putExtra(ChecklistWidgetProvider.EXTRA_ITEM_ID, item.id)
+            setOnClickFillInIntent(R.id.widget_item_root, toggle)
+            setOnClickFillInIntent(R.id.widget_item_status, toggle)
+            setOnClickFillInIntent(R.id.widget_item_title, toggle)
         }
     }
 

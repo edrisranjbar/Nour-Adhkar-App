@@ -43,6 +43,14 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     private val prefs = PreferenceRepository(application)
     private val notificationManager = AdhkarNotificationManager(application)
 
+    private val _onboardingComplete = MutableStateFlow(prefs.isOnboardingComplete())
+    val onboardingComplete = _onboardingComplete.asStateFlow()
+
+    fun completeOnboarding() {
+        prefs.setOnboardingComplete(true)
+        _onboardingComplete.value = true
+    }
+
     private val _appLanguage = MutableStateFlow(prefs.getAppLanguage())
     val appLanguage = _appLanguage.asStateFlow()
     fun setAppLanguage(language: com.example.ui.language.AppLanguage) {

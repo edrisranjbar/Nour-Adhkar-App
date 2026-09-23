@@ -58,10 +58,12 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Article
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.filled.SystemUpdateAlt
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Close
 import com.example.ui.language.LocalizedIcon as Icon
 import androidx.compose.material3.IconButton
@@ -101,6 +103,9 @@ import com.example.ui.screens.AboutScreen
 import com.example.ui.screens.ArticlesScreen
 import com.example.ui.screens.AdhkarCollectionsScreen
 import com.example.ui.screens.FavoritesScreen
+import com.example.ui.screens.QuranScreen
+import com.example.ui.screens.AchievementsScreen
+import com.example.ui.screens.OnboardingScreen
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.SandDark
 import com.example.ui.theme.SunGold
@@ -118,6 +123,8 @@ class MainActivity : ComponentActivity() {
 
     private var notificationCategory by mutableStateOf<String?>(null)
     private var openChecklistFromWidget by mutableStateOf(false)
+    private var openPrayersFromWidget by mutableStateOf(false)
+    private var openQuranPage by mutableStateOf<Int?>(null)
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -129,32 +136,56 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         notificationCategory = intent.getStringExtra(AdhkarNotificationManager.EXTRA_OPEN_CATEGORY)
         openChecklistFromWidget = intent.getBooleanExtra(ChecklistWidgetProvider.EXTRA_OPEN_CHECKLIST, false)
+        openPrayersFromWidget = intent.getBooleanExtra(com.example.widget.PrayerTimesWidgetProvider.EXTRA_OPEN_PRAYERS, false)
+        openQuranPage = intent.getIntExtra(AdhkarNotificationManager.EXTRA_OPEN_QURAN_PAGE, 0).takeIf { it in 1..604 }
         enableEdgeToEdge()
-
-        // Proactively request Notification permissions on Android 13+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }
 
         setContent {
             val viewModel: AdhkarViewModel = viewModel()
+            LaunchedEffect(openPrayersFromWidget) {
+                if (openPrayersFromWidget) {
+                    viewModel.openPrayerSettings()
+                    openPrayersFromWidget = false
+                }
+            }
             val darkModeEnabled by viewModel.darkModeEnabled.collectAsState()
             val appLanguage by viewModel.appLanguage.collectAsState()
+            val onboardingComplete by viewModel.onboardingComplete.collectAsState()
             com.example.ui.language.LanguageProvider(appLanguage) {
             MyApplicationTheme(darkTheme = darkModeEnabled) {
-                AppMainScaffold(
-                    viewModel = viewModel,
-                    notificationCategory = notificationCategory,
-                    onNotificationCategoryConsumed = { notificationCategory = null },
-                    openChecklistFromWidget = openChecklistFromWidget,
-                    onChecklistWidgetIntentConsumed = { openChecklistFromWidget = false }
-                )
+                if (onboardingComplete) {
+                    AppMainScaffold(
+                        viewModel = viewModel,
+                        notificationCategory = notificationCategory,
+                        onNotificationCategoryConsumed = { notificationCategory = null },
+                        openChecklistFromWidget = openChecklistFromWidget,
+                        onChecklistWidgetIntentConsumed = { openChecklistFromWidget = false },
+                        openQuranPage = openQuranPage,
+                        onQuranPageConsumed = { openQuranPage = null }
+                    )
+                } else {
+                    OnboardingScreen(
+                        language = appLanguage,
+                        notificationsEnabled = viewModel.notificationsEnabled.collectAsState().value,
+                        darkModeEnabled = darkModeEnabled,
+                        onLanguageChange = viewModel::setAppLanguage,
+                        onNotificationsChange = viewModel::setNotificationsEnabled,
+                        onDarkModeChange = viewModel::setDarkModeEnabled,
+                        onComplete = {
+                            viewModel.completeOnboarding()
+                            if (
+                                viewModel.notificationsEnabled.value &&
+                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                ContextCompat.checkSelfPermission(
+                                    this,
+                                    Manifest.permission.POST_NOTIFICATIONS
+                                ) != PackageManager.PERMISSION_GRANTED
+                            ) {
+                                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                        }
+                    )
+                }
             }
             }
         }
@@ -163,6 +194,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         com.example.prayer.AdhanScheduler(this).reschedule()
+        com.example.widget.PrayerTimesWidgetProvider.updateAll(this)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -170,6 +202,8 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         notificationCategory = intent.getStringExtra(AdhkarNotificationManager.EXTRA_OPEN_CATEGORY)
         openChecklistFromWidget = intent.getBooleanExtra(ChecklistWidgetProvider.EXTRA_OPEN_CHECKLIST, false)
+        openPrayersFromWidget = intent.getBooleanExtra(com.example.widget.PrayerTimesWidgetProvider.EXTRA_OPEN_PRAYERS, false)
+        openQuranPage = intent.getIntExtra(AdhkarNotificationManager.EXTRA_OPEN_QURAN_PAGE, 0).takeIf { it in 1..604 }
     }
 }
 
@@ -179,7 +213,9 @@ fun AppMainScaffold(
     notificationCategory: String? = null,
     onNotificationCategoryConsumed: () -> Unit = {},
     openChecklistFromWidget: Boolean = false,
-    onChecklistWidgetIntentConsumed: () -> Unit = {}
+    onChecklistWidgetIntentConsumed: () -> Unit = {},
+    openQuranPage: Int? = null,
+    onQuranPageConsumed: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val language = LocalAppLanguage.current
@@ -202,6 +238,10 @@ fun AppMainScaffold(
             viewModel.selectTab("checklist")
             onChecklistWidgetIntentConsumed()
         }
+    }
+
+    LaunchedEffect(openQuranPage) {
+        if (openQuranPage != null) viewModel.selectTab("quran")
     }
 
     LaunchedEffect(Unit) {
@@ -257,9 +297,11 @@ fun AppMainScaffold(
                         ) {
                             val drawerItems = listOf(
                                 Triple("home", "خانه", Icons.Default.Home),
+                                Triple("quran", "قرآن کریم", Icons.Default.MenuBook),
                                 Triple("adhkar", "اذکار و ادعیه", Icons.Default.Article),
                                 Triple("checklist", "چک‌لیست روزانه", Icons.Default.Checklist),
                                 Triple("tasbih", "ذکرشمار", null),
+                                Triple("achievements", "نشان‌ها و دستاوردها", Icons.Default.EmojiEvents),
                                 Triple("qibla", "قبله‌نما", Icons.Default.Explore),
                                 Triple("articles", "مقالات", Icons.Default.Article),
                                 Triple("favorites", "علاقه‌مندی‌ها", Icons.Default.Favorite),
@@ -333,6 +375,7 @@ fun AppMainScaffold(
             Scaffold(
                 modifier = Modifier.fillMaxSize().statusBarsPadding(),
                 topBar = {
+                    if (currentTab !in setOf("quran", "achievements")) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -359,11 +402,13 @@ fun AppMainScaffold(
                             text = when (currentTab) {
                                 "checklist" -> "چک‌لیست روزانه"
                                 "tasbih" -> "ذکرشمار"
+                                "achievements" -> "نشان‌ها و دستاوردها"
                                 "qibla" -> "قبله‌نما"
                                 "settings" -> "تنظیمات"
                                 "about" -> "درباره برنامه"
                                 "articles" -> "مقالات"
                                 "adhkar" -> "اذکار و ادعیه"
+                                "quran" -> "قرآن کریم"
                                 "favorites" -> "علاقه‌مندی‌ها"
                                 else -> "اذکار نور"
                             },
@@ -373,8 +418,10 @@ fun AppMainScaffold(
                             modifier = Modifier.padding(horizontal = 8.dp)
                         )
                     }
+                    }
                 },
                 bottomBar = {
+                    if (currentTab != "quran") {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -424,6 +471,32 @@ fun AppMainScaffold(
                                 }
 
                                 // 2. Adhkar Tab (right side in the RTL bottom bar)
+                                val isQuranSelected = currentTab == "quran"
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .clickable { viewModel.selectTab("quran") }
+                                        .padding(vertical = 8.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.MenuBook,
+                                        contentDescription = "قرآن کریم",
+                                        tint = if (isQuranSelected) SunGold else NightBlue.copy(alpha = 0.75f),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "قرآن",
+                                        fontSize = (10 * fontScale).sp,
+                                        fontWeight = if (isQuranSelected) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isQuranSelected) SunGold else NightBlue.copy(alpha = 0.75f)
+                                    )
+                                }
+
+                                // 3. Adhkar Tab
                                 val isAdhkarSelected = currentTab == "adhkar"
                                 Column(
                                     modifier = Modifier
@@ -449,7 +522,7 @@ fun AppMainScaffold(
                                     )
                                 }
 
-                                // 3. Tasbih Tab (Center Gradient Circular Button)
+                                // 4. Tasbih Tab (Center Gradient Circular Button)
                                 val isTasbihSelected = currentTab == "tasbih"
                                 Box(
                                     modifier = Modifier
@@ -474,7 +547,7 @@ fun AppMainScaffold(
                                     )
                                 }
 
-                                // 4. Daily Checklist Tab
+                                // 5. Daily Checklist Tab
                                 val isChecklistSelected = currentTab == "checklist"
                                 Column(
                                     modifier = Modifier
@@ -500,7 +573,7 @@ fun AppMainScaffold(
                                     )
                                 }
 
-                                // 5. Settings Tab (left side in the RTL bottom bar)
+                                // 6. Settings Tab (left side in the RTL bottom bar)
                                 val isSettingsSelected = currentTab == "settings"
                                 Column(
                                     modifier = Modifier
@@ -528,6 +601,7 @@ fun AppMainScaffold(
                             }
                         }
                     }
+                    }
                 }
             ) { innerPadding ->
                 // Animate switching between the primary bottom-tabs
@@ -542,9 +616,20 @@ fun AppMainScaffold(
                         "home" -> HomeScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "checklist" -> DailyChecklistScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "tasbih" -> TasbihScreen(viewModel = viewModel, innerPadding = innerPadding)
+                        "achievements" -> AchievementsScreen(
+                            viewModel = viewModel,
+                            innerPadding = innerPadding,
+                            onNavigateHome = { viewModel.selectTab("home") }
+                        )
                         "about" -> AboutScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "articles" -> ArticlesScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "adhkar" -> AdhkarCollectionsScreen(viewModel = viewModel, innerPadding = innerPadding)
+                        "quran" -> QuranScreen(
+                            innerPadding = innerPadding,
+                            onNavigateHome = { viewModel.selectTab("home") },
+                            requestedPage = openQuranPage,
+                            onRequestedPageConsumed = onQuranPageConsumed
+                        )
                         "qibla" -> QiblaScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "favorites" -> FavoritesScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "settings" -> SettingsScreen(viewModel = viewModel, innerPadding = innerPadding)

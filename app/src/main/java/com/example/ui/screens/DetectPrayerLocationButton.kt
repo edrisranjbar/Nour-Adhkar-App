@@ -2,10 +2,12 @@ package com.example.ui.screens
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
 import android.os.CancellationSignal
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -44,22 +46,26 @@ fun DetectPrayerLocationButton(
             locating = true
             try {
                 val manager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+                if (!LocationManagerCompat.isLocationEnabled(manager)) {
+                    latestError("مکان‌یابی گوشی هنوز خاموش است.")
+                    return@launch
+                }
                 val precise = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
                 val providers = listOfNotNull(
                     LocationManager.GPS_PROVIDER.takeIf { precise && manager.isProviderEnabled(it) },
                     LocationManager.NETWORK_PROVIDER.takeIf { manager.isProviderEnabled(it) }
                 )
                 if (providers.isEmpty()) {
-                    latestError("مکان‌یابی گوشی را روشن کنید و دوباره تلاش کنید؛ یا مختصات را دستی وارد کنید.")
+                    latestError("GPS یا مکان‌یابی شبکه در دسترس نیست؛ تنظیمات مکان گوشی را بررسی کنید.")
                 } else {
                     val result = withTimeoutOrNull(25_000) { currentLocation(context, manager, providers) }
                     if (result != null) latestLocation(result)
-                    else latestError("موقعیت دریافت نشد. در فضای باز دوباره تلاش کنید یا مختصات را دستی وارد کنید.")
+                    else latestError("موقعیت دریافت نشد. در فضای باز دوباره تلاش کنید یا نام شهر را دستی وارد کنید.")
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
-                latestError("دسترسی به موقعیت ممکن نیست؛ مجوز مکان را بررسی کنید یا مختصات را دستی وارد کنید.")
+                latestError("دسترسی به موقعیت ممکن نیست؛ مجوز مکان را بررسی کنید یا نام شهر را دستی وارد کنید.")
             } finally {
                 locating = false
             }
@@ -67,12 +73,20 @@ fun DetectPrayerLocationButton(
     }
     val permissions = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
         if (result.values.any { it }) detect()
-        else latestError("مجوز مکان داده نشد. می‌توانید آن را در تنظیمات گوشی فعال کنید یا مختصات را دستی وارد کنید.")
+        else latestError("مجوز مکان داده نشد. آن را در تنظیمات گوشی فعال کنید یا نام شهر را دستی وارد کنید.")
+    }
+    val locationSettings = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val manager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        if (LocationManagerCompat.isLocationEnabled(manager)) detect()
+        else latestError("برای دریافت موقعیت، GPS یا مکان‌یابی گوشی را روشن کنید.")
     }
     val requestLocation: () -> Unit = {
         val granted = listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
             .any { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
-        if (granted) detect()
+        val manager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        if (!LocationManagerCompat.isLocationEnabled(manager)) {
+            locationSettings.launch(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+        } else if (granted) detect()
         else permissions.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
     }
     if (iconOnly) {

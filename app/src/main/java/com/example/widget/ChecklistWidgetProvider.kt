@@ -22,11 +22,12 @@ class ChecklistWidgetProvider : AppWidgetProvider() {
         super.onReceive(context, intent)
         if (intent.action == ACTION_TOGGLE_ITEM) {
             val itemId = intent.getStringExtra(EXTRA_ITEM_ID) ?: return
+            if (DailyChecklistData.items.none { it.id == itemId }) return
             val prefs = PreferenceRepository(context)
             val completed = prefs.getDailyChecklistCompletedIds()
             prefs.setDailyChecklistItemCompleted(todayKey(), itemId, itemId !in completed)
             updateAll(context)
-        } else if (intent.action == ACTION_REFRESH_WIDGET) {
+        } else if (intent.action == ACTION_REFRESH_WIDGET || intent.action == Intent.ACTION_MY_PACKAGE_REPLACED) {
             updateAll(context)
         }
     }
@@ -68,14 +69,15 @@ class ChecklistWidgetProvider : AppWidgetProvider() {
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
-    private fun toggleTemplate(context: Context, widgetId: Int): PendingIntent =
+    internal fun toggleTemplate(context: Context, widgetId: Int): PendingIntent =
         PendingIntent.getBroadcast(
             context,
             8000 + widgetId,
             Intent(context, ChecklistWidgetProvider::class.java).apply {
                 action = ACTION_TOGGLE_ITEM
             },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            // Collection rows supply EXTRA_ITEM_ID through a fill-in intent.
+            PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE
         )
 
     companion object {
@@ -89,9 +91,9 @@ class ChecklistWidgetProvider : AppWidgetProvider() {
             val component = ComponentName(context, ChecklistWidgetProvider::class.java)
             val ids = manager.getAppWidgetIds(component)
             if (ids.isNotEmpty()) {
-                manager.notifyAppWidgetViewDataChanged(ids, R.id.widget_task_list)
                 val provider = ChecklistWidgetProvider()
                 ids.forEach { id -> manager.updateAppWidget(id, provider.buildViews(context, id)) }
+                manager.notifyAppWidgetViewDataChanged(ids, R.id.widget_task_list)
             }
         }
 

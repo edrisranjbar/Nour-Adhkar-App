@@ -1,0 +1,12 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+ android:id="@+id/prayer_widget_root" android:layout_width="match_parent" android:layout_height="match_parent"
+ android:orientation="vertical" android:layoutDirection="rtl" android:padding="8dp" android:background="@drawable/bg_prayer_widget">
+ <TextView android:id="@+id/prayer_widget_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/prayer_widget_name" android:textSize="13sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:textColor="#191C1A" />
+ <TextView android:id="@+id/prayer_widget_city" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/prayer_widget_location" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" android:textColor="#43493F" />
+ <TextView android:id="@+id/prayer_widget_next" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="2dp" android:paddingBottom="4dp" android:maxLines="1" android:ellipsize="end" android:text="@string/prayer_widget_setup" android:textSize="11sp" android:textColor="#3A6931" />
+ <LinearLayout android:id="@+id/prayer_widget_grid" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+  <LinearLayout android:id="@+id/prayer_widget_row1" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" />
+  <LinearLayout android:id="@+id/prayer_widget_row2" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" />
+  <LinearLayout android:id="@+id/prayer_widget_row3" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" />
+ </LinearLayout>
+</LinearLayout>

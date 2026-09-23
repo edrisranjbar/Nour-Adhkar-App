@@ -2,14 +2,23 @@ package com.example.data.repository
 
 import android.content.Context
 import android.content.SharedPreferences
+import org.json.JSONObject
 import java.util.Calendar
 
 class PreferenceRepository(context: Context) {
+    private val appContext = context.applicationContext
+
+    fun isOnboardingComplete(): Boolean = prefs.getBoolean("onboarding_complete", false)
+
+    fun setOnboardingComplete(completed: Boolean) {
+        prefs.edit().putBoolean("onboarding_complete", completed).apply()
+    }
 
     fun getAppLanguage() = com.example.ui.language.AppLanguage.fromCode(prefs.getString("app_language", "fa"))
 
     fun setAppLanguage(language: com.example.ui.language.AppLanguage) {
         prefs.edit().putString("app_language", language.code).apply()
+        com.example.widget.PrayerTimesWidgetProvider.updateAll(appContext)
     }
 
     private val prefs: SharedPreferences = context.getSharedPreferences(
@@ -29,6 +38,7 @@ class PreferenceRepository(context: Context) {
             .putString("prayer_lon", value.longitude.toString()).putString("prayer_zone", value.zone)
             .putString("prayer_method", value.method).putBoolean("prayer_hanafi", value.hanafi)
             .putBoolean("prayer_automatic_location", value.automaticLocation).apply()
+        com.example.widget.PrayerTimesWidgetProvider.updateAll(appContext)
     }
 
     fun getAdhanSound(): com.example.prayer.AdhanSound {
@@ -81,6 +91,48 @@ class PreferenceRepository(context: Context) {
 
     fun setDarkModeEnabled(enabled: Boolean) {
         prefs.edit().putBoolean("dark_mode_enabled", enabled).apply()
+        com.example.widget.PrayerTimesWidgetProvider.updateAll(appContext)
+    }
+
+    fun getQuranLastReadPage(): Int = prefs.getInt("quran_last_read_page", 1).coerceIn(1, 604)
+
+    fun setQuranLastReadPage(page: Int) {
+        prefs.edit().putInt("quran_last_read_page", page.coerceIn(1, 604)).apply()
+    }
+
+    fun getQuranReaderColor(): String = prefs.getString("quran_reader_color", "night").orEmpty()
+
+    fun setQuranReaderColor(colorId: String) {
+        prefs.edit().putString("quran_reader_color", colorId).apply()
+    }
+
+    fun getQuranHighlights(): Map<String, String> = getQuranMap("quran_highlights")
+
+    fun setQuranHighlight(verseId: String, color: String?) {
+        updateQuranMap("quran_highlights", verseId, color)
+    }
+
+    fun getQuranNotes(): Map<String, String> = getQuranMap("quran_notes")
+
+    fun setQuranNote(verseId: String, note: String?) {
+        updateQuranMap("quran_notes", verseId, note?.trim()?.takeIf { it.isNotEmpty() })
+    }
+
+    fun hasAchievementLevelBaseline(): Boolean = prefs.contains("achievement_levels_seen")
+
+    fun getAchievementLevelsSeen(): Map<String, Int> = runCatching {
+        val value = JSONObject(prefs.getString("achievement_levels_seen", "{}").orEmpty())
+        buildMap {
+            val keys = value.keys()
+            while (keys.hasNext()) {
+                val id = keys.next()
+                put(id, value.optInt(id, 0))
+            }
+        }
+    }.getOrDefault(emptyMap())
+
+    fun setAchievementLevelsSeen(levels: Map<String, Int>) {
+        prefs.edit().putString("achievement_levels_seen", JSONObject(levels as Map<*, *>).toString()).apply()
     }
 
     fun getCustomDhikr(): List<String> =
@@ -236,6 +288,25 @@ class PreferenceRepository(context: Context) {
     }
 
     private fun checklistKey(dayKey: Long) = "daily_checklist_$dayKey"
+
+    private fun getQuranMap(key: String): Map<String, String> = runCatching {
+        val objectValue = JSONObject(prefs.getString(key, "{}").orEmpty())
+        buildMap {
+            val keys = objectValue.keys()
+            while (keys.hasNext()) {
+                val verseId = keys.next()
+                put(verseId, objectValue.getString(verseId))
+            }
+        }
+    }.getOrDefault(emptyMap())
+
+    private fun updateQuranMap(key: String, verseId: String, value: String?) {
+        val updated = getQuranMap(key).toMutableMap().apply {
+            if (value == null) remove(verseId) else put(verseId, value)
+        }
+        val serialized = JSONObject(updated as Map<*, *>).toString()
+        prefs.edit().putString(key, serialized).apply()
+    }
 
     private fun completionKey(categoryId: String) = "${categoryId}_completed_day"
 

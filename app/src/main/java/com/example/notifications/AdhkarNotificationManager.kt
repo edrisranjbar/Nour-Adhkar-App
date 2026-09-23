@@ -5,11 +5,13 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import com.example.data.repository.PreferenceRepository
+import com.example.quran.QuranKhatmRepository
 import java.util.Calendar
 
 class AdhkarNotificationManager(private val context: Context) {
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
     private val prefs = PreferenceRepository(context)
+    private val khatmRepository = QuranKhatmRepository(context)
 
     fun scheduleReminders() {
         try {
@@ -18,6 +20,10 @@ class AdhkarNotificationManager(private val context: Context) {
             scheduleNext("morning")
             scheduleNext("evening")
             if (prefs.isFridayKahfReminderEnabled()) scheduleNext("friday_kahf")
+            val khatmGoal = khatmRepository.getGoal()
+            if (khatmGoal?.reminderEnabled == true && !khatmGoal.paused && !khatmGoal.isComplete) {
+                scheduleNext("quran_khatm")
+            }
         } catch (_: Exception) {
             // Alarm restrictions must never crash app startup.
         }
@@ -32,6 +38,11 @@ class AdhkarNotificationManager(private val context: Context) {
                 "friday_kahf" -> {
                     if (!prefs.isFridayKahfReminderEnabled()) return
                     Triple(prefs.getFridayKahfReminderTime(), setOf(Calendar.FRIDAY), REQUEST_FRIDAY_KAHF)
+                }
+                "quran_khatm" -> {
+                    val goal = khatmRepository.getGoal() ?: return
+                    if (!goal.reminderEnabled || goal.paused || goal.isComplete) return
+                    Triple(goal.reminderTime, ALL_DAYS, REQUEST_QURAN_KHATM)
                 }
                 else -> return
             }
@@ -53,6 +64,7 @@ class AdhkarNotificationManager(private val context: Context) {
                 "morning" -> REQUEST_SNOOZE_MORNING
                 "evening" -> REQUEST_SNOOZE_EVENING
                 "friday_kahf" -> REQUEST_SNOOZE_FRIDAY
+                "quran_khatm" -> REQUEST_SNOOZE_QURAN_KHATM
                 else -> return
             }
             val pendingIntent = reminderPendingIntent(type, requestCode)
@@ -68,7 +80,7 @@ class AdhkarNotificationManager(private val context: Context) {
     }
 
     fun cancelAllReminders() {
-        listOf(101, 102, 103, 201, 202, 203).forEach(::cancelReminder)
+        listOf(101, 102, 103, 104, 201, 202, 203, 204).forEach(::cancelReminder)
     }
 
     private fun nextTrigger(time: String, allowedDays: Set<Int>): Long {
@@ -126,12 +138,15 @@ class AdhkarNotificationManager(private val context: Context) {
         const val ACTION_SNOOZE_REMINDER = "ir.adhkar.app.action.SNOOZE_REMINDER"
         const val EXTRA_REMINDER_TYPE = "REMINDER_TYPE"
         const val EXTRA_OPEN_CATEGORY = "OPEN_CATEGORY"
+        const val EXTRA_OPEN_QURAN_PAGE = "OPEN_QURAN_PAGE"
         private const val REQUEST_MORNING = 101
         private const val REQUEST_EVENING = 102
         private const val REQUEST_FRIDAY_KAHF = 103
+        private const val REQUEST_QURAN_KHATM = 104
         private const val REQUEST_SNOOZE_MORNING = 201
         private const val REQUEST_SNOOZE_EVENING = 202
         private const val REQUEST_SNOOZE_FRIDAY = 203
+        private const val REQUEST_SNOOZE_QURAN_KHATM = 204
         private val ALL_DAYS = (Calendar.SUNDAY..Calendar.SATURDAY).toSet()
     }
 }

@@ -14,16 +14,29 @@ import com.example.MainActivity
 import com.example.R
 import com.example.data.model.AdhkarData
 import com.example.data.repository.PreferenceRepository
+import com.example.quran.QuranKhatmPlanner
+import com.example.quran.QuranKhatmRepository
+import com.example.ui.language.AppLanguage
 
 class ReminderReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val prefs = PreferenceRepository(context)
         val language = prefs.getAppLanguage()
+        val scheduler = AdhkarNotificationManager(context)
+        if (intent.action in setOf(
+                Intent.ACTION_BOOT_COMPLETED,
+                Intent.ACTION_MY_PACKAGE_REPLACED,
+                Intent.ACTION_TIME_CHANGED,
+                Intent.ACTION_TIMEZONE_CHANGED
+            )
+        ) {
+            scheduler.scheduleReminders()
+            return
+        }
         if (!prefs.isNotificationsEnabled()) return
 
         val type = intent.getStringExtra(AdhkarNotificationManager.EXTRA_REMINDER_TYPE) ?: "general"
-        val scheduler = AdhkarNotificationManager(context)
         if (intent.action == AdhkarNotificationManager.ACTION_SNOOZE_REMINDER) {
             scheduler.scheduleSnooze(type)
             (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
@@ -33,6 +46,19 @@ class ReminderReceiver : BroadcastReceiver() {
         if ((type == "morning" || type == "evening") && prefs.isAdhkarCompletedToday(type)) {
             scheduler.scheduleNext(type)
             return
+        }
+        val khatmRepository = QuranKhatmRepository(context)
+        val khatmGoal = if (type == "quran_khatm") khatmRepository.getGoal() else null
+        val khatmPlan = khatmGoal?.let(QuranKhatmPlanner::plan)
+        if (type == "quran_khatm") {
+            if (khatmGoal == null || khatmGoal.paused || khatmGoal.isComplete || !khatmGoal.reminderEnabled) return
+            val todayLog = khatmRepository.getDailyLogs().firstOrNull {
+                it.dayKey == QuranKhatmPlanner.dayKey()
+            }
+            if (todayLog != null && khatmPlan != null && todayLog.completedThroughPage >= khatmPlan.targetEndPage) {
+                scheduler.scheduleNext(type)
+                return
+            }
         }
 
         val channelId = "nour_adhkar_reminders"
@@ -77,6 +103,22 @@ class ReminderReceiver : BroadcastReceiver() {
                 "یادآوری تلاوت سوره مبارکه کهف",
                 "امروز جمعه است؛ فرصتی آرام برای تلاوت سوره مبارکه کهف. برای شروع، روی دکمه زیر بزنید."
             )
+            "quran_khatm" -> {
+                val plan = requireNotNull(khatmPlan)
+                if (language == AppLanguage.ARABIC) {
+                    Triple(
+                        "📖 ورد ختم القرآن",
+                        "ورد اليوم: الصفحات ${plan.targetStartPage}–${plan.targetEndPage}",
+                        "تابع ختم القرآن من الصفحة ${plan.targetStartPage}. بقي ${plan.remainingDays} أيام في خطتك."
+                    )
+                } else {
+                    Triple(
+                        "📖 ورد ختم قرآن",
+                        "ورد امروز: صفحات ${plan.targetStartPage} تا ${plan.targetEndPage}",
+                        "ختم قرآن را از صفحه ${plan.targetStartPage} ادامه دهید. ${plan.remainingDays} روز از برنامه باقی مانده است."
+                    )
+                }
+            }
             else -> {
                 val dhikr = AdhkarData.adhkarList["daily"]?.randomOrNull()
                 val intro = "دل‌ها با یاد الهی به آرامش حقیقی می‌رسند. یادآوری تلاوت اذکار روزانه:"
@@ -90,16 +132,20 @@ class ReminderReceiver : BroadcastReceiver() {
             }
         }
 
-        val startIntent = if (type == "friday_kahf") {
-            Intent(Intent.ACTION_VIEW, Uri.parse("https://quran.com/18"))
-        } else {
-            Intent(context, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                if (type == "morning" || type == "evening") {
-                    putExtra(AdhkarNotificationManager.EXTRA_OPEN_CATEGORY, type)
+        val startIntent = when (type) {
+            "friday_kahf" -> Intent(Intent.ACTION_VIEW, Uri.parse("https://quran.com/18"))
+            else -> Intent(context, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    if (type == "morning" || type == "evening") {
+                        putExtra(AdhkarNotificationManager.EXTRA_OPEN_CATEGORY, type)
+                    } else if (type == "quran_khatm") {
+                        putExtra(
+                            AdhkarNotificationManager.EXTRA_OPEN_QURAN_PAGE,
+                            requireNotNull(khatmPlan).targetStartPage
+                        )
+                    }
                 }
             }
-        }
         val startPendingIntent = PendingIntent.getActivity(
             context,
             notificationId(type),
@@ -123,19 +169,30 @@ class ReminderReceiver : BroadcastReceiver() {
             .setStyle(NotificationCompat.BigTextStyle().bigText(bigText.split("\n\n").joinToString("\n\n") { language.text(it) }))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(startPendingIntent)
-            .addAction(0, language.text(if (type == "friday_kahf") "باز کردن سوره" else "شروع"), startPendingIntent)
+            .addAction(
+                0,
+                language.text(
+                    when (type) {
+                        "friday_kahf" -> "باز کردن سوره"
+                        "quran_khatm" -> "ادامه تلاوت"
+                        else -> "شروع"
+                    }
+                ),
+                startPendingIntent
+            )
             .addAction(0, language.text("یک ساعت بعد"), snoozePendingIntent)
             .setAutoCancel(true)
             .build()
 
         notificationManager.notify(notificationId(type), notification)
-        if (type in setOf("morning", "evening", "friday_kahf")) scheduler.scheduleNext(type)
+        if (type in setOf("morning", "evening", "friday_kahf", "quran_khatm")) scheduler.scheduleNext(type)
     }
 
     private fun notificationId(type: String): Int = when (type) {
         "morning" -> 1001
         "evening" -> 1002
         "friday_kahf" -> 1003
+        "quran_khatm" -> 1005
         else -> 1004
     }
 }

@@ -1,0 +1,6 @@
+<resources>
+ <string name="prayer_widget_name">اوقات شرعی</string>
+ <string name="prayer_widget_description">زمان نمازها و نماز بعدی بر اساس موقعیت ذخیره‌شده</string>
+ <string name="prayer_widget_location">تعیین موقعیت</string>
+ <string name="prayer_widget_setup">برای تعیین موقعیت بزنید</string>
+</resources>
