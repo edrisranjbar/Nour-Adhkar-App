@@ -246,7 +246,7 @@ fun AppMainScaffold(
 
     LaunchedEffect(Unit) {
         availableUpdate = if (BuildConfig.FORCE_UPDATE_PROMPT) {
-            AppUpdate(versionName = "۱.۵.۱ (پیش‌نمایش)", versionCode = BuildConfig.VERSION_CODE + 1)
+            AppUpdate(versionName = "۲.۱.۰ (پیش‌نمایش)", versionCode = BuildConfig.VERSION_CODE + 1)
         } else {
             UpdateChecker.check()
         }
