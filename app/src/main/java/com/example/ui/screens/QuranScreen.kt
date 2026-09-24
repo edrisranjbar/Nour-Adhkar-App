@@ -910,7 +910,7 @@ private fun SurahOpeningHeader(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(82.dp)
+            .height(112.dp)
             .padding(top = 4.dp, bottom = 10.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -922,8 +922,10 @@ private fun SurahOpeningHeader(
         )
         Text(
             text = "سُورَةُ $surahName",
+            modifier = Modifier.fillMaxWidth(),
             fontFamily = AmiriQuran,
-            fontSize = 23.sp,
+            fontSize = 18.sp,
+            lineHeight = 24.sp,
             color = palette.text,
             textAlign = TextAlign.Center,
             maxLines = 1
