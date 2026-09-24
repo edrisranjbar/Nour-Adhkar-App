@@ -6,28 +6,25 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -106,14 +103,23 @@ internal fun QuranKhatmSetupSheet(
     onSave: (days: Int, startPage: Int, reminderEnabled: Boolean, reminderTime: String) -> Unit
 ) {
     val context = LocalContext.current
-    var daysText by remember(existingGoal) { mutableStateOf((existingGoal?.targetDays ?: 30).toString()) }
-    var startFromCurrent by remember(existingGoal) { mutableStateOf(existingGoal?.startPage?.let { it > 1 } ?: false) }
+    val durationOptions = remember(existingGoal) {
+        buildList {
+            addAll(listOf(7, 30, 60, 90))
+            existingGoal?.targetDays?.takeUnless { contains(it) }?.let(::add)
+        }
+    }
+    var selectedDays by remember(existingGoal) { mutableStateOf(existingGoal?.targetDays ?: 30) }
+    var durationExpanded by remember(existingGoal) { mutableStateOf(false) }
+    var startPageText by remember(existingGoal, currentPage) {
+        mutableStateOf((existingGoal?.startPage ?: 1).toString())
+    }
     var reminderEnabled by remember(existingGoal) { mutableStateOf(existingGoal?.reminderEnabled ?: true) }
     var reminderTime by remember(existingGoal) { mutableStateOf(existingGoal?.reminderTime ?: "20:00") }
-    val days = daysText.toIntOrNull()?.takeIf { it in 1..3650 }
-    val startPage = if (existingGoal != null) existingGoal.startPage else if (startFromCurrent) currentPage else 1
-    val totalPages = QuranRepository.PAGE_COUNT - startPage + 1
-    val dailyPages = days?.let { kotlin.math.ceil(totalPages / it.toDouble()).toInt() }
+    val days = selectedDays
+    val startPage = startPageText.toIntOrNull()?.takeIf { it in 1..QuranRepository.PAGE_COUNT }
+    val totalPages = startPage?.let { QuranRepository.PAGE_COUNT - it + 1 } ?: 0
+    val dailyPages = startPage?.let { kotlin.math.ceil(totalPages / days.toDouble()).toInt() }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -138,57 +144,45 @@ internal fun QuranKhatmSetupSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(labels.duration, style = MaterialTheme.typography.labelLarge)
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ExposedDropdownMenuBox(
+                expanded = durationExpanded,
+                onExpandedChange = { durationExpanded = !durationExpanded }
             ) {
-                items(listOf(7, 30, 60, 90)) { preset ->
-                    FilterChip(
-                        selected = days == preset,
-                        onClick = { daysText = preset.toString() },
-                        label = { Text(labels.days(preset)) }
-                    )
+                OutlinedTextField(
+                    value = labels.days(selectedDays),
+                    onValueChange = {},
+                    readOnly = true,
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    label = { Text(labels.duration) },
+                    supportingText = if (startPage != null) dailyPages?.let { { Text(labels.preview(it, startPage)) } } else null,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = durationExpanded) }
+                )
+                ExposedDropdownMenu(
+                    expanded = durationExpanded,
+                    onDismissRequest = { durationExpanded = false }
+                ) {
+                    durationOptions.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(labels.days(option)) },
+                            onClick = {
+                                selectedDays = option
+                                durationExpanded = false
+                            }
+                        )
+                    }
                 }
             }
+
             OutlinedTextField(
-                value = daysText,
-                onValueChange = { daysText = it.filter(Char::isDigit).take(4) },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(labels.customDays) },
-                supportingText = dailyPages?.let { { Text(labels.preview(it, startPage)) } },
-                isError = days == null,
+                value = startPageText,
+                onValueChange = { startPageText = it.filter(Char::isDigit).take(3) },
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                label = { Text(labels.startingPoint) },
+                supportingText = { Text(labels.startPageHint) },
+                isError = startPage == null,
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
-
-            if (existingGoal == null) {
-                Text(
-                    text = labels.startingPoint,
-                    modifier = Modifier.padding(top = 16.dp),
-                    style = MaterialTheme.typography.labelLarge
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { startFromCurrent = false }
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(selected = !startFromCurrent, onClick = null)
-                    Text(labels.fromBeginning)
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { startFromCurrent = true }
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(selected = startFromCurrent, onClick = null)
-                    Text(labels.fromCurrentPage(currentPage))
-                }
-            }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
             Row(
@@ -223,11 +217,13 @@ internal fun QuranKhatmSetupSheet(
             }
 
             Button(
-                enabled = days != null,
-                onClick = { days?.let { onSave(it, startPage, reminderEnabled, reminderTime) } },
+                enabled = startPage != null,
+                onClick = {
+                    startPage?.let { page -> onSave(days, page, reminderEnabled, reminderTime) }
+                },
                 modifier = Modifier.fillMaxWidth().padding(top = 20.dp)
             ) {
-                Text(if (existingGoal == null) labels.startGoal else labels.saveChanges)
+                Text(if (existingGoal == null) labels.planGoal else labels.saveChanges)
             }
             Spacer(Modifier.height(22.dp))
         }
@@ -358,21 +354,20 @@ internal class QuranKhatmLabels(private val language: AppLanguage) {
     val menuTitle get() = if (arabic) "خطة ختم القرآن" else "برنامه ختم قرآن"
     val createTitle get() = if (arabic) "إنشاء خطة ختم" else "ساخت برنامه ختم"
     val editTitle get() = if (arabic) "تعديل خطة الختم" else "ویرایش برنامه ختم"
-    val setupDescription get() = if (arabic) "حدد المدة، وسنقسم الصفحات المتبقية إلى ورد يومي مرن." else "مدت را مشخص کنید؛ صفحات باقی‌مانده به ورد روزانهٔ منعطف تقسیم می‌شوند."
+    val setupDescription get() = if (arabic) "حدد المدة، وسنقسم الصفحات المتبقية إلى قراءة يومية مرنة." else "مدت را مشخص کنید؛ صفحات باقی‌مانده به قرائت روزانهٔ منعطف تقسیم می‌شوند."
     val duration get() = if (arabic) "مدة الختم" else "مدت ختم"
-    val customDays get() = if (arabic) "عدد الأيام" else "تعداد روزها"
-    val startingPoint get() = if (arabic) "نقطة البداية" else "نقطه شروع"
-    val fromBeginning get() = if (arabic) "من الصفحة الأولى" else "از صفحه اول"
+    val startingPoint get() = if (arabic) "ابدأ من الصفحة" else "نقطه شروع از صفحه"
+    val startPageHint get() = if (arabic) "أدخل رقم الصفحة فقط (۱ إلى ۶۰۴)" else "فقط عدد صفحه را وارد کنید (۱ تا ۶۰۴)"
     val dailyReminder get() = if (arabic) "تذكير يومي" else "یادآوری روزانه"
-    val dailyReminderDescription get() = if (arabic) "يفتح الورد التالي مباشرة" else "مستقیماً ورد بعدی را باز می‌کند"
-    val startGoal get() = if (arabic) "ابدأ الختم" else "شروع ختم"
+    val dailyReminderDescription get() = if (arabic) "يفتح القراءة التالية مباشرة" else "قرائت روزانهٔ بعدی را مستقیماً باز می‌کند"
+    val planGoal get() = if (arabic) "خطط للختم" else "برنامه‌ریزی ختم"
     val saveChanges get() = if (arabic) "حفظ التغييرات" else "ذخیره تغییرات"
     val goalTitle get() = if (arabic) "تقدم ختم القرآن" else "پیشرفت ختم قرآن"
     val paused get() = if (arabic) "متوقفة" else "متوقف"
-    val today get() = if (arabic) "ورد اليوم" else "ورد امروز"
+    val today get() = if (arabic) "القراءة اليومية" else "قرائت روزانه"
     val completed get() = if (arabic) "تم ختم القرآن، تقبل الله" else "ختم قرآن کامل شد؛ قبول باشد"
     val continueReading get() = if (arabic) "متابعة التلاوة" else "ادامه تلاوت"
-    val dailyLog get() = if (arabic) "السجل اليومي" else "گزارش روزانه"
+    val dailyLog get() = if (arabic) "سجل القراءة اليومية" else "گزارش قرائت روزانه"
     val noDailyLog get() = if (arabic) "لم تسجل تلاوة بعد." else "هنوز تلاوتی ثبت نشده است."
     val editGoal get() = if (arabic) "تعديل" else "ویرایش"
     val pause get() = if (arabic) "إيقاف مؤقت" else "توقف موقت"
