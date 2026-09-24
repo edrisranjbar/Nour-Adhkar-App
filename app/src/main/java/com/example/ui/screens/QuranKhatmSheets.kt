@@ -105,7 +105,7 @@ internal fun QuranKhatmSetupSheet(
     val context = LocalContext.current
     val durationOptions = remember(existingGoal) {
         buildList {
-            addAll(listOf(7, 30, 60, 90))
+            addAll(listOf(7, 30, 60, 90, 180, 365))
             existingGoal?.targetDays?.takeUnless { contains(it) }?.let(::add)
         }
     }
@@ -153,7 +153,6 @@ internal fun QuranKhatmSetupSheet(
                     onValueChange = {},
                     readOnly = true,
                     modifier = Modifier.fillMaxWidth().menuAnchor(),
-                    label = { Text(labels.duration) },
                     supportingText = if (startPage != null) dailyPages?.let { { Text(labels.preview(it, startPage)) } } else null,
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = durationExpanded) }
                 )
