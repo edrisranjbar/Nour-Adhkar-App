@@ -2,6 +2,12 @@
 
 This file applies to the whole repository. Follow explicit user requests over these defaults. Verify the current code and device state before relying on historical build results.
 
+## User workflow preferences
+
+- Do not push to `main` (or any other branch) unless the user explicitly tells you to push. When asked to save completed work without a push request, commit locally only.
+- Do not build, install, launch, or otherwise run the app unless the user explicitly asks you to do so. Source edits and non-executing checks are fine; defer build and runtime verification until requested.
+- When the user asks for a build, create a version-appropriate changelog file alongside the release `.aab` and `.bin` artifacts. Place these release artifacts and the changelog in the same release output directory (the `.d` release folder when that is the requested/project convention). Do not assume a build request also authorizes installing or launching the app.
+
 ## Product and architecture
 
 - Persian-first, RTL Android app for adhkar, prayers, reading, reminders, and personal progress. Keep core content and calculations offline.
