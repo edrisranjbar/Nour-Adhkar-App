@@ -100,6 +100,8 @@ private val AchievementMuted: Color
     @Composable @ReadOnlyComposable get() = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF746F63)
 private val AchievementEmerald = Color(0xFF246B3D)
 private val AchievementEmeraldDark = Color(0xFF0E4B38)
+// Bright reward gold for use on the dark emerald panels (~7:1 contrast). Note: theme SunGold is a dark green.
+private val RewardGold = Color(0xFFF2C94C)
 private val AchievementTrack: Color
     @Composable @ReadOnlyComposable get() = if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFE9E2D3)
 
@@ -307,7 +309,7 @@ private fun AchievementSummary(
     ) {
         Box(
             Modifier.background(
-                Brush.linearGradient(listOf(AchievementEmeraldDark, AchievementEmerald, Color(0xFF3F8A55)))
+                Brush.linearGradient(listOf(AchievementEmeraldDark, Color(0xFF155A3F)))
             )
         ) {
             Column(Modifier.fillMaxWidth().padding(18.dp)) {
@@ -316,8 +318,8 @@ private fun AchievementSummary(
                         CircularProgressIndicator(
                             progress = { if (totalLevels == 0) 0f else unlockedLevels / totalLevels.toFloat() },
                             modifier = Modifier.size(88.dp),
-                            color = SunGold,
-                            trackColor = Color.White.copy(alpha = 0.18f),
+                            color = RewardGold,
+                            trackColor = Color.White.copy(alpha = 0.22f),
                             strokeWidth = 8.dp
                         )
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -325,7 +327,7 @@ private fun AchievementSummary(
                             Text(
                                 "از ${totalLevels.toPersianDigits()}",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.White.copy(alpha = 0.8f)
+                                color = Color.White.copy(alpha = 0.9f)
                             )
                         }
                     }
@@ -337,13 +339,13 @@ private fun AchievementSummary(
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
-                        SummaryStat(Icons.Default.EmojiEvents, "کامل شده", completed.toPersianDigits(), SunGold)
-                        SummaryStat(Icons.Default.Lock, "هنوز قفل", locked.toPersianDigits(), Color.White.copy(alpha = 0.75f))
+                        SummaryStat(Icons.Default.EmojiEvents, "کامل شده", completed.toPersianDigits(), RewardGold)
+                        SummaryStat(Icons.Default.Lock, "هنوز قفل", locked.toPersianDigits(), Color.White.copy(alpha = 0.9f))
                     }
                 }
                 if (next != null) {
                     HorizontalDivider(Modifier.padding(vertical = 14.dp), color = Color.White.copy(alpha = 0.18f))
-                    Text("هدف بعدی", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.75f))
+                    Text("هدف بعدی", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.9f))
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -358,15 +360,15 @@ private fun AchievementSummary(
                         Text(
                             "${(next.nextTarget - next.progress).coerceAtLeast(0).toPersianDigits()} ${next.unit} مانده",
                             style = MaterialTheme.typography.labelLarge,
-                            color = SunGold,
+                            color = RewardGold,
                             fontWeight = FontWeight.Bold
                         )
                     }
                     LinearProgressIndicator(
                         progress = { (next.progress / next.nextTarget.toFloat()).coerceIn(0f, 1f) },
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp).height(8.dp).clip(RoundedCornerShape(4.dp)),
-                        color = SunGold,
-                        trackColor = Color.White.copy(alpha = 0.18f)
+                        color = RewardGold,
+                        trackColor = Color.White.copy(alpha = 0.22f)
                     )
                 }
             }
@@ -379,7 +381,7 @@ private fun SummaryStat(icon: ImageVector, label: String, value: String, tint: C
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
         Spacer(Modifier.size(6.dp))
-        Text("$label: $value", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.92f))
+        Text("$label: $value", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.9f))
     }
 }
 
@@ -742,12 +744,12 @@ private fun AchievementCelebrationScreen(achievement: Achievement, onDismiss: ()
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("✦  ✧  ✦", color = SunGold, fontSize = 30.sp)
+                Text("✦  ✧  ✦", color = RewardGold, fontSize = 30.sp)
                 Surface(
                     modifier = Modifier.padding(top = 18.dp).size(220.dp),
                     shape = ShieldShape,
                     color = Color(0xFFF8EBC6),
-                    border = BorderStroke(4.dp, SunGold),
+                    border = BorderStroke(4.dp, RewardGold),
                     shadowElevation = 16.dp
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -770,8 +772,8 @@ private fun AchievementCelebrationScreen(achievement: Achievement, onDismiss: ()
                     }
                 }
                 Text("تبریک!", modifier = Modifier.padding(top = 26.dp), color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Black)
-                Text("یک مرحله جدید باز شد", modifier = Modifier.padding(top = 6.dp), color = Color.White.copy(alpha = 0.8f), fontSize = 15.sp)
-                Text(achievement.title, modifier = Modifier.padding(top = 12.dp), color = SunGold, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text("یک مرحله جدید باز شد", modifier = Modifier.padding(top = 6.dp), color = Color.White.copy(alpha = 0.9f), fontSize = 15.sp)
+                Text(achievement.title, modifier = Modifier.padding(top = 12.dp), color = RewardGold, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 Text(
                     "مرحله ${achievement.unlockedLevel.toPersianDigits()} از ۳",
                     modifier = Modifier.padding(top = 5.dp),
