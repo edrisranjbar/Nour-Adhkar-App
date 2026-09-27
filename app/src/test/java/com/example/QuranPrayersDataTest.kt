@@ -12,9 +12,11 @@ class QuranPrayersDataTest {
         val category = AdhkarData.categories.single { it.id == "quran_prayers" }
         val prayers = AdhkarData.adhkarList.getValue(category.id)
 
-        assertTrue(prayers.size > 15)
-        assertEquals(prayers.size, category.count)
+        assertTrue(prayers.size > 50)
+        assertEquals(56, prayers.size)
+        assertEquals(56, category.count)
         assertEquals(prayers.size, prayers.map { it.id }.distinct().size)
+        assertEquals(prayers.size, prayers.map { it.arabicText }.distinct().size)
         assertTrue(prayers.all { it.arabicText.isNotBlank() && it.persianTranslation.isNotBlank() })
         assertTrue(prayers.all { it.source.startsWith("سوره ") && it.source.contains("آیه") })
     }
