@@ -72,6 +72,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
 import com.example.ui.language.LocalizedText as Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -163,10 +164,12 @@ fun HomeScreen(
                         // 1. Special Daily Adhkar Header
                         item {
                             HomeSectionHeader(
-                                title = "اذکار ویژه روزانه",
+                                title = "اذکار و دعاها",
                                 icon = Icons.Default.WbSunny,
                                 fontScale = fontScale,
-                                modifier = Modifier.padding(top = 6.dp)
+                                modifier = Modifier.padding(top = 6.dp),
+                                actionLabel = "بیشتر",
+                                onAction = { viewModel.selectTab("adhkar") }
                             )
                         }
 
@@ -797,6 +800,38 @@ fun AyahOfTheDayCard(viewModel: AdhkarViewModel, fontScale: Float) {
     }
 }
 
+/** Current consecutive-day streak; today may still be pending, so a streak ending yesterday counts. */
+@Composable
+fun rememberCurrentStreak(viewModel: AdhkarViewModel): Int {
+    val allProgress by viewModel.allProgress.collectAsState()
+    val recentSessions by viewModel.recentTasbihSessions.collectAsState()
+    val activityDayKeys by viewModel.activityDayKeys.collectAsState()
+    return remember(allProgress, recentSessions, activityDayKeys) {
+        var s = 0
+        val streakCal = Calendar.getInstance()
+        val todayActive = isDayActive(streakCal, allProgress, recentSessions, activityDayKeys)
+        if (todayActive) {
+            s = 1
+            streakCal.add(Calendar.DAY_OF_YEAR, -1)
+            while (isDayActive(streakCal, allProgress, recentSessions, activityDayKeys)) {
+                s++
+                streakCal.add(Calendar.DAY_OF_YEAR, -1)
+            }
+        } else {
+            streakCal.add(Calendar.DAY_OF_YEAR, -1)
+            if (isDayActive(streakCal, allProgress, recentSessions, activityDayKeys)) {
+                s = 1
+                streakCal.add(Calendar.DAY_OF_YEAR, -1)
+                while (isDayActive(streakCal, allProgress, recentSessions, activityDayKeys)) {
+                    s++
+                    streakCal.add(Calendar.DAY_OF_YEAR, -1)
+                }
+            }
+        }
+        s
+    }
+}
+
 @Composable
 fun StreakCalendarCard(
     viewModel: AdhkarViewModel,
@@ -828,31 +863,7 @@ fun StreakCalendarCard(
         list
     }
 
-    // Calculate current streak
-    val streak = remember(allProgress, recentSessions, activityDayKeys) {
-        var s = 0
-        val streakCal = Calendar.getInstance()
-        val todayActive = isDayActive(streakCal, allProgress, recentSessions, activityDayKeys)
-        if (todayActive) {
-            s = 1
-            streakCal.add(Calendar.DAY_OF_YEAR, -1)
-            while (isDayActive(streakCal, allProgress, recentSessions, activityDayKeys)) {
-                s++
-                streakCal.add(Calendar.DAY_OF_YEAR, -1)
-            }
-        } else {
-            streakCal.add(Calendar.DAY_OF_YEAR, -1)
-            if (isDayActive(streakCal, allProgress, recentSessions, activityDayKeys)) {
-                s = 1
-                streakCal.add(Calendar.DAY_OF_YEAR, -1)
-                while (isDayActive(streakCal, allProgress, recentSessions, activityDayKeys)) {
-                    s++
-                    streakCal.add(Calendar.DAY_OF_YEAR, -1)
-                }
-            }
-        }
-        s
-    }
+    val streak = rememberCurrentStreak(viewModel)
 
     var showStreakDialog by remember { mutableStateOf(false) }
 
@@ -1061,7 +1072,9 @@ fun HomeSectionHeader(
     title: String,
     icon: ImageVector,
     fontScale: Float,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -1095,6 +1108,14 @@ fun HomeSectionHeader(
             modifier = Modifier.weight(1f),
             color = SoftBorder.copy(alpha = 0.9f)
         )
+        if (actionLabel != null && onAction != null) {
+            TextButton(
+                onClick = onAction,
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+            ) {
+                Text(actionLabel, fontSize = (12 * fontScale).sp, color = MaterialTheme.colorScheme.primary)
+            }
+        }
     }
 }
 

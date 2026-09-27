@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -33,6 +34,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.runtime.collectAsState
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.RecordVoiceOver
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.EditNote
@@ -92,6 +99,8 @@ import com.example.quran.QuranSurah
 import com.example.quran.QuranVerse
 import com.example.notifications.AdhkarNotificationManager
 import com.example.ui.language.AppLanguage
+import com.example.media.QuranAudioPlayer
+import com.example.media.QuranReciters
 import com.example.ui.language.LocalAppLanguage
 import com.example.ui.theme.AmiriQuran
 import com.example.ui.util.toPersianDigits
@@ -140,7 +149,6 @@ fun QuranScreen(
     val khatmRepository = remember(context) { QuranKhatmRepository(context) }
     val notificationManager = remember(context) { AdhkarNotificationManager(context) }
     var corpus by remember { mutableStateOf<QuranCorpus?>(null) }
-    var query by remember { mutableStateOf("") }
     var selectedVerse by remember { mutableStateOf<QuranVerse?>(null) }
     var noteVerse by remember { mutableStateOf<QuranVerse?>(null) }
     var readerColor by remember { mutableStateOf(QuranReaderColor.fromId(prefs.getQuranReaderColor())) }
@@ -160,6 +168,17 @@ fun QuranScreen(
     var khatmDetailsOpen by remember { mutableStateOf(false) }
     var cancelKhatmConfirmationOpen by remember { mutableStateOf(false) }
     var khatmCompletedDialogOpen by remember { mutableStateOf(false) }
+    val audioPrefs = remember(context) { context.getSharedPreferences("quran_audio", android.content.Context.MODE_PRIVATE) }
+    var reciterId by remember { mutableStateOf(audioPrefs.getString("reciter", QuranReciters.first().id)!!) }
+    var reciterMenuOpen by remember { mutableStateOf(false) }
+    val audioState by QuranAudioPlayer.state.collectAsState()
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { QuranAudioPlayer.stop() } }
+    LaunchedEffect(audioState.error) {
+        audioState.error?.let {
+            android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_LONG).show()
+            QuranAudioPlayer.clearError()
+        }
+    }
 
     LaunchedEffect(Unit) {
         corpus = withContext(Dispatchers.Default) { QuranRepository.load(context) }
@@ -187,9 +206,6 @@ fun QuranScreen(
     val palette = readerColor.palette()
     val labels = QuranLabels(language)
     val khatmLabels = QuranKhatmLabels(language)
-    val searchResults = remember(query, loadedCorpus) {
-        loadedCorpus.search(query)
-    }
     val pageFirstSurahNumber = loadedCorpus.pages
         .getOrNull(pagerState.currentPage)
         ?.verses
@@ -233,31 +249,6 @@ fun QuranScreen(
             color = Color(0xFF4D3524),
             tonalElevation = 0.dp
         ) {
-            if (searchOpen) {
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 5.dp),
-                    singleLine = true,
-                    placeholder = { Text(labels.search, color = Color(0xFFF5EDE2)) },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color(0xFFF5EDE2)) },
-                    trailingIcon = {
-                        IconButton(onClick = {
-                            query = ""
-                            searchOpen = false
-                        }) {
-                            Icon(Icons.Default.Close, contentDescription = labels.clearSearch, tint = Color(0xFFF5EDE2))
-                        }
-                    },
-                    colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color(0xFFFDF8EF),
-                        unfocusedTextColor = Color(0xFFFDF8EF),
-                        focusedBorderColor = Color(0xFFC9A65A),
-                        unfocusedBorderColor = Color(0xFFAD937B),
-                        cursorColor = Color(0xFFC9A65A)
-                    )
-                )
-            } else {
                 Row(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -275,6 +266,62 @@ fun QuranScreen(
                         style = MaterialTheme.typography.titleMedium,
                         color = Color(0xFFFDF8EF)
                     )
+                    val reciter = QuranReciters.firstOrNull { it.id == reciterId } ?: QuranReciters.first()
+                    Box {
+                        IconButton(onClick = { reciterMenuOpen = true }) {
+                            Icon(
+                                Icons.Default.RecordVoiceOver,
+                                contentDescription = if (language == AppLanguage.ARABIC) "اختيار القارئ" else "انتخاب قاری",
+                                tint = Color(0xFFF5EDE2)
+                            )
+                        }
+                        DropdownMenu(expanded = reciterMenuOpen, onDismissRequest = { reciterMenuOpen = false }) {
+                            QuranReciters.forEach { item ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            if (language == AppLanguage.ARABIC) item.arName else item.faName,
+                                            fontWeight = if (item.id == reciterId) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    },
+                                    leadingIcon = if (item.id == reciterId) {
+                                        { Icon(Icons.Default.Check, contentDescription = null) }
+                                    } else null,
+                                    onClick = {
+                                        reciterMenuOpen = false
+                                        reciterId = item.id
+                                        audioPrefs.edit().putString("reciter", item.id).apply()
+                                        // Switch voice immediately when something is already playing.
+                                        audioState.surah?.let { QuranAudioPlayer.play(item, it) }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    val audioActive = audioState.isPlaying || audioState.isLoading
+                    IconButton(onClick = {
+                        if (audioActive) QuranAudioPlayer.stop()
+                        else QuranAudioPlayer.play(reciter, currentSurahNumber)
+                    }) {
+                        if (audioState.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = Color(0xFFF5EDE2)
+                            )
+                        } else {
+                            Icon(
+                                if (audioActive) Icons.Default.Stop else Icons.Default.PlayArrow,
+                                contentDescription = when {
+                                    audioActive && language == AppLanguage.ARABIC -> "إيقاف التلاوة"
+                                    audioActive -> "توقف تلاوت"
+                                    language == AppLanguage.ARABIC -> "تشغيل تلاوة السورة"
+                                    else -> "پخش تلاوت سوره"
+                                },
+                                tint = Color(0xFFF5EDE2)
+                            )
+                        }
+                    }
                     IconButton(onClick = { searchOpen = true }) {
                         Icon(Icons.Default.Search, contentDescription = labels.search, tint = Color(0xFFF5EDE2))
                     }
@@ -312,18 +359,9 @@ fun QuranScreen(
                                 colorDialogOpen = true
                             }
                         )
-                        HorizontalDivider()
-                        DropdownMenuItem(
-                            text = { Text(labels.textSource) },
-                            onClick = {
-                                moreMenuOpen = false
-                                uriHandler.openUri("https://tanzil.net")
-                            }
-                        )
                     }
                 }
                 }
-            }
         }
 
         val visibleGoal = khatmGoal
@@ -337,52 +375,6 @@ fun QuranScreen(
             )
         }
 
-        if (query.isNotBlank()) {
-            Surface(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = Color(0xFF202A3C),
-                shadowElevation = 4.dp
-            ) {
-                if (searchResults.isEmpty()) {
-                    Text(
-                        text = labels.noResults,
-                        modifier = Modifier.padding(18.dp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    LazyColumn(modifier = Modifier.heightIn(max = 210.dp)) {
-                        items(searchResults, key = { it.id }) { verse ->
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        activeSurahNumber = verse.surahNumber
-                                        scope.launch { pagerState.scrollToPage(verse.pageNumber - 1) }
-                                        query = ""
-                                    }
-                                    .padding(horizontal = 16.dp, vertical = 10.dp)
-                            ) {
-                                Text(
-                                    text = "${labels.surah} ${verse.surahName} · ${labels.verse} ${verse.verseNumber.toPersianDigits()}",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = palette.accent
-                                )
-                                Text(
-                                    text = verse.text,
-                                    fontFamily = AmiriQuran,
-                                    fontSize = 18.sp,
-                                    lineHeight = 28.sp,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                        }
-                    }
-                }
-            }
-            Spacer(Modifier.height(8.dp))
-        }
 
         HorizontalPager(
             state = pagerState,
@@ -424,6 +416,30 @@ fun QuranScreen(
                     pagerState.scrollToPage(surah.firstPage - 1)
                     focusedSurahNumber = surah.number
                 }
+            }
+        )
+    }
+
+    if (searchOpen) {
+        QuranSpotlightSearch(
+            corpus = loadedCorpus,
+            arabic = language == AppLanguage.ARABIC,
+            quranFont = AmiriQuran,
+            searchVerses = { loadedCorpus.search(it) },
+            normalize = { it.normalizeArabic() },
+            onDismiss = { searchOpen = false },
+            onSurahSelected = { surah ->
+                searchOpen = false
+                activeSurahNumber = surah.number
+                scope.launch {
+                    pagerState.scrollToPage(surah.firstPage - 1)
+                    focusedSurahNumber = surah.number
+                }
+            },
+            onVerseSelected = { verse ->
+                searchOpen = false
+                activeSurahNumber = verse.surahNumber
+                scope.launch { pagerState.scrollToPage(verse.pageNumber - 1) }
             }
         )
     }
@@ -910,7 +926,7 @@ private fun SurahOpeningHeader(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(82.dp)
+            .height(112.dp)
             .padding(top = 4.dp, bottom = 10.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -922,8 +938,12 @@ private fun SurahOpeningHeader(
         )
         Text(
             text = "سُورَةُ $surahName",
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset(y = (-3).dp),
             fontFamily = AmiriQuran,
-            fontSize = 23.sp,
+            fontSize = 18.sp,
+            lineHeight = 24.sp,
             color = palette.text,
             textAlign = TextAlign.Center,
             maxLines = 1
@@ -1105,7 +1125,6 @@ private class QuranLabels(private val language: AppLanguage) {
     val pageRange get() = if (arabic) "رقم الصفحة (١–٦٠٤)" else "شماره صفحه (۱ تا ۶۰۴)"
     val go get() = if (arabic) "انتقال" else "برو"
     val more get() = if (arabic) "المزيد" else "بیشتر"
-    val textSource get() = if (arabic) "مصدر النص: Tanzil Project" else "منبع متن: Tanzil Project"
     val noResults get() = if (arabic) "لا توجد نتائج" else "نتیجه‌ای پیدا نشد"
     val page get() = if (arabic) "الصفحة" else "صفحه"
     val surah get() = if (arabic) "سورة" else "سوره"

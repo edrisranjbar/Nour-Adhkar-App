@@ -1,6 +1,6 @@
 # Qibla compass
 
-The drawer item «قبله‌نما» opens a separate screen after the counter. It uses the saved prayer location or an explicitly requested foreground GPS fix. A GPS fix on this screen is temporary and does not change prayer settings or alert schedules.
+The drawer item «قبله‌نما» opens the Qibla screen, which uses the saved prayer location or an explicitly requested foreground GPS fix. A GPS fix on this screen is temporary and does not change prayer settings or alert schedules.
 
 Bearing is calculated offline using the installed Adhan library's Qibla implementation. The phone heading uses a north-referenced rotation vector (never the game rotation vector), with accelerometer/magnetometer fallback, display rotation remapping, and Android GeomagneticField declination correction to true north. Circular filtering crosses north by the shortest route. Listeners run only while the screen is resumed and are removed on pause or disposal.
 

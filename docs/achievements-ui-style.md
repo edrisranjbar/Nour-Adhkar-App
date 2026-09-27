@@ -89,7 +89,7 @@ At a `360 dp` width, build the screen in this order:
 2. Centered app bar.
 3. Summary card.
 4. Category chips.
-5. Three-column achievement grid.
+5. Two-column achievement grid.
 6. Persistent app bottom navigation.
 
 Use `16 dp` horizontal screen padding and `12 dp` vertical section spacing. The grid scrolls beneath the app bar and above the bottom navigation.
@@ -99,8 +99,8 @@ Use `16 dp` horizontal screen padding and `12 dp` vertical section spacing. The 
 - Height: `56 dp`, excluding status-bar inset.
 - Background: `achievementCanvas`.
 - Title centered independently of actions.
-- Back button remains visually on the left, matching the reference.
-- Optional information button sits on the right.
+- Back button sits on the right, matching the other RTL pages.
+- Do not show an information action in the app bar.
 - Icon containers are `40 × 40 dp`, ivory, with a warm border and `12 dp` radius.
 - Icons are `22 dp` and use `achievementText`.
 - Do not add a dividing line unless scroll content reaches the app bar.
@@ -134,11 +134,11 @@ Ring stroke is `6 dp`. Completed arc uses emerald; track uses warm beige. All su
 
 ### Achievement grid
 
-- Exactly three columns on normal phones, matching the reference.
-- Grid gap: `8 dp` horizontal and `12 dp` vertical.
-- Card width at `360 dp`: approximately `104 dp`.
-- Card height: content-driven, usually `214–230 dp`.
-- Card padding: `5 dp` around artwork, `7 dp` around text.
+- Exactly two columns on normal phones.
+- Grid gap: `12 dp` horizontal and `14 dp` vertical.
+- Card width at `360 dp`: approximately `160 dp`.
+- Card height: content-driven, with room for artwork, title, description, and progress.
+- Card padding: `9 dp` around artwork and text; use a rounded `22 dp` surface and subtle elevation.
 - Card background: `achievementSurface`.
 - Border: `1 dp achievementBorder`.
 - Radius: `16 dp`.
@@ -306,8 +306,8 @@ Keep motion short and ceremonial:
 - [ ] Warm ivory canvas replaces the default Material background on both achievement screens.
 - [ ] Summary uses three reward zones and a real circular progress ring.
 - [ ] Category filters are compact pills with emerald selected state.
-- [ ] Normal phone layout shows three cards per row.
-- [ ] Every card contains square artwork, an overlapping shield, two lines of copy, numeric progress, and a thin progress bar.
+- [ ] Normal phone layout shows two cards per row.
+- [ ] Every card contains prominent artwork, an overlapping shield, two lines of copy, numeric progress, and a clear progress bar.
 - [ ] Locked cards remain visible with grayscale artwork, reduced contrast, and an explicit lock.
 - [ ] Tapping a card opens a full-screen detail destination.
 - [ ] Detail hero is full bleed with floating back/share actions.

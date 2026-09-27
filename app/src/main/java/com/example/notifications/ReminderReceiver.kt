@@ -113,8 +113,8 @@ class ReminderReceiver : BroadcastReceiver() {
                     )
                 } else {
                     Triple(
-                        "📖 ورد ختم قرآن",
-                        "ورد امروز: صفحات ${plan.targetStartPage} تا ${plan.targetEndPage}",
+                        "یادآوری تلاوت قرآن",
+                        "قرائت امروز: صفحات ${plan.targetStartPage} تا ${plan.targetEndPage}",
                         "ختم قرآن را از صفحه ${plan.targetStartPage} ادامه دهید. ${plan.remainingDays} روز از برنامه باقی مانده است."
                     )
                 }

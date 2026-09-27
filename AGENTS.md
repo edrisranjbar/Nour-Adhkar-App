@@ -2,6 +2,12 @@
 
 This file applies to the whole repository. Follow explicit user requests over these defaults. Verify the current code and device state before relying on historical build results.
 
+## User workflow preferences
+
+- Do not push to `main` (or any other branch) unless the user explicitly tells you to push. When asked to save completed work without a push request, commit locally only.
+- Do not build, install, launch, or otherwise run the app unless the user explicitly asks you to do so. Source edits and non-executing checks are fine; defer build and runtime verification until requested.
+- When the user asks for a build, create a version-appropriate changelog file alongside the release `.aab` and `.bin` artifacts. Place these release artifacts and the changelog in the same release output directory (the `.d` release folder when that is the requested/project convention). Do not assume a build request also authorizes installing or launching the app.
+
 ## Product and architecture
 
 - Persian-first, RTL Android app for adhkar, prayers, reading, reminders, and personal progress. Keep core content and calculations offline.
@@ -16,7 +22,7 @@ This file applies to the whole repository. Follow explicit user requests over th
 - Use natural Persian labels, Persian digits where appropriate, RTL layout, accessible contrast, scalable text, and adequate touch targets. Avoid fixed heights that clip text at larger font scales.
 - Use shared Material theme roles for dark surfaces, text, dividers, and highlights. Do not introduce a separate blue/mint dark palette for the prayer card.
 - Keep the prayer-times card compact, immediately after the streak section. It shows the next prayer/countdown and six times in three two-column rows, with a gear settings icon. Do not show a date or restore the large illustration. Keep the date internally for correct calculation rollover.
-- Among home collection cards, retain morning, evening, Quran prayers, and Sunnah prayers. Other adhkar collections belong on the separate `adhkar` page titled «اذکار و ادعیه», the second drawer item after Home. Preserve existing streak/activity/checklist sections unless asked to change them.
+- The bottom navigation contains exactly these destinations in order: Home, Quran, tasbih (matching the centered circular control), daily checklist, and Settings. Keep the broader destinations and actions in the navigation drawer; app sharing belongs in the About screen, not the drawer. Among home collection cards, retain morning, evening, Quran prayers, and Sunnah prayers. Other adhkar collections belong on the separate `adhkar` page titled «اذکار و ادعیه». Preserve existing streak/activity/checklist sections unless asked to change them.
 - Article cards open a separate reading view, not an expanding card. Provide back navigation and an Android share chooser for the article. Do not repeat «مقالات» or a page description beneath the app bar. Opening the chooser is not authorization to send to a recipient.
 - Preserve the selected collection's parent page when returning. Avoid duplicate app-bar and body titles.
 - Update relevant documentation when behavior changes. Report source changes, compilation, installation, and visual verification separately.

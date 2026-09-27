@@ -1,0 +1,85 @@
+package com.example.media
+
+import android.media.AudioAttributes
+import android.media.MediaPlayer
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+/** A reciter whose complete per-surah recitations are streamed from mp3quran.net (`NNN.mp3`). */
+data class QuranReciter(val id: String, val faName: String, val arName: String, val baseUrl: String) {
+    fun surahUrl(surah: Int) = "$baseUrl/${surah.toString().padStart(3, '0')}.mp3"
+}
+
+val QuranReciters = listOf(
+    QuranReciter("afs", "مشاری راشد العفاسی", "مشاري راشد العفاسي", "https://server8.mp3quran.net/afs"),
+    QuranReciter("basit", "عبدالباسط عبدالصمد", "عبد الباسط عبد الصمد", "https://server7.mp3quran.net/basit"),
+    QuranReciter("husr", "محمود خلیل الحصری", "محمود خليل الحصري", "https://server13.mp3quran.net/husr"),
+    QuranReciter("minsh", "محمد صدیق المنشاوی", "محمد صديق المنشاوي", "https://server10.mp3quran.net/minsh"),
+    QuranReciter("s_gmd", "سعد الغامدی", "سعد الغامدي", "https://server7.mp3quran.net/s_gmd"),
+    QuranReciter("maher", "ماهر المعیقلی", "ماهر المعيقلي", "https://server12.mp3quran.net/maher"),
+    QuranReciter("sds", "عبدالرحمن السدیس", "عبد الرحمن السديس", "https://server11.mp3quran.net/sds"),
+    QuranReciter("shatri", "ابوبکر الشاطری", "أبو بكر الشاطري", "https://server11.mp3quran.net/shatri")
+)
+
+data class QuranAudioState(
+    val surah: Int? = null,
+    val isLoading: Boolean = false,
+    val isPlaying: Boolean = false,
+    val error: String? = null
+)
+
+/** Streams one surah at a time; kept separate from the adhkar playback service. */
+object QuranAudioPlayer {
+    private var player: MediaPlayer? = null
+    private val _state = MutableStateFlow(QuranAudioState())
+    val state: StateFlow<QuranAudioState> = _state.asStateFlow()
+
+    fun play(reciter: QuranReciter, surah: Int) {
+        release()
+        _state.value = QuranAudioState(surah = surah, isLoading = true)
+        val mp = MediaPlayer()
+        player = mp
+        try {
+            mp.setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build()
+            )
+            mp.setDataSource(reciter.surahUrl(surah))
+            mp.setOnPreparedListener {
+                if (player === it) {
+                    it.start()
+                    _state.value = QuranAudioState(surah = surah, isPlaying = true)
+                }
+            }
+            mp.setOnCompletionListener { if (player === it) stop() }
+            mp.setOnErrorListener { it, _, _ ->
+                if (player === it) {
+                    release()
+                    _state.value = QuranAudioState(surah = surah, error = "پخش انجام نشد. اتصال اینترنت را بررسی کنید.")
+                }
+                true
+            }
+            mp.prepareAsync()
+        } catch (e: Exception) {
+            release()
+            _state.value = QuranAudioState(surah = surah, error = "پخش انجام نشد. اتصال اینترنت را بررسی کنید.")
+        }
+    }
+
+    fun stop() {
+        release()
+        _state.value = QuranAudioState()
+    }
+
+    fun clearError() {
+        if (_state.value.error != null) _state.value = QuranAudioState()
+    }
+
+    private fun release() {
+        player?.let { runCatching { it.stop() }; it.release() }
+        player = null
+    }
+}

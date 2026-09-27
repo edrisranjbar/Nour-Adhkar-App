@@ -47,6 +47,7 @@ import com.example.quran.QuranKhatmPlan
 import com.example.quran.QuranKhatmStatus
 import com.example.quran.QuranRepository
 import com.example.ui.language.AppLanguage
+import com.example.ui.util.formatPersianDate
 import com.example.ui.util.toPersianDigits
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -105,7 +106,7 @@ internal fun QuranKhatmSetupSheet(
     val context = LocalContext.current
     val durationOptions = remember(existingGoal) {
         buildList {
-            addAll(listOf(7, 30, 60, 90))
+            addAll(listOf(7, 30, 60, 90, 180, 365))
             existingGoal?.targetDays?.takeUnless { contains(it) }?.let(::add)
         }
     }
@@ -153,7 +154,6 @@ internal fun QuranKhatmSetupSheet(
                     onValueChange = {},
                     readOnly = true,
                     modifier = Modifier.fillMaxWidth().menuAnchor(),
-                    label = { Text(labels.duration) },
                     supportingText = if (startPage != null) dailyPages?.let { { Text(labels.preview(it, startPage)) } } else null,
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = durationExpanded) }
                 )
@@ -407,7 +407,9 @@ internal class QuranKhatmLabels(private val language: AppLanguage) {
     fun deadline(dayKey: Long) = if (arabic) "موعد الإتمام: ${date(dayKey)}" else "تاریخ پایان: ${date(dayKey)}"
     fun recordThrough(page: Int) = if (arabic) "تسجيل حتى الصفحة $page" else "ثبت تلاوت تا صفحه ${page.toPersianDigits()}"
     fun throughPage(page: Int) = if (arabic) "حتى الصفحة $page" else "تا صفحه ${page.toPersianDigits()}"
-    fun date(dayKey: Long): String = SimpleDateFormat("yyyy/MM/dd", Locale.US)
-        .format(Date(dayKey))
-        .let { if (arabic) it else it.toPersianDigits() }
+    fun date(dayKey: Long): String = if (arabic) {
+        SimpleDateFormat("yyyy/MM/dd", Locale.US).format(Date(dayKey))
+    } else {
+        formatPersianDate(dayKey)
+    }
 }

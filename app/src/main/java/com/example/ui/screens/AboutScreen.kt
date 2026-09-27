@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import android.content.Intent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,8 +13,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import com.example.ui.language.LocalizedIcon as Icon
 import androidx.compose.material3.MaterialTheme
 import com.example.ui.language.LocalizedText as Text
@@ -21,12 +32,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import com.example.data.repository.AppInboxApi
+import com.example.ui.language.AppLanguage
+import com.example.ui.language.LocalAppLanguage
+import com.example.ui.language.text
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
@@ -46,6 +67,11 @@ fun AboutScreen(
 ) {
     val fontScale by viewModel.fontScale.collectAsState()
     val uriHandler = LocalUriHandler.current
+    val context = LocalContext.current
+    val appLanguage = LocalAppLanguage.current
+    val scope = rememberCoroutineScope()
+    var feedbackOpen by remember { mutableStateOf(false) }
+    if (feedbackOpen) FeedbackSheet(onDismiss = { feedbackOpen = false })
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Column(
@@ -55,21 +81,11 @@ fun AboutScreen(
                 .padding(top = innerPadding.calculateTopPadding())
                 .padding(horizontal = 16.dp)
         ) {
-            // Screen Header
-            Text(
-                text = "درباره برنامه",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontSize = (24 * fontScale).sp,
-                    fontWeight = FontWeight.Bold,
-                    color = SandDark
-                ),
-                modifier = Modifier.padding(vertical = 12.dp)
-            )
-
+            // The app bar already shows «درباره برنامه»; no duplicate body title.
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 16.dp)
+                contentPadding = PaddingValues(top = 12.dp, bottom = innerPadding.calculateBottomPadding() + 16.dp)
             ) {
                 // App Logo & Core About Text Card
                 item {
@@ -118,10 +134,10 @@ fun AboutScreen(
                             // Beautifully written description directly from adhkar.ir/about concepts
                             Text(
                                 text = if (com.example.ui.language.LocalAppLanguage.current == com.example.ui.language.AppLanguage.ARABIC)
-                                    "أذكار نور مشروع مفتوح المصدر وغير ربحي يهدف إلى تيسير قراءة الأدعية والأذكار والتسبيح للمسلمين حول العالم.\n\nنؤمن بأن ذكر الله ينبغي أن يكون متاحًا للجميع في بيئة بسيطة وجميلة، بعيدًا عن الأهداف التجارية. جميع أقسام التطبيق مجانية بالكامل، بلا إعلانات أو تتبع، ومحتواه الأساسي متاح دون إنترنت.\n\nالتسجيلات بصوت مشاري راشد العفاسي من Makkah Live وInternet Archive."
+                                    "أذكار نور مشروع مفتوح المصدر وغير ربحي يهدف إلى تيسير قراءة الأدعية والأذكار والتسبيح للمسلمين حول العالم.\n\nنؤمن بأن ذكر الله ينبغي أن يكون متاحًا للجميع في بيئة بسيطة وجميلة، بعيدًا عن الأهداف التجارية. جميع أقسام التطبيق مجانية بالكامل، بلا إعلانات أو تتبع، ومحتواه الأساسي متاح دون إنترنت.\n\nتسجيلات الأذكار بصوت مشاري راشد العفاسي من Makkah Live وInternet Archive، وتلاوات القرآن تُبث من mp3quran.net. نص القرآن من Tanzil Project (tanzil.net)."
                                 else "پروژه اذکار یک تلاش متن‌باز، عام‌المنفعه و غیرانتفاعی است که با هدف تسهیل قرائت ادعیه، اذکار روزانه و تسبیحات برای مسلمانان سراسر جهان شکل گرفته است.\n\n" +
                                         "ما معتقدیم یاد و ذکر پروردگار باید در بستری زلال، ساده، زیبا و به دور از هرگونه هیاهو یا اهداف تجاری در دسترس همگان باشد. از این رو، تمام بخش‌های این نرم‌افزار به صورت کاملاً رایگان ارائه شده، فاقد هرگونه تبلیغ یا ردیابی است و محتوای اصلی آن بدون اینترنت در دسترس می‌ماند تا آرامش خاطر شما حفظ شود.\n\n" +
-                                        "فایل‌های صوتی با تلاوت مشاری راشد العفاسی از Makkah Live و Internet Archive تهیه شده‌اند.",
+                                        "فایل‌های صوتی اذکار با صدای مشاری راشد العفاسی از Makkah Live و Internet Archive تهیه شده‌اند. تلاوت‌های قرآن از mp3quran.net پخش می‌شوند. متن قرآن از Tanzil Project (tanzil.net) است.",
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontSize = (13.5 * fontScale).sp,
                                     color = TextPersian,
@@ -130,6 +146,18 @@ fun AboutScreen(
                                 textAlign = TextAlign.Justify
                             )
                         }
+                    }
+                }
+
+                item {
+                    OutlinedButton(
+                        onClick = { feedbackOpen = true },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                        shape = RoundedCornerShape(18.dp)
+                    ) {
+                        Icon(Icons.Default.Email, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("ارسال نظر و پیشنهاد", fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -178,6 +206,47 @@ fun AboutScreen(
                                     color = NightBlue
                                 )
                             }
+                        }
+                    }
+                }
+
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val shareText = if (appLanguage == AppLanguage.ARABIC) {
+                                    "أذكار نور؛ رفيقك اليومي للذكر والدعاء والتذكير بالأعمال اليومية\nhttps://cafebazaar.ir/app/ir.adhkar.app"
+                                } else {
+                                    "اذکار نور؛ همراه روزانه ذکر و نیایش، یادآوری اذکار و اعمال روزانه\nhttps://cafebazaar.ir/app/ir.adhkar.app"
+                                }
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, shareText)
+                                }
+                                context.startActivity(Intent.createChooser(shareIntent, appLanguage.text("اشتراک‌گذاری اذکار نور")))
+                            },
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = BorderStroke(1.dp, SoftBorder)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Text(
+                                text = "اشتراک‌گذاری برنامه",
+                                fontSize = (14 * fontScale).sp,
+                                fontWeight = FontWeight.Bold,
+                                color = SandDark
+                            )
                         }
                     }
                 }
@@ -284,6 +353,73 @@ fun AboutScreen(
                 }
 
             }
+        }
+    }
+}
+
+private val FeedbackTypes = listOf("suggestion" to "پیشنهاد", "criticism" to "انتقاد", "other" to "سایر")
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FeedbackSheet(onDismiss: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    var type by remember { mutableStateOf(FeedbackTypes.first().first) }
+    var typeMenuOpen by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf("") }
+    var status by remember { mutableStateOf("") }
+    var sending by remember { mutableStateOf(false) }
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .imePadding()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text("ارسال نظر و پیشنهاد", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            ExposedDropdownMenuBox(expanded = typeMenuOpen, onExpandedChange = { typeMenuOpen = it }) {
+                OutlinedTextField(
+                    value = FeedbackTypes.first { it.first == type }.second,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("نوع پیام") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeMenuOpen) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                )
+                ExposedDropdownMenu(expanded = typeMenuOpen, onDismissRequest = { typeMenuOpen = false }) {
+                    FeedbackTypes.forEach { (value, label) ->
+                        DropdownMenuItem(text = { Text(label) }, onClick = { type = value; typeMenuOpen = false })
+                    }
+                }
+            }
+            OutlinedTextField(
+                value = message,
+                onValueChange = { if (it.length <= 3000) message = it },
+                label = { Text("پیام شما") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 4,
+                maxLines = 8
+            )
+            Button(
+                enabled = !sending && message.trim().length >= 3,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                onClick = {
+                    sending = true
+                    status = ""
+                    scope.launch {
+                        try {
+                            AppInboxApi.sendFeedback(type, message.trim())
+                            message = ""
+                            status = "پیام شما ارسال شد. سپاسگزاریم."
+                        } catch (e: Exception) {
+                            status = if (e is java.io.IOException) "ارسال انجام نشد. اتصال اینترنت را بررسی کنید."
+                            else "ارسال انجام نشد. لطفاً بعداً دوباره تلاش کنید."
+                        } finally { sending = false }
+                    }
+                }
+            ) { Text(if (sending) "در حال ارسال…" else "ارسال پیام") }
+            if (status.isNotEmpty()) Text(status, style = MaterialTheme.typography.bodySmall)
         }
     }
 }
