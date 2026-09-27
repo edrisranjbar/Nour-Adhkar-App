@@ -18,6 +18,16 @@ fun releaseSecret(environmentName: String, propertyName: String): String? =
   System.getenv(environmentName)?.takeIf(String::isNotBlank)
     ?: releaseSigningProperties.getProperty(propertyName)?.takeIf(String::isNotBlank)
 
+fun googleWebClientId(): String {
+  val localFile = rootProject.file("local.properties")
+  val local = if (localFile.exists()) {
+    Properties().apply { localFile.inputStream().use(::load) }.getProperty("googleWebClientId")
+  } else null
+  return (System.getenv("GOOGLE_WEB_CLIENT_ID")?.takeIf(String::isNotBlank)
+    ?: local?.takeIf(String::isNotBlank)
+    ?: "").replace("\"", "").trim()
+}
+
 val releaseBuildRequested =
   gradle.startParameter.taskNames.any { it.contains("release", ignoreCase = true) }
 
@@ -31,6 +41,9 @@ android {
     targetSdk = 36
         versionCode = 20
         versionName = "2.2.0"
+    // OAuth *Web* client id whose ID tokens the API accepts (GOOGLE_CLIENT_IDS on the backend).
+    // Set googleWebClientId in local.properties or GOOGLE_WEB_CLIENT_ID in the environment.
+    buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${googleWebClientId()}\"")
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -108,6 +121,11 @@ dependencies {
   implementation(libs.androidx.compose.ui.graphics)
   implementation(libs.androidx.compose.ui.tooling.preview)
   implementation(libs.androidx.core.ktx)
+  implementation(libs.androidx.credentials)
+  implementation(libs.androidx.credentials.play.services)
+  implementation(libs.googleid)
+  // play-services-auth pulls fragment 1.2.x; release lint requires >= 1.3.0 for ActivityResult APIs.
+  implementation("androidx.fragment:fragment:1.5.7")
   // implementation(libs.androidx.datastore.preferences)
   implementation(libs.androidx.lifecycle.runtime.compose)
   implementation(libs.androidx.lifecycle.runtime.ktx)
