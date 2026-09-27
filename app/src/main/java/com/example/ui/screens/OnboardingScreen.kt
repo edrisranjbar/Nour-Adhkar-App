@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.DarkMode
@@ -68,7 +69,7 @@ import com.example.ui.language.text
 import com.example.ui.util.toPersianDigits
 import kotlinx.coroutines.launch
 
-private const val ONBOARDING_PAGE_COUNT = 4
+private const val ONBOARDING_PAGE_COUNT = 5
 
 @Composable
 fun OnboardingScreen(
@@ -125,11 +126,12 @@ fun OnboardingScreen(
                         onNotificationsChange = onNotificationsChange,
                         onDarkModeChange = onDarkModeChange
                     )
-                    else -> ReadyPage(
+                    3 -> ReadyPage(
                         language = language,
                         notificationsEnabled = notificationsEnabled,
                         darkModeEnabled = darkModeEnabled
                     )
+                    else -> AccountPage(language, onSignedIn = onComplete)
                 }
             }
 
@@ -168,7 +170,7 @@ fun OnboardingScreen(
                     )
                 ) {
                     Text(
-                        text = language.text(if (isLastPage) "شروع کنیم" else "ادامه"),
+                        text = language.text(if (isLastPage) "بعداً، شروع کنیم" else "ادامه"),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -629,4 +631,25 @@ private fun OnboardingIcon(icon: ImageVector) {
     ) {
         Icon(icon, null, tint = Color.White, modifier = Modifier.size(42.dp))
     }
+}
+
+@Composable
+private fun AccountPage(language: AppLanguage, onSignedIn: () -> Unit) = PageColumn {
+    OnboardingIcon(Icons.Rounded.AccountCircle)
+    Spacer(Modifier.height(18.dp))
+    Text(
+        text = language.text("ورود به حساب (اختیاری)"),
+        style = MaterialTheme.typography.headlineSmall,
+        fontWeight = FontWeight.Bold,
+        textAlign = TextAlign.Center
+    )
+    Spacer(Modifier.height(8.dp))
+    Text(
+        text = language.text("می‌توانید این مرحله را رد کنید و بعداً از منوی «پروفایل» وارد شوید."),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
+    )
+    Spacer(Modifier.height(18.dp))
+    AuthForm(onSignedIn = onSignedIn)
 }

@@ -7,7 +7,11 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
-data class AppUpdate(val versionName: String, val versionCode: Int)
+data class AppUpdate(
+    val versionName: String,
+    val versionCode: Int,
+    val isRequired: Boolean = false
+)
 
 object UpdateChecker {
     private const val VERSION_URL =
@@ -20,10 +24,13 @@ object UpdateChecker {
             connection.readTimeout = 5_000
             connection.useCaches = false
             val json = connection.inputStream.bufferedReader().use { JSONObject(it.readText()) }
+            val versionCode = json.getInt("versionCode")
+            val isRequired = BuildConfig.VERSION_CODE < json.optInt("minRequiredVersionCode", 0)
             AppUpdate(
                 versionName = json.getString("versionName"),
-                versionCode = json.getInt("versionCode")
-            ).takeIf { it.versionCode > BuildConfig.VERSION_CODE }
+                versionCode = versionCode,
+                isRequired = isRequired
+            ).takeIf { versionCode > BuildConfig.VERSION_CODE || isRequired }
         }.getOrNull()
     }
 }

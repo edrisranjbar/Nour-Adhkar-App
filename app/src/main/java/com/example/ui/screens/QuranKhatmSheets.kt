@@ -47,6 +47,7 @@ import com.example.quran.QuranKhatmPlan
 import com.example.quran.QuranKhatmStatus
 import com.example.quran.QuranRepository
 import com.example.ui.language.AppLanguage
+import com.example.ui.util.formatPersianDate
 import com.example.ui.util.toPersianDigits
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -406,7 +407,9 @@ internal class QuranKhatmLabels(private val language: AppLanguage) {
     fun deadline(dayKey: Long) = if (arabic) "موعد الإتمام: ${date(dayKey)}" else "تاریخ پایان: ${date(dayKey)}"
     fun recordThrough(page: Int) = if (arabic) "تسجيل حتى الصفحة $page" else "ثبت تلاوت تا صفحه ${page.toPersianDigits()}"
     fun throughPage(page: Int) = if (arabic) "حتى الصفحة $page" else "تا صفحه ${page.toPersianDigits()}"
-    fun date(dayKey: Long): String = SimpleDateFormat("yyyy/MM/dd", Locale.US)
-        .format(Date(dayKey))
-        .let { if (arabic) it else it.toPersianDigits() }
+    fun date(dayKey: Long): String = if (arabic) {
+        SimpleDateFormat("yyyy/MM/dd", Locale.US).format(Date(dayKey))
+    } else {
+        formatPersianDate(dayKey)
+    }
 }

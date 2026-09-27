@@ -1,6 +1,5 @@
 package com.example
 import com.example.ui.language.LocalAppLanguage
-import com.example.ui.language.AppLanguage
 import com.example.ui.language.text
 
 import android.Manifest
@@ -26,6 +25,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -50,17 +50,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.FavoriteBorder
+import com.example.ui.util.toPersianDigits
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Explore
 import com.example.ui.screens.QiblaScreen
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.filled.SystemUpdateAlt
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -92,6 +96,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ui.screens.DailyChecklistScreen
@@ -100,6 +106,7 @@ import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.screens.TasbihScreen
 import com.example.ui.screens.AboutScreen
+import com.example.ui.screens.AppInboxScreen
 import com.example.ui.screens.ArticlesScreen
 import com.example.ui.screens.AdhkarCollectionsScreen
 import com.example.ui.screens.FavoritesScreen
@@ -271,7 +278,7 @@ fun AppMainScaffold(
                             )
                         )
                     }
-                    availableUpdate = null
+                    if (!update.isRequired) availableUpdate = null
                 }
             )
         }
@@ -290,24 +297,23 @@ fun AppMainScaffold(
                         modifier = Modifier.width(300.dp),
                         drawerContainerColor = MaterialTheme.colorScheme.surface
                     ) {
+                        com.example.ui.screens.DrawerProfileHeader(
+                            streak = com.example.ui.screens.rememberCurrentStreak(viewModel),
+                            onClick = {
+                                viewModel.selectTab("account")
+                                coroutineScope.launch { drawerState.close() }
+                            }
+                        )
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(horizontal = 16.dp, vertical = 24.dp)
+                                .padding(horizontal = 16.dp, vertical = 12.dp)
                         ) {
                             val drawerItems = listOf(
-                                Triple("home", "خانه", Icons.Default.Home),
-                                Triple("quran", "قرآن کریم", Icons.Default.MenuBook),
                                 Triple("adhkar", "اذکار و ادعیه", Icons.Default.Article),
-                                Triple("checklist", "چک‌لیست روزانه", Icons.Default.Checklist),
-                                Triple("tasbih", "ذکرشمار", null),
-                                Triple("achievements", "نشان‌ها و دستاوردها", Icons.Default.EmojiEvents),
                                 Triple("qibla", "قبله‌نما", Icons.Default.Explore),
                                 Triple("articles", "مقالات", Icons.Default.Article),
-                                Triple("favorites", "علاقه‌مندی‌ها", Icons.Default.Favorite),
                                 Triple("donation", "حمایت مالی", Icons.Default.VolunteerActivism),
-                                Triple("share", "اشتراک‌گذاری برنامه", Icons.Default.Share),
-                                Triple("settings", "تنظیمات", Icons.Default.Settings),
                                 Triple("about", "درباره برنامه", Icons.Default.Info)
                             )
                             drawerItems.forEach { (tab, label, icon) ->
@@ -319,16 +325,13 @@ fun AppMainScaffold(
                                             fontWeight = if (currentTab == tab) FontWeight.Bold else FontWeight.Normal
                                         )
                                     },
-                                    selected = tab !in setOf("share", "donation") && currentTab == tab,
+                                    selected = tab != "donation" && currentTab == tab,
                                     icon = {
                                         if (tab == "tasbih") {
                                             TasbihIcon(
                                                 modifier = Modifier.size(24.dp),
-                                                color = if (currentTab == tab) {
-                                                    MaterialTheme.colorScheme.primary
-                                                } else {
-                                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                                }
+                                                color = if (currentTab == tab) MaterialTheme.colorScheme.primary
+                                                else MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         } else {
                                             Icon(icon ?: Icons.Default.Home, contentDescription = null)
@@ -342,16 +345,6 @@ fun AppMainScaffold(
                                                     Uri.parse("https://edrisranjbar.ir/donation")
                                                 )
                                             )
-                                        } else if (tab == "share") {
-                                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                                type = "text/plain"
-                                                putExtra(
-                                                    Intent.EXTRA_TEXT,
-                                                    if (language == AppLanguage.ARABIC) "أذكار نور؛ رفيقك اليومي للذكر والدعاء والتذكير بالأعمال اليومية\nhttps://cafebazaar.ir/app/ir.adhkar.app"
-                                                    else "اذکار نور؛ همراه روزانه ذکر و نیایش، یادآوری اذکار و اعمال روزانه\nhttps://cafebazaar.ir/app/ir.adhkar.app"
-                                                )
-                                            }
-                                            context.startActivity(Intent.createChooser(shareIntent, language.text("اشتراک‌گذاری اذکار نور")))
                                         } else {
                                             viewModel.selectTab(tab)
                                         }
@@ -406,6 +399,8 @@ fun AppMainScaffold(
                                 "qibla" -> "قبله‌نما"
                                 "settings" -> "تنظیمات"
                                 "about" -> "درباره برنامه"
+                                "app_inbox" -> "پیام‌ها"
+                                "account" -> "پروفایل"
                                 "articles" -> "مقالات"
                                 "adhkar" -> "اذکار و ادعیه"
                                 "quran" -> "قرآن کریم"
@@ -417,6 +412,35 @@ fun AppMainScaffold(
                             color = NightBlue,
                             modifier = Modifier.padding(horizontal = 8.dp)
                         )
+                        if (currentTab == "home") {
+                            val unread by com.example.data.repository.AppInboxApi.unreadCount.collectAsState()
+                            LaunchedEffect(Unit) { com.example.data.repository.AppInboxApi.refreshUnreadCount(context) }
+                            Spacer(Modifier.weight(1f))
+                            IconButton(onClick = { viewModel.selectTab("favorites") }) {
+                                Icon(
+                                    imageVector = Icons.Default.FavoriteBorder,
+                                    contentDescription = "علاقه‌مندی‌ها",
+                                    tint = NightBlue
+                                )
+                            }
+                            IconButton(onClick = { viewModel.selectTab("app_inbox") }) {
+                                androidx.compose.material3.BadgedBox(
+                                    badge = {
+                                        if (unread > 0) {
+                                            androidx.compose.material3.Badge {
+                                                Text(if (unread > 99) "۹۹+" else unread.toPersianDigits())
+                                            }
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Notifications,
+                                        contentDescription = if (unread > 0) "پیام‌ها، ${unread.toPersianDigits()} خوانده‌نشده" else "پیام‌ها",
+                                        tint = NightBlue
+                                    )
+                                }
+                            }
+                        }
                     }
                     }
                 },
@@ -470,7 +494,7 @@ fun AppMainScaffold(
                                     )
                                 }
 
-                                // 2. Adhkar Tab (right side in the RTL bottom bar)
+                                // 2. Quran Tab (right side in the RTL bottom bar)
                                 val isQuranSelected = currentTab == "quran"
                                 Column(
                                     modifier = Modifier
@@ -496,33 +520,7 @@ fun AppMainScaffold(
                                     )
                                 }
 
-                                // 3. Adhkar Tab
-                                val isAdhkarSelected = currentTab == "adhkar"
-                                Column(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(16.dp))
-                                        .clickable { viewModel.selectTab("adhkar") }
-                                        .padding(vertical = 8.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Article,
-                                        contentDescription = "اذکار و ادعیه",
-                                        tint = if (isAdhkarSelected) SunGold else NightBlue.copy(alpha = 0.75f),
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "اذکار",
-                                        fontSize = (10 * fontScale).sp,
-                                        fontWeight = if (isAdhkarSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isAdhkarSelected) SunGold else NightBlue.copy(alpha = 0.75f)
-                                    )
-                                }
-
-                                // 4. Tasbih Tab (Center Gradient Circular Button)
+                                // 3. Tasbih Tab (Center Gradient Circular Button)
                                 val isTasbihSelected = currentTab == "tasbih"
                                 Box(
                                     modifier = Modifier
@@ -547,7 +545,7 @@ fun AppMainScaffold(
                                     )
                                 }
 
-                                // 5. Daily Checklist Tab
+                                // 4. Daily Checklist Tab
                                 val isChecklistSelected = currentTab == "checklist"
                                 Column(
                                     modifier = Modifier
@@ -573,7 +571,7 @@ fun AppMainScaffold(
                                     )
                                 }
 
-                                // 6. Settings Tab (left side in the RTL bottom bar)
+                                // 5. Settings Tab (left side in the RTL bottom bar)
                                 val isSettingsSelected = currentTab == "settings"
                                 Column(
                                     modifier = Modifier
@@ -619,9 +617,14 @@ fun AppMainScaffold(
                         "achievements" -> AchievementsScreen(
                             viewModel = viewModel,
                             innerPadding = innerPadding,
-                            onNavigateHome = { viewModel.selectTab("home") }
+                            onNavigateBack = { viewModel.selectTab("account") }
                         )
                         "about" -> AboutScreen(viewModel = viewModel, innerPadding = innerPadding)
+                        "app_inbox" -> AppInboxScreen(innerPadding = innerPadding)
+                        "account" -> com.example.ui.screens.AccountScreen(
+                            innerPadding = innerPadding,
+                            onOpenAchievements = { viewModel.selectTab("achievements") }
+                        )
                         "articles" -> ArticlesScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "adhkar" -> AdhkarCollectionsScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "quran" -> QuranScreen(
@@ -649,6 +652,54 @@ private fun UpdateAvailableBottomSheet(
     onDismiss: () -> Unit,
     onUpdate: () -> Unit
 ) {
+    if (update.isRequired) {
+        Dialog(
+            onDismissRequest = {},
+            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxWidth().widthIn(max = 440.dp),
+                shape = RoundedCornerShape(32.dp),
+                color = Color(0xF2FFFFFF),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.9f)),
+                shadowElevation = 24.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 28.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .shadow(12.dp, RoundedCornerShape(22.dp))
+                            .clip(RoundedCornerShape(22.dp))
+                            .background(Brush.linearGradient(listOf(Color(0xFF1677FF), Color(0xFF5B45E8)))),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.SystemUpdateAlt, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
+                    }
+                    Spacer(Modifier.height(18.dp))
+                    Text("به‌روزرسانی اجباری است", fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF071B31))
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "برای ادامه استفاده از برنامه، نسخه ${update.versionName} را از کافه‌بازار دریافت کنید.",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF29445F),
+                        lineHeight = 23.sp
+                    )
+                    Spacer(Modifier.height(22.dp))
+                    Button(onClick = onUpdate, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(18.dp)) {
+                        Icon(Icons.Default.SystemUpdateAlt, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("به‌روزرسانی برنامه", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    }
+                }
+            }
+        }
+        return
+    }
+
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(

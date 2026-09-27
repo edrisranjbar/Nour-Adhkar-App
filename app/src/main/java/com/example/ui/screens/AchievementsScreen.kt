@@ -5,6 +5,9 @@ import androidx.annotation.DrawableRes
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
@@ -33,10 +36,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,10 +47,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
-import androidx.compose.material3.TextButton
 import com.example.ui.language.LocalizedIcon as Icon
 import com.example.ui.language.LocalizedText as Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -63,6 +64,9 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -79,14 +83,25 @@ import com.example.ui.theme.SunGold
 import com.example.ui.util.toPersianDigits
 import com.example.ui.viewmodel.AdhkarViewModel
 
-private val AchievementCanvas = Color(0xFFFBF7ED)
-private val AchievementSurface = Color(0xFFFFFDF7)
-private val AchievementBorder = Color(0xFFE8DFC9)
-private val AchievementText = Color(0xFF222A20)
-private val AchievementMuted = Color(0xFF746F63)
+// Warm parchment tokens in light mode; follow the shared Material dark roles otherwise.
+private val isDark: Boolean
+    @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.background.luminance() < 0.5f
+private val AchievementCanvas: Color
+    @Composable @ReadOnlyComposable get() = if (isDark) MaterialTheme.colorScheme.background else Color(0xFFFBF7ED)
+private val AchievementSurface: Color
+    @Composable @ReadOnlyComposable get() = if (isDark) MaterialTheme.colorScheme.surfaceContainer else Color(0xFFFFFDF7)
+private val AchievementSurfaceWarm: Color
+    @Composable @ReadOnlyComposable get() = if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else Color(0xFFF7F0DF)
+private val AchievementBorder: Color
+    @Composable @ReadOnlyComposable get() = if (isDark) MaterialTheme.colorScheme.outlineVariant else Color(0xFFE8DFC9)
+private val AchievementText: Color
+    @Composable @ReadOnlyComposable get() = if (isDark) MaterialTheme.colorScheme.onSurface else Color(0xFF222A20)
+private val AchievementMuted: Color
+    @Composable @ReadOnlyComposable get() = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF746F63)
 private val AchievementEmerald = Color(0xFF246B3D)
 private val AchievementEmeraldDark = Color(0xFF0E4B38)
-private val AchievementTrack = Color(0xFFE9E2D3)
+private val AchievementTrack: Color
+    @Composable @ReadOnlyComposable get() = if (isDark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFE9E2D3)
 
 private enum class AchievementFilter(val label: String) {
     All("همه"), Consistency("استمرار"), Tasks("اعمال روزانه"), Dhikr("اذکار")
@@ -122,7 +137,7 @@ private data class Achievement(
 fun AchievementsScreen(
     viewModel: AdhkarViewModel,
     innerPadding: PaddingValues,
-    onNavigateHome: () -> Unit
+    onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
     val prefs = remember(context) { PreferenceRepository(context) }
@@ -131,7 +146,6 @@ fun AchievementsScreen(
     val tasbihSessions by viewModel.recentTasbihSessions.collectAsState()
     var selected by remember { mutableStateOf<Achievement?>(null) }
     var filter by remember { mutableStateOf(AchievementFilter.All) }
-    var showInfo by remember { mutableStateOf(false) }
     var celebration by remember { mutableStateOf<Achievement?>(null) }
 
     val achievements = listOf(
@@ -189,19 +203,22 @@ fun AchievementsScreen(
             .background(AchievementCanvas)
             .padding(innerPadding)
     ) {
-        AchievementsTopBar(onBack = onNavigateHome, onInfo = { showInfo = true })
+        AchievementsTopBar(onBack = onNavigateBack)
         LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
+            columns = GridCells.Fixed(2),
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item(span = { GridItemSpan(maxLineSpan) }) {
                 AchievementSummary(
                     unlockedLevels = unlockedLevels,
+                    totalLevels = achievements.sumOf { it.levels.size },
                     completed = achievements.count(Achievement::complete),
-                    locked = achievements.count { it.unlockedLevel == 0 }
+                    locked = achievements.count { it.unlockedLevel == 0 },
+                    next = achievements.filterNot(Achievement::complete)
+                        .maxByOrNull { it.progress / it.nextTarget.toFloat() }
                 )
             }
             item(span = { GridItemSpan(maxLineSpan) }) {
@@ -217,24 +234,16 @@ fun AchievementsScreen(
     selected?.let { achievement ->
         AchievementDetailScreen(achievement = achievement, onDismiss = { selected = null })
     }
-    if (showInfo) {
-        AlertDialog(
-            onDismissRequest = { showInfo = false },
-            title = { Text("نشان‌ها و دستاوردها") },
-            text = { Text("با استمرار در اذکار، انجام اعمال روزانه و استفاده از ذکرشمار، مرحله‌های هر نشان را باز کنید.") },
-            confirmButton = { TextButton(onClick = { showInfo = false }) { Text("متوجه شدم") } }
-        )
-    }
     celebration?.let { achievement ->
         AchievementCelebrationScreen(achievement = achievement, onDismiss = { celebration = null })
     }
 }
 
 @Composable
-private fun AchievementsTopBar(onBack: () -> Unit, onInfo: () -> Unit) {
+private fun AchievementsTopBar(onBack: () -> Unit) {
     Box(modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp)) {
         Surface(
-            modifier = Modifier.align(Alignment.CenterEnd).size(40.dp),
+            modifier = Modifier.align(Alignment.CenterStart).size(40.dp),
             shape = RoundedCornerShape(12.dp),
             color = AchievementSurface,
             border = BorderStroke(1.dp, AchievementBorder)
@@ -250,34 +259,33 @@ private fun AchievementsTopBar(onBack: () -> Unit, onInfo: () -> Unit) {
             fontWeight = FontWeight.Bold,
             color = AchievementText
         )
-        Surface(
-            modifier = Modifier.align(Alignment.CenterStart).size(40.dp),
-            shape = RoundedCornerShape(12.dp),
-            color = AchievementSurface,
-            border = BorderStroke(1.dp, AchievementBorder)
-        ) {
-            IconButton(onClick = onInfo) {
-                Icon(Icons.Default.Info, contentDescription = "راهنما", tint = AchievementText)
-            }
-        }
     }
 }
 
 @Composable
 private fun AchievementFilters(selected: AchievementFilter, onSelected: (AchievementFilter) -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(7.dp)
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         AchievementFilter.entries.forEach { item ->
             val active = item == selected
             Surface(
-                modifier = Modifier.weight(1f).height(34.dp).clickable { onSelected(item) },
-                shape = RoundedCornerShape(18.dp),
-                color = if (active) AchievementEmerald else Color(0xFFF7F0DF)
+                modifier = Modifier
+                    .heightIn(min = 40.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable(role = Role.Tab) { onSelected(item) },
+                shape = RoundedCornerShape(20.dp),
+                color = if (active) AchievementEmerald else AchievementSurfaceWarm,
+                border = if (active) null else BorderStroke(1.dp, AchievementBorder)
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(item.label, fontSize = 10.sp, color = if (active) Color.White else AchievementMuted)
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 18.dp, vertical = 9.dp)) {
+                    Text(
+                        item.label,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
+                        color = if (active) Color.White else AchievementMuted
+                    )
                 }
             }
         }
@@ -285,41 +293,93 @@ private fun AchievementFilters(selected: AchievementFilter, onSelected: (Achieve
 }
 
 @Composable
-private fun AchievementSummary(unlockedLevels: Int, completed: Int, locked: Int) {
-    OutlinedCard(
+private fun AchievementSummary(
+    unlockedLevels: Int,
+    totalLevels: Int,
+    completed: Int,
+    locked: Int,
+    next: Achievement?
+) {
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.outlinedCardColors(
-            containerColor = AchievementSurface
-        ),
-        border = BorderStroke(1.dp, AchievementBorder)
+        shape = RoundedCornerShape(26.dp),
+        color = AchievementEmeraldDark
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            Modifier.background(
+                Brush.linearGradient(listOf(AchievementEmeraldDark, AchievementEmerald, Color(0xFF3F8A55)))
+            )
         ) {
-            SummaryMedal(completed.toPersianDigits(), "کامل شده", Color(0xFF2F7545), false)
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(82.dp)) {
-                CircularProgressIndicator(
-                    progress = { unlockedLevels / 9f },
-                    modifier = Modifier.size(78.dp),
-                    color = Color(0xFF2F7545),
-                    trackColor = AchievementTrack,
-                    strokeWidth = 7.dp
-                )
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        unlockedLevels.toPersianDigits(),
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Black,
-                        color = AchievementText
+            Column(Modifier.fillMaxWidth().padding(18.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(92.dp)) {
+                        CircularProgressIndicator(
+                            progress = { if (totalLevels == 0) 0f else unlockedLevels / totalLevels.toFloat() },
+                            modifier = Modifier.size(88.dp),
+                            color = SunGold,
+                            trackColor = Color.White.copy(alpha = 0.18f),
+                            strokeWidth = 8.dp
+                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(unlockedLevels.toPersianDigits(), fontSize = 26.sp, fontWeight = FontWeight.Black, color = Color.White)
+                            Text(
+                                "از ${totalLevels.toPersianDigits()}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.size(16.dp))
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            "مراحل گشوده‌شده",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        SummaryStat(Icons.Default.EmojiEvents, "کامل شده", completed.toPersianDigits(), SunGold)
+                        SummaryStat(Icons.Default.Lock, "هنوز قفل", locked.toPersianDigits(), Color.White.copy(alpha = 0.75f))
+                    }
+                }
+                if (next != null) {
+                    HorizontalDivider(Modifier.padding(vertical = 14.dp), color = Color.White.copy(alpha = 0.18f))
+                    Text("هدف بعدی", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.75f))
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            next.title,
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Text(
+                            "${(next.nextTarget - next.progress).coerceAtLeast(0).toPersianDigits()} ${next.unit} مانده",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = SunGold,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    LinearProgressIndicator(
+                        progress = { (next.progress / next.nextTarget.toFloat()).coerceIn(0f, 1f) },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp).height(8.dp).clip(RoundedCornerShape(4.dp)),
+                        color = SunGold,
+                        trackColor = Color.White.copy(alpha = 0.18f)
                     )
-                    Text("از ۹ مرحله", fontSize = 10.sp, color = AchievementMuted)
                 }
             }
-            SummaryMedal(locked.toPersianDigits(), "قفل شده", SunGold, true)
         }
+    }
+}
+
+@Composable
+private fun SummaryStat(icon: ImageVector, label: String, value: String, tint: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.size(6.dp))
+        Text("$label: $value", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.92f))
     }
 }
 
@@ -357,11 +417,13 @@ private fun AchievementTile(achievement: Achievement, onClick: () -> Unit) {
     val locked = achievement.unlockedLevel == 0
     OutlinedCard(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.outlinedCardColors(containerColor = AchievementSurface),
-        border = BorderStroke(1.dp, AchievementBorder)
+        border = BorderStroke(1.dp, AchievementBorder),
+        elevation = CardDefaults.outlinedCardElevation(defaultElevation = 3.dp, pressedElevation = 6.dp)
     ) {
-        Column(modifier = Modifier.padding(5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        val lockVeil = AchievementCanvas.copy(alpha = 0.45f)
+        Column(modifier = Modifier.padding(9.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Box {
                 val grayMatrix = remember { ColorMatrix().apply { setToSaturation(0f) } }
                 Image(
@@ -369,11 +431,11 @@ private fun AchievementTile(achievement: Achievement, onClick: () -> Unit) {
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(14.dp))
+                        .aspectRatio(1.08f)
+                        .clip(RoundedCornerShape(16.dp))
                         .drawWithContent {
                             drawContent()
-                            if (locked) drawRect(Color.White.copy(alpha = 0.42f))
+                            if (locked) drawRect(lockVeil)
                         },
                     contentScale = ContentScale.Crop,
                     colorFilter = if (locked) ColorFilter.colorMatrix(grayMatrix) else null
@@ -409,18 +471,19 @@ private fun AchievementTile(achievement: Achievement, onClick: () -> Unit) {
             }
             Text(
                 achievement.title,
-                modifier = Modifier.padding(top = 8.dp, start = 2.dp, end = 2.dp),
-                fontSize = 12.sp,
+                modifier = Modifier.padding(top = 10.dp, start = 3.dp, end = 3.dp),
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
+                color = AchievementText,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center
             )
             Text(
                 achievement.description,
-                modifier = Modifier.height(38.dp).padding(top = 3.dp, start = 2.dp, end = 2.dp),
-                fontSize = 9.sp,
-                lineHeight = 13.sp,
+                modifier = Modifier.heightIn(min = 36.dp).padding(top = 4.dp, start = 3.dp, end = 3.dp),
+                fontSize = 12.sp,
+                lineHeight = 17.sp,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
@@ -429,18 +492,18 @@ private fun AchievementTile(achievement: Achievement, onClick: () -> Unit) {
             Text(
                 "${achievement.progress.toPersianDigits()} / ${achievement.nextTarget.toPersianDigits()}",
                 modifier = Modifier.padding(top = 4.dp),
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 color = achievement.color,
                 fontWeight = FontWeight.Bold
             )
             LinearProgressIndicator(
                 progress = { (achievement.progress / achievement.nextTarget.toFloat()).coerceIn(0f, 1f) },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 3.dp, vertical = 7.dp).height(5.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp).height(6.dp).clip(RoundedCornerShape(3.dp)),
                 color = achievement.color,
                 trackColor = AchievementTrack
             )
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 5.dp, vertical = 2.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 3.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 achievement.levels.forEach { target ->

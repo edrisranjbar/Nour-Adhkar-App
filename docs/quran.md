@@ -11,7 +11,7 @@
 
 گزینهٔ «برنامه ختم قرآن» در منوی سه‌نقطهٔ خواننده قرار دارد و مقصد جدیدی به منوی اصلی اضافه نمی‌کند. کاربر مدت ختم را از یک انتخاب‌گر ۷، ۳۰، ۶۰، ۹۰، ۱۸۰ یا ۳۶۵ روزه انتخاب می‌کند، شمارهٔ صفحهٔ شروع را در یک فیلد عددی وارد می‌کند و در صورت تمایل زمان یادآوری روزانه را تعیین می‌کند.
 
-پس از فعال‌شدن برنامه، یک نوار باریک پیشرفت در بالای خواننده دیده می‌شود. پنل جزئیات، قرائت روزانه، درصد پیشرفت، تاریخ پایان و گزارش قرائت روزانه را نشان می‌دهد. پیشرفت تنها با دکمهٔ «ثبت تلاوت تا این صفحه» تغییر می‌کند؛ ورق‌زدن به‌تنهایی هیچ صفحه‌ای را تکمیل‌شده ثبت نمی‌کند. اگر کاربر عقب یا جلو بیفتد، سهم روزهای باقی‌مانده از روی صفحات باقی‌مانده دوباره محاسبه می‌شود.
+پس از فعال‌شدن برنامه، یک نوار باریک پیشرفت در بالای خواننده دیده می‌شود. پنل جزئیات، قرائت روزانه، درصد پیشرفت، تاریخ پایان و گزارش قرائت روزانه را نشان می‌دهد؛ تاریخ‌ها در زبان فارسی شمسی هستند. پیشرفت تنها با دکمهٔ «ثبت تلاوت تا این صفحه» تغییر می‌کند؛ ورق‌زدن به‌تنهایی هیچ صفحه‌ای را تکمیل‌شده ثبت نمی‌کند. اگر کاربر عقب یا جلو بیفتد، سهم روزهای باقی‌مانده از روی صفحات باقی‌مانده دوباره محاسبه می‌شود.
 
 یادآوری ختم از تنظیم کلی اعلان‌ها پیروی می‌کند، با تأخیر یک‌ساعته سازگار است و با لمس اعلان، صفحهٔ بعدیِ خوانده‌نشده را در خوانندهٔ داخلی باز می‌کند. توقف موقت، تکمیل یا لغو برنامه، زمان‌بندی اعلان آن را متوقف می‌کند. برنامه و گزارش روزانه به‌صورت آفلاین در تنظیمات محلی دستگاه ذخیره می‌شوند.
 
@@ -19,6 +19,14 @@
 
 ## داده و انتساب
 
-متن عربی Uthmani بدون تغییر از **Tanzil Project، نسخهٔ ۱.۱** در `app/src/main/assets/quran/tanzil-uthmani.xml` قرار دارد و اطلاعیهٔ کپی‌رایت اصلی در همان فایل حفظ شده است. منوی بیش‌تر در خواننده پیوند `https://tanzil.net` را در اختیار کاربر می‌گذارد.
+متن عربی Uthmani بدون تغییر از **Tanzil Project، نسخهٔ ۱.۱** در `app/src/main/assets/quran/tanzil-uthmani.xml` قرار دارد و اطلاعیهٔ کپی‌رایت اصلی در همان فایل حفظ شده است. اعتبار منبع (Tanzil Project، tanzil.net) در متن صفحهٔ «درباره برنامه» آمده است.
 
 نقشهٔ صفحه‌های مصحف مدینه در `app/src/main/assets/quran/page-index.json` است و از پروژهٔ [quran-json](https://github.com/wpdynamo/quran-json) که شاخص‌های صفحه را از Quran.com تولید می‌کند، گرفته شده است.
+
+## Audio recitation
+
+The reader's top bar has a reciter picker (voice icon) and a play/stop button. Play streams the complete recitation of the surah currently shown (the active surah on the page) from mp3quran.net (`<server>/<NNN>.mp3`); an internet connection is required and nothing is downloaded or cached. Choosing another reciter while playing restarts the same surah with that voice; the choice is saved in the `quran_audio` preferences. Playback stops when leaving the Quran screen or when the surah ends. Reciters: Alafasy, Abdul Basit, Al-Husary, Al-Minshawi, Al-Ghamdi, Al-Muaiqly, Al-Sudais, Al-Shatri (each URL verified reachable before adding).
+
+## Search
+
+The search icon opens a spotlight-style overlay: a dimmed backdrop with a floating, auto-focused field. Results are grouped into matching surahs (by name or number; tapping jumps to the surah) and matching verses (at least two characters; up to 40, tapping opens the verse page). Tapping the backdrop or ✕ on an empty field closes it.
