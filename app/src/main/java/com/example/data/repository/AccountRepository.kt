@@ -52,6 +52,11 @@ object AccountRepository {
         JSONObject().put("name", name.trim()).put("email", email.trim()).put("password", password)
     )
 
+    /** Google accounts are already email-verified, so the API signs in (or creates) the user directly. */
+    suspend fun loginWithGoogle(context: Context, idToken: String) = authenticate(
+        context, "auth/google", JSONObject().put("id_token", idToken)
+    )
+
     /** Confirms the emailed code; the password is re-sent so a code alone never grants access. */
     suspend fun verifyEmail(context: Context, email: String, password: String, code: String): AuthResult =
         authenticate(
@@ -141,7 +146,7 @@ object AccountRepository {
      */
     internal fun friendlyMessage(status: Int, serverMessage: String?): String {
         val message = serverMessage?.trim().orEmpty()
-        if (status in 400..499 && status != 429 && message.any { it in '؀'..'ۿ' }) return message
+        if (status in 400..499 && status != 429 && isPersianSentence(message)) return message
         return when (status) {
             401 -> "ایمیل یا رمز عبور نادرست است."
             403 -> "دسترسی به این حساب ممکن نیست. لطفاً با پشتیبانی تماس بگیرید."
@@ -149,10 +154,26 @@ object AccountRepository {
             409 -> "این ایمیل قبلاً تأیید شده است. با رمز عبور وارد شوید."
             422 -> "اطلاعات واردشده درست نیست. لطفاً دوباره بررسی کنید."
             429 -> "تعداد تلاش‌ها زیاد بود. چند دقیقه صبر کنید و دوباره امتحان کنید."
-            in 500..599 -> "مشکلی در سرور پیش آمده است. لطفاً چند دقیقه دیگر دوباره تلاش کنید."
+            503 -> "این روش ورود در حال حاضر روی سرور فعال نیست. لطفاً با ایمیل وارد شوید."
+            in 500..599 ->"مشکلی در سرور پیش آمده است. لطفاً چند دقیقه دیگر دوباره تلاش کنید."
             else -> "ورود انجام نشد. لطفاً دوباره تلاش کنید."
         }
     }
+
+    /**
+     * True only for genuine Persian/Arabic text: no Latin letters at all (rejects mixed framework
+     * text like "Server Error: خطا") and at least a few Arabic-script letters (rejects a stray
+     * character or punctuation). Digits, spaces and punctuation are ignored.
+     */
+    internal fun isPersianSentence(message: String): Boolean {
+        val letters = message.filter(Char::isLetter)
+        if (letters.any { it in 'A'..'Z' || it in 'a'..'z' }) return false
+        val arabicLetters = letters.count(::isArabicScriptLetter)
+        return arabicLetters >= 3 && arabicLetters == letters.length
+    }
+
+    private fun isArabicScriptLetter(c: Char): Boolean =
+        c in '؀'..'ۿ' || c in 'ݐ'..'ݿ' || c in 'ﭐ'..'﷿' || c in 'ﹰ'..'﻿'
 
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
