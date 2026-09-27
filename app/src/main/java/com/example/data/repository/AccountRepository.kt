@@ -81,7 +81,7 @@ object AccountRepository {
             )
         }
         val token = response.optString("token").takeIf { it.isNotBlank() }
-            ?: throw AuthException(response.optString("message", "ورود ناموفق بود"))
+            ?: throw AuthException(friendlyMessage(200, response.optString("message")))
         val userJson = response.optJSONObject("user") ?: JSONObject()
         val user = AccountUser(userJson.optString("name"), userJson.optString("email"))
         prefs(context).edit()
@@ -127,11 +127,30 @@ object AccountRepository {
             val text = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
             val json = runCatching { JSONObject(text) }.getOrDefault(JSONObject())
             if (code !in 200..299 && code !in allowStatus) {
-                throw AuthException(json.optString("message").ifBlank { "خطای سرور ($code)" })
+                throw AuthException(friendlyMessage(code, json.optString("message")))
             }
             code to json
         } finally {
             connection.disconnect()
+        }
+    }
+
+    /**
+     * Shows the server's message only when it is a real Persian/Arabic sentence; raw framework
+     * text such as "Server Error" or "Too Many Attempts." is replaced by a friendly message.
+     */
+    internal fun friendlyMessage(status: Int, serverMessage: String?): String {
+        val message = serverMessage?.trim().orEmpty()
+        if (status in 400..499 && status != 429 && message.any { it in '؀'..'ۿ' }) return message
+        return when (status) {
+            401 -> "ایمیل یا رمز عبور نادرست است."
+            403 -> "دسترسی به این حساب ممکن نیست. لطفاً با پشتیبانی تماس بگیرید."
+            404 -> "سرویس حساب کاربری در دسترس نیست. لطفاً بعداً تلاش کنید."
+            409 -> "این ایمیل قبلاً تأیید شده است. با رمز عبور وارد شوید."
+            422 -> "اطلاعات واردشده درست نیست. لطفاً دوباره بررسی کنید."
+            429 -> "تعداد تلاش‌ها زیاد بود. چند دقیقه صبر کنید و دوباره امتحان کنید."
+            in 500..599 -> "مشکلی در سرور پیش آمده است. لطفاً چند دقیقه دیگر دوباره تلاش کنید."
+            else -> "ورود انجام نشد. لطفاً دوباره تلاش کنید."
         }
     }
 
