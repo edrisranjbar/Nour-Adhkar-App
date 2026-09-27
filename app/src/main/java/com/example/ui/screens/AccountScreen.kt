@@ -254,7 +254,7 @@ fun DrawerProfileHeader(streak: Int, onClick: () -> Unit) {
 private fun AchievementsEntryCard(onClick: () -> Unit) {
     Surface(onClick = onClick, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), color = ProfileGreenDark) {
         Row(Modifier.padding(horizontal = 18.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Rounded.EmojiEvents, contentDescription = null, tint = SunGold, modifier = Modifier.size(36.dp))
+            Icon(Icons.Rounded.EmojiEvents, contentDescription = null, tint = Color(0xFFF2C94C), modifier = Modifier.size(36.dp))
             Spacer(Modifier.size(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(
@@ -296,6 +296,7 @@ fun AuthForm(onSignedIn: () -> Unit, modifier: Modifier = Modifier) {
     var code by rememberSaveable { mutableStateOf("") }
     var resendIn by rememberSaveable { mutableStateOf(0) }
     var info by remember { mutableStateOf<String?>(null) }
+    var googlePending by remember { mutableStateOf(false) }
 
     LaunchedEffect(resendIn) {
         if (resendIn > 0) {
@@ -322,6 +323,8 @@ fun AuthForm(onSignedIn: () -> Unit, modifier: Modifier = Modifier) {
         scope.launch {
             try {
                 block()
+            } catch (e: GoogleSignInCancelled) {
+                // User closed Google's chooser; nothing to report.
             } catch (e: AuthException) {
                 error = e.message
             } catch (e: Exception) {
@@ -429,6 +432,34 @@ fun AuthForm(onSignedIn: () -> Unit, modifier: Modifier = Modifier) {
             if (loading) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
             else Text(if (registerMode) "ساخت حساب" else "ورود", fontWeight = FontWeight.Bold)
         }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            androidx.compose.material3.HorizontalDivider(Modifier.weight(1f))
+            Text(
+                "یا",
+                modifier = Modifier.padding(horizontal = 12.dp),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            androidx.compose.material3.HorizontalDivider(Modifier.weight(1f))
+        }
+        GoogleSignInButton(
+            loading = loading && googlePending,
+            enabled = !loading,
+            onClick = {
+                if (!isGoogleSignInConfigured) {
+                    error = "ورود با گوگل در این نسخه هنوز فعال نشده است. لطفاً با ایمیل وارد شوید."
+                } else {
+                    googlePending = true
+                    launchAuth {
+                        try {
+                            handle(AccountRepository.loginWithGoogle(context, requestGoogleIdToken(context)))
+                        } finally {
+                            googlePending = false
+                        }
+                    }
+                }
+            }
+        )
     }
 }
 
