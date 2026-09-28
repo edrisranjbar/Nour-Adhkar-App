@@ -5,7 +5,8 @@ import com.example.data.model.ArticleItem
 fun ArticleItem.inLanguage(language: AppLanguage): ArticleItem {
     if (language != AppLanguage.ARABIC) return this
     return when (id) {
-        "1" -> copy(title = "فضل ذكر الله وبركاته في القرآن والسنة",
+        // Keyed by API post slug (see backend AppArticlesSeeder).
+        "virtue-of-remembering-allah" -> copy(title = "فضل ذكر الله وبركاته في القرآن والسنة",
             summary = "ذكر الله مفتاح طمأنينة القلوب والبعد عن وساوس الشيطان والقرب من الله.",
             content = """
                 ذكر الله حياة القلوب وبهجة روح المؤمن. قال النبي ﷺ: «مَثَلُ الّذي يَذكُرُ ربَّهُ والّذي لا يَذكُرُ رَبَّهُ مَثَلُ الحَيِّ والمَيِّتِ».
@@ -16,7 +17,7 @@ fun ArticleItem.inLanguage(language: AppLanguage): ArticleItem {
                 • صحيح البخاري، كتاب الدعوات، باب فضل ذكر الله عز وجل، الحديث ٦٤٠٧.
                 • سورة الأحزاب، الآية ٤١؛ وسورة الرعد، الآية ٢٨.
             """.trimIndent(), readTime = "٥ دقائق للقراءة", author = "أذكار نور")
-        "2" -> copy(title = "بركات سيد الاستغفار في الدنيا والآخرة",
+        "sayyid-al-istighfar" -> copy(title = "بركات سيد الاستغفار في الدنيا والآخرة",
             summary = "التعرف إلى سيد الاستغفار، دعاء طلب المغفرة والتوبة إلى الله.",
             content = """
                 علّمنا النبي ﷺ دعاء «سيد الاستغفار». يجمع هذا الدعاء معاني العبودية والإقرار بضعف الإنسان وعظمة ربه.

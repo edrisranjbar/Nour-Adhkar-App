@@ -46,6 +46,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
@@ -53,7 +57,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.data.model.AdhkarData
+import com.example.data.repository.ArticlesException
+import com.example.data.repository.ArticlesRepository
 import com.example.data.model.ArticleItem
 import com.example.ui.theme.SandDark
 import com.example.ui.theme.SoftBorder
@@ -70,7 +75,25 @@ fun ArticlesScreen(
 ) {
     val fontScale by viewModel.fontScale.collectAsState()
     val language = LocalAppLanguage.current
-    val articles = AdhkarData.articles.map { it.inLanguage(language) }
+    val context = LocalContext.current
+    var loaded by remember { mutableStateOf(ArticlesRepository.cached(context)) }
+    var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var reloadKey by remember { mutableStateOf(0) }
+    LaunchedEffect(reloadKey) {
+        loading = true
+        try {
+            loaded = ArticlesRepository.refresh(context)
+            error = null
+        } catch (e: ArticlesException) {
+            error = e.message
+        } catch (e: Exception) {
+            error = "دریافت مقالات ممکن نشد. لطفاً دوباره تلاش کنید."
+        } finally {
+            loading = false
+        }
+    }
+    val articles = loaded.map { it.inLanguage(language) }
 
     var expandedArticleId by rememberSaveable { mutableStateOf<String?>(null) }
     val selected = articles.firstOrNull { it.id == expandedArticleId }
@@ -78,6 +101,28 @@ fun ArticlesScreen(
     BackHandler(enabled = selected != null) { expandedArticleId = null }
     if (selected != null) {
         ArticleDetailPage(selected, fontScale, innerPadding) { expandedArticleId = null }
+        return
+    }
+
+    if (articles.isEmpty()) {
+        // Nothing cached yet: full-screen spinner, or a friendly error with retry.
+        Box(
+            Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(innerPadding).padding(24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            if (loading) {
+                CircularProgressIndicator()
+            } else {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        error ?: language.text("هنوز مقاله‌ای منتشر نشده است."),
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (error != null) TextButton(onClick = { reloadKey++ }) { Text(language.text("تلاش دوباره")) }
+                }
+            }
+        }
         return
     }
 
@@ -89,6 +134,7 @@ fun ArticlesScreen(
                 .padding(top = innerPadding.calculateTopPadding())
                 .padding(horizontal = 16.dp)
         ) {
+            if (loading) LinearProgressIndicator(Modifier.fillMaxWidth().padding(bottom = 8.dp))
 
             LazyColumn(
                 state = listState,
