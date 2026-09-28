@@ -25,8 +25,8 @@ class QuranPrayersDataTest {
         val prayers = AdhkarData.adhkarList.getValue(category.id)
 
         assertTrue(category.isEnabled)
-        assertEquals(10, category.count)
-        assertEquals(10, prayers.size)
+        assertEquals(103, category.count)
+        assertEquals(103, prayers.size)
         assertEquals(prayers.size, prayers.map { it.id }.distinct().size)
         assertTrue(prayers.all { it.source.startsWith("صحیح بخاری") || it.source.startsWith("صحیح مسلم") })
     }
