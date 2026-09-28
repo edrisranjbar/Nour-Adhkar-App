@@ -11,15 +11,18 @@ data class QuranReciter(val id: String, val faName: String, val arName: String, 
     fun surahUrl(surah: Int) = "$baseUrl/${surah.toString().padStart(3, '0')}.mp3"
 }
 
+/** Ten widely known reciters; each base URL was checked to serve 001.mp3 and 114.mp3. */
 val QuranReciters = listOf(
     QuranReciter("afs", "مشاری راشد العفاسی", "مشاري راشد العفاسي", "https://server8.mp3quran.net/afs"),
     QuranReciter("basit", "عبدالباسط عبدالصمد", "عبد الباسط عبد الصمد", "https://server7.mp3quran.net/basit"),
+    QuranReciter("sds", "عبدالرحمن السدیس", "عبد الرحمن السديس", "https://server11.mp3quran.net/sds"),
+    QuranReciter("shur", "سعود الشریم", "سعود الشريم", "https://server7.mp3quran.net/shur"),
     QuranReciter("husr", "محمود خلیل الحصری", "محمود خليل الحصري", "https://server13.mp3quran.net/husr"),
     QuranReciter("minsh", "محمد صدیق المنشاوی", "محمد صديق المنشاوي", "https://server10.mp3quran.net/minsh"),
-    QuranReciter("s_gmd", "سعد الغامدی", "سعد الغامدي", "https://server7.mp3quran.net/s_gmd"),
     QuranReciter("maher", "ماهر المعیقلی", "ماهر المعيقلي", "https://server12.mp3quran.net/maher"),
-    QuranReciter("sds", "عبدالرحمن السدیس", "عبد الرحمن السديس", "https://server11.mp3quran.net/sds"),
-    QuranReciter("shatri", "ابوبکر الشاطری", "أبو بكر الشاطري", "https://server11.mp3quran.net/shatri")
+    QuranReciter("s_gmd", "سعد الغامدی", "سعد الغامدي", "https://server7.mp3quran.net/s_gmd"),
+    QuranReciter("ajm", "احمد العجمی", "أحمد العجمي", "https://server10.mp3quran.net/ajm"),
+    QuranReciter("yasser", "یاسر الدوسری", "ياسر الدوسري", "https://server11.mp3quran.net/yasser")
 )
 
 data class QuranAudioState(

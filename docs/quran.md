@@ -25,7 +25,7 @@
 
 ## Audio recitation
 
-The reader's top bar has a reciter picker (voice icon) and a play/stop button. Play streams the complete recitation of the surah currently shown (the active surah on the page) from mp3quran.net (`<server>/<NNN>.mp3`); an internet connection is required and nothing is downloaded or cached. Choosing another reciter while playing restarts the same surah with that voice; the choice is saved in the `quran_audio` preferences. Playback stops when leaving the Quran screen or when the surah ends. Reciters: Alafasy, Abdul Basit, Al-Husary, Al-Minshawi, Al-Ghamdi, Al-Muaiqly, Al-Sudais, Al-Shatri (each URL verified reachable before adding).
+The reader's top bar has a reciter picker (voice icon) and a play/stop button. Play streams the complete recitation of the surah currently shown (the active surah on the page) from mp3quran.net (`<server>/<NNN>.mp3`); an internet connection is required and nothing is downloaded or cached. Choosing another reciter while playing restarts the same surah with that voice; the choice is saved in the `quran_audio` preferences. Playback stops when leaving the Quran screen or when the surah ends. Reciters (10): Alafasy, Abdul Basit, Al-Sudais, Al-Shuraim, Al-Husary, Al-Minshawi, Al-Muaiqly, Al-Ghamdi, Al-Ajmi, Yasser Al-Dosari (each URL verified to serve surahs 1 and 114). A saved reciter that is no longer listed falls back to the first one.
 
 ## Search
 
