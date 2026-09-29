@@ -1,6 +1,12 @@
 package com.example.ui.screens
 
 import androidx.activity.compose.BackHandler
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import android.widget.Toast
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -103,7 +109,26 @@ fun ScholarsScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
     val context = LocalContext.current
     val fontScale by viewModel.fontScale.collectAsState()
     var scholars by remember { mutableStateOf(ScholarsRepository.cached(context)) }
+    var refreshing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) { ScholarsRepository.refresh(context)?.let { scholars = it } }
+    // Pull-to-refresh on the list: keeps what is shown if the refresh fails.
+    val onRefresh: () -> Unit = {
+        if (!refreshing) scope.launch {
+            refreshing = true
+            val fresh = ScholarsRepository.refresh(context)
+            if (fresh != null) {
+                scholars = fresh
+            } else {
+                Toast.makeText(
+                    context.applicationContext,
+                    "به‌روزرسانی انجام نشد. اتصال اینترنت را بررسی کنید.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            refreshing = false
+        }
+    }
     var scholarId by rememberSaveable { mutableStateOf<String?>(null) }
     var lectureId by rememberSaveable { mutableStateOf<String?>(null) }
     val scholar = scholars.firstOrNull { it.id == scholarId }
@@ -119,7 +144,7 @@ fun ScholarsScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
                 LecturePlayerPage(scholar, lecture, fontScale, innerPadding) { lectureId = null }
             scholar != null ->
                 ScholarLecturesPage(scholar, fontScale, innerPadding, onBack = { scholarId = null }) { lectureId = it.id }
-            else -> ScholarListPage(scholars, fontScale, innerPadding) { scholarId = it.id }
+            else -> ScholarListPage(scholars, fontScale, innerPadding, refreshing, onRefresh) { scholarId = it.id }
         }
     }
 }
@@ -181,15 +206,33 @@ private fun CoverArt(scholar: Scholar, size: Dp, spinning: Boolean = false, corn
 
 // ───────────────────────── Scholar list ─────────────────────────
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ScholarListPage(
     scholars: List<Scholar>,
     fontScale: Float,
     innerPadding: PaddingValues,
+    refreshing: Boolean,
+    onRefresh: () -> Unit,
     onOpen: (Scholar) -> Unit
 ) {
-    LazyColumn(
+    val pullState = rememberPullToRefreshState()
+    PullToRefreshBox(
+        isRefreshing = refreshing,
+        onRefresh = onRefresh,
+        state = pullState,
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        indicator = {
+            // Below the app bar, which overlaps the top of this screen.
+            PullToRefreshDefaults.Indicator(
+                state = pullState,
+                isRefreshing = refreshing,
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = innerPadding.calculateTopPadding())
+            )
+        }
+    ) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
             start = 16.dp, end = 16.dp,
             top = innerPadding.calculateTopPadding() + 4.dp,
@@ -211,6 +254,7 @@ private fun ScholarListPage(
         items(scholars, key = { it.id }) { scholar ->
             ScholarCard(scholar, fontScale) { onOpen(scholar) }
         }
+    }
     }
 }
 
