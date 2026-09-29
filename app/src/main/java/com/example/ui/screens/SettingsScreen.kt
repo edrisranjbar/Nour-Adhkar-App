@@ -1,6 +1,8 @@
 package com.example.ui.screens
 
 import com.example.ui.language.LocalAppLanguage
+import com.example.notifications.BatteryOptimization
+import com.example.ui.components.BatteryOptimizationNotice
 import com.example.ui.language.text
 import android.app.TimePickerDialog
 import androidx.compose.foundation.BorderStroke
@@ -80,6 +82,7 @@ fun SettingsScreen(
     val morningTime by viewModel.morningTime.collectAsState()
     val eveningTime by viewModel.eveningTime.collectAsState()
     val fridayKahfReminderEnabled by viewModel.fridayKahfReminderEnabled.collectAsState()
+    val settingsContext = LocalContext.current
     val fridayKahfReminderTime by viewModel.fridayKahfReminderTime.collectAsState()
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -137,7 +140,10 @@ fun SettingsScreen(
                                 }
                                 Switch(
                                     checked = notificationsEnabled,
-                                    onCheckedChange = { viewModel.setNotificationsEnabled(it) },
+                                    onCheckedChange = {
+                                        if (it) BatteryOptimization.request(settingsContext)
+                                        viewModel.setNotificationsEnabled(it)
+                                    },
                                     colors = SwitchDefaults.colors(
                                         checkedThumbColor = Color.White,
                                         checkedTrackColor = SunGold,
@@ -148,6 +154,7 @@ fun SettingsScreen(
                             }
 
                             if (notificationsEnabled) {
+                                BatteryOptimizationNotice(Modifier.padding(top = 8.dp))
                                 Spacer(modifier = Modifier.height(16.dp))
                                 HorizontalDivider(color = SoftBorder)
                                 Spacer(modifier = Modifier.height(16.dp))

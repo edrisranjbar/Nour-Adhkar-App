@@ -37,3 +37,12 @@ Five independent checkboxes (Fajr, Dhuhr, Asr, Maghrib, Isha) enable automatic A
 Each enabled prayer has a separate exact idle-aware alarm for its next calculated occurrence using the saved timezone. Changing location, voice, or enabled prayers refreshes the schedule; disabling a prayer cancels its alarm. Schedules also refresh on app resume, reboot, app update, clock changes, timezone changes, and exact-alarm permission grants. Unavailable times are skipped. The receiver rechecks enabled state and ignores alerts delayed by more than ten minutes. Audio runs in a media-playback foreground service using alarm volume and a visible Stop notification; completion, errors, or audio-focus loss stop playback. Boot receivers only schedule future alarms and do not start audio. Invalid/legacy file selections resolve to no built-in selection until a user chooses one.
 
 Focused verification covers selection persistence, invalid IDs, unchanged reminder time, exactly three distinct resources, and hashes matching the downloaded source audio. All three files were fully decoded with FFmpeg to verify readability.
+
+## Battery optimization (background adhan and reminders)
+
+Adhan alarms and adhkar reminders must fire while the app is closed and the phone is idle, so the app asks to be exempt from battery optimization (`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, helper `notifications/BatteryOptimization.kt`).
+
+- The system dialog opens only from a user action: when the first adhan prayer is ticked, or when the adhkar reminder switch is turned on. Declining changes nothing else; schedules and settings stay as they are.
+- Until the exemption is granted, `BatteryOptimizationNotice` appears under the adhan checkboxes and under the reminder switch, with the button «اجازه اجرا بدون محدودیت باتری». It re-checks on every resume and hides once granted.
+- If the direct dialog is unavailable, the battery-optimization list and then the app's details page open instead.
+- Some vendors (e.g. Xiaomi autostart) have extra background limits outside Android's API; those must still be enabled by the user in the phone's settings.

@@ -21,6 +21,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.prayer.AdhanPrayer
 import com.example.prayer.AdhanScheduler
+import com.example.notifications.BatteryOptimization
+import com.example.ui.components.BatteryOptimizationNotice
 import com.example.ui.viewmodel.AdhkarViewModel
 
 @Composable
@@ -50,7 +52,11 @@ fun AdhanPrayerSettings(viewModel: AdhkarViewModel) {
                     Row(Modifier.weight(1f).heightIn(min = 48.dp).toggleable(
                         value = prayer in selected,
                         role = Role.Checkbox,
-                        onValueChange = { viewModel.setAdhanPrayer(prayer, it) }
+                        onValueChange = {
+                            // Turning adhan on is the moment to ask for unrestricted background work.
+                            if (it && selected.isEmpty()) BatteryOptimization.request(context)
+                            viewModel.setAdhanPrayer(prayer, it)
+                        }
                     ), verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = prayer in selected, onCheckedChange = null,
                             colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.tertiary,
@@ -73,6 +79,7 @@ fun AdhanPrayerSettings(viewModel: AdhkarViewModel) {
             if (!exact && Build.VERSION.SDK_INT >= 31) TextButton(onClick = {
                 context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${context.packageName}")))
             }) { Text("اجازه پخش در وقت دقیق نماز") }
+            BatteryOptimizationNotice()
         }
     }
 }
