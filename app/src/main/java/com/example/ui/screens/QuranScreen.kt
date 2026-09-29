@@ -96,6 +96,8 @@ import com.example.quran.QuranKhatmRepository
 import com.example.quran.QuranPage
 import com.example.quran.QuranRepository
 import com.example.quran.QuranSurah
+import com.example.quran.QuranTranslation
+import com.example.quran.QuranTranslations
 import com.example.quran.QuranVerse
 import com.example.notifications.AdhkarNotificationManager
 import com.example.ui.language.AppLanguage
@@ -149,6 +151,14 @@ fun QuranScreen(
     val khatmRepository = remember(context) { QuranKhatmRepository(context) }
     val notificationManager = remember(context) { AdhkarNotificationManager(context) }
     var corpus by remember { mutableStateOf<QuranCorpus?>(null) }
+    val translation = QuranTranslation.forLanguage(language)
+    // null while loading; empty if the bundled file could not be read.
+    val translationTexts by androidx.compose.runtime.produceState<Map<String, String>?>(null, translation) {
+        value = null
+        value = runCatching {
+            withContext(Dispatchers.IO) { QuranTranslations.load(context, translation) }
+        }.getOrElse { emptyMap() }
+    }
     var selectedVerse by remember { mutableStateOf<QuranVerse?>(null) }
     var noteVerse by remember { mutableStateOf<QuranVerse?>(null) }
     var readerColor by remember { mutableStateOf(QuranReaderColor.fromId(prefs.getQuranReaderColor())) }
@@ -596,6 +606,8 @@ fun QuranScreen(
         VerseActionsSheet(
             verse = verse,
             labels = labels,
+            translationText = translationTexts?.let { it[verse.id].orEmpty() },
+            translationCredit = translation.credit,
             currentHighlight = highlights[verse.id],
             currentNote = notes[verse.id],
             onDismiss = { selectedVerse = null },
@@ -995,6 +1007,9 @@ private fun List<QuranVerse>.asMushafText(
 private fun VerseActionsSheet(
     verse: QuranVerse,
     labels: QuranLabels,
+    /** null while loading; blank if unavailable. */
+    translationText: String?,
+    translationCredit: String,
     currentHighlight: String?,
     currentNote: String?,
     onDismiss: () -> Unit,
@@ -1007,12 +1022,46 @@ private fun VerseActionsSheet(
     ) {
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
             Text(labels.noteFor(verse), style = MaterialTheme.typography.titleMedium)
+            // The sheet shows the verse's meaning; the Arabic text is already on the page behind it.
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = 300.dp)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                ) {
+                    when {
+                        translationText == null -> CircularProgressIndicator(
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .size(24.dp)
+                                .align(Alignment.CenterHorizontally),
+                            strokeWidth = 2.dp
+                        )
+                        translationText.isBlank() -> Text(
+                            text = labels.translationUnavailable,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        else -> Text(
+                            text = translationText,
+                            style = MaterialTheme.typography.bodyLarge,
+                            lineHeight = 30.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
             Text(
-                text = verse.text,
-                modifier = Modifier.padding(top = 6.dp),
-                fontFamily = AmiriQuran,
-                fontSize = 20.sp,
-                lineHeight = 32.sp,
+                text = translationCredit,
+                modifier = Modifier.padding(top = 6.dp, start = 4.dp),
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
@@ -1131,6 +1180,7 @@ private class QuranLabels(private val language: AppLanguage) {
     val verse get() = if (arabic) "آية" else "آیه"
     val highlight get() = if (arabic) "تمييز الآية" else "هایلایت آیه"
     val removeHighlight get() = if (arabic) "إزالة التمييز" else "حذف هایلایت"
+    val translationUnavailable get() = if (arabic) "التفسير غير متاح حاليًا." else "ترجمهٔ این آیه در دسترس نیست."
     val addNote get() = if (arabic) "إضافة ملاحظة" else "افزودن یادداشت"
     val editNote get() = if (arabic) "ویرایش یادداشت" else "ویرایش یادداشت"
     val writeNote get() = if (arabic) "اكتب ملاحظتك" else "یادداشت خود را بنویسید"
