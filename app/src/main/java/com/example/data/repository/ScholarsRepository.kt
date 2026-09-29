@@ -61,6 +61,7 @@ object ScholarsRepository {
             tagline = s.optString("tagline"),
             bio = s.optString("bio"),
             hue = s.optDouble("hue", 150.0).toFloat(),
+            photoUrl = s.optString("photoUrl").takeIf { it.startsWith("http") },
             lectures = (0 until (lectures?.length() ?: 0)).map { j ->
                 val l = lectures!!.getJSONObject(j)
                 Lecture(

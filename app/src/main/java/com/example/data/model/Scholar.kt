@@ -9,12 +9,16 @@ data class Lecture(
     val durationSec: Int? = null
 )
 
-/** A scholar shown under «علما و مشاهیر». [hue] (0..360) tints his generated cover art. */
+/**
+ * A scholar shown under «علما و مشاهیر». [photoUrl] is set from the admin panel; without it the
+ * app draws cover art tinted by [hue] (0..360).
+ */
 data class Scholar(
     val id: String,
     val name: String,
     val tagline: String,
     val bio: String,
     val hue: Float,
+    val photoUrl: String? = null,
     val lectures: List<Lecture>
 )

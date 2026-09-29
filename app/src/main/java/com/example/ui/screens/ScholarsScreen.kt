@@ -63,6 +63,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
@@ -123,7 +126,7 @@ fun ScholarsScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
 
 // ───────────────────────── Cover art ─────────────────────────
 
-/** Generated album art: tinted gradient, geometric star ornament and the sheikh's initial. Offline, no images. */
+/** Cover: the scholar's photo when set in the admin panel, otherwise generated art (tinted gradient, star ornament, initial). */
 @Composable
 private fun CoverArt(scholar: Scholar, size: Dp, spinning: Boolean = false, corner: Dp = size * 0.18f) {
     val transition = rememberInfiniteTransition(label = "cover")
@@ -163,6 +166,16 @@ private fun CoverArt(scholar: Scholar, size: Dp, spinning: Boolean = false, corn
             fontSize = (size.value * 0.36f).sp,
             fontWeight = FontWeight.Bold
         )
+        // Photo from the admin panel, drawn over the generated art (which shows while loading,
+        // offline before the first load, or if the image fails). The photo itself never spins.
+        scholar.photoUrl?.let { url ->
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current).data(url).crossfade(true).build(),
+                contentDescription = scholar.name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 }
 
