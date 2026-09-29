@@ -36,7 +36,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
@@ -91,7 +90,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -389,13 +387,6 @@ fun AppMainScaffold(
                                 tint = NightBlue
                             )
                         }
-                        Image(
-                            painter = painterResource(R.drawable.ic_nour_adhkar_logo),
-                            contentDescription = language.text("نشان اذکار نور"),
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(11.dp))
-                        )
                         Text(
                             text = when (currentTab) {
                                 "checklist" -> "چک‌لیست روزانه"
