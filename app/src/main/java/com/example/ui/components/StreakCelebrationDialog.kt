@@ -1,5 +1,18 @@
 package com.example.ui.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.platform.LocalView
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -86,32 +99,36 @@ fun StreakCelebrationDialog(
     fontScale: Float = 1.0f,
     onDismiss: () -> Unit
 ) {
-    val cardScale = remember { Animatable(0.75f) }
-    val numberScale = remember { Animatable(0.3f) }
+    val view = LocalView.current
+    // Honour the system "remove animations" setting: show the final state at once.
+    val reduceMotion = remember {
+        android.provider.Settings.Global.getFloat(
+            view.context.contentResolver,
+            android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,
+            1f
+        ) == 0f
+    }
+    val cardScale = remember { Animatable(if (reduceMotion) 1f else 0.85f) }
+    val cardAlpha = remember { Animatable(if (reduceMotion) 1f else 0f) }
+    val numberScale = remember { Animatable(1f) }
+    val footerAlpha = remember { Animatable(if (reduceMotion) 1f else 0f) }
+    // Duolingo-style count-up: start on yesterday's number and roll to today's once the flame lands.
+    var shownCount by remember { mutableIntStateOf(if (reduceMotion) streakCount else (streakCount - 1).coerceAtLeast(0)) }
+    var todayFilled by remember { mutableStateOf(reduceMotion) }
 
-    // Fast, snappy pop animation on load
     LaunchedEffect(Unit) {
-        cardScale.animateTo(
-            targetValue = 1f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessMedium
-            )
-        )
-        numberScale.animateTo(
-            targetValue = 1.25f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioHighBouncy,
-                stiffness = Spring.StiffnessHigh
-            )
-        )
-        numberScale.animateTo(
-            targetValue = 1f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessMedium
-            )
-        )
+        if (reduceMotion) return@LaunchedEffect
+        launch { cardAlpha.animateTo(1f, tween(180)) }
+        cardScale.animateTo(1f, spring(dampingRatio = 0.62f, stiffness = Spring.StiffnessMediumLow))
+        // The Rive flame's squash-and-stretch lands ~450 ms after it starts.
+        delay(260)
+        shownCount = streakCount
+        view.confirmHaptic()
+        numberScale.animateTo(1.28f, spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessHigh))
+        numberScale.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMedium))
+        delay(120)
+        todayFilled = true
+        footerAlpha.animateTo(1f, tween(260))
     }
 
     // Build default 7 days if not provided
@@ -161,6 +178,7 @@ fun StreakCelebrationDialog(
                     modifier = Modifier
                         .fillMaxWidth(0.90f)
                         .scale(cardScale.value)
+                        .alpha(cardAlpha.value)
                         .clip(RoundedCornerShape(32.dp))
                         .background(
                             brush = Brush.verticalGradient(
@@ -207,19 +225,32 @@ fun StreakCelebrationDialog(
                             }
                         }
 
-                        // Realistic Animated Flame Canvas with Live Sparks
-                        AnimatedRealisticFireWithSparks(modifier = Modifier.size(170.dp))
+                        // Rive flame (pop-in, flicker; tap to replay), Canvas fallback.
+                        StreakFlame(
+                            streak = streakCount,
+                            modifier = Modifier.size(width = 180.dp, height = 204.dp)
+                        )
 
                         Spacer(modifier = Modifier.height(4.dp))
 
-                        // Snappy Big Streak Number
-                        Text(
-                            text = streakCount.toPersianDigits(),
-                            fontSize = (54 * fontScale).sp,
-                            fontWeight = FontWeight.Black,
-                            color = Color(0xFFFFB74D),
-                            modifier = Modifier.scale(numberScale.value)
-                        )
+                        // The number rolls up from yesterday's count.
+                        AnimatedContent(
+                            targetState = shownCount,
+                            transitionSpec = {
+                                (slideInVertically(spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessMediumLow)) { it } + fadeIn(tween(160)))
+                                    .togetherWith(slideOutVertically(tween(200)) { -it } + fadeOut(tween(140)))
+                                    .using(SizeTransform(clip = false))
+                            },
+                            modifier = Modifier.scale(numberScale.value),
+                            label = "streakCount"
+                        ) { count ->
+                            Text(
+                                text = count.toPersianDigits(),
+                                fontSize = (54 * fontScale).sp,
+                                fontWeight = FontWeight.Black,
+                                color = Color(0xFFFFB74D)
+                            )
+                        }
 
                         Text(
                             text = "روز متوالی!",
@@ -251,9 +282,29 @@ fun StreakCelebrationDialog(
                                 .border(0.5.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(18.dp))
                                 .padding(vertical = 12.dp, horizontal = 6.dp)
                         ) {
-                            resolvedDays.forEach { day ->
+                            resolvedDays.forEachIndexed { index, day ->
+                                val dayScale = remember { Animatable(if (reduceMotion) 1f else 0.4f) }
+                                LaunchedEffect(Unit) {
+                                    if (!reduceMotion) {
+                                        delay(180L + index * 55L)
+                                        dayScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMedium))
+                                    }
+                                }
+                                // Today counts as done only once the fill animation runs.
+                                val filled = day.isActive && (!day.isToday || todayFilled)
+                                val fillColor by animateColorAsState(
+                                    targetValue = when {
+                                        filled && day.isToday -> Color(0xFFFF9800)
+                                        filled -> Color(0xFF2E7D32)
+                                        day.isToday -> Color(0xFF37474F)
+                                        else -> Color.White.copy(alpha = 0.12f)
+                                    },
+                                    animationSpec = tween(320),
+                                    label = "dayFill"
+                                )
                                 Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.scale(dayScale.value)
                                 ) {
                                     Text(
                                         text = day.dayLabel,
@@ -268,14 +319,7 @@ fun StreakCelebrationDialog(
                                         modifier = Modifier
                                             .size(28.dp)
                                             .clip(CircleShape)
-                                            .background(
-                                                when {
-                                                    day.isActive && day.isToday -> Color(0xFFFF9800)
-                                                    day.isActive -> Color(0xFF2E7D32)
-                                                    day.isToday -> Color(0xFF37474F)
-                                                    else -> Color.White.copy(alpha = 0.12f)
-                                                }
-                                            )
+                                            .background(fillColor)
                                             .border(
                                                 width = if (day.isToday) 1.5.dp else 0.dp,
                                                 color = if (day.isToday) SunGold else Color.Transparent,
@@ -283,12 +327,19 @@ fun StreakCelebrationDialog(
                                             ),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        if (day.isActive) {
+                                        if (filled) {
+                                            // Check pops in with a spring when today fills.
+                                            val checkScale = remember { Animatable(if (day.isToday && !reduceMotion) 0f else 1f) }
+                                            LaunchedEffect(Unit) {
+                                                checkScale.animateTo(1f, spring(dampingRatio = 0.4f, stiffness = Spring.StiffnessMedium))
+                                            }
                                             Icon(
                                                 imageVector = Icons.Default.Check,
                                                 contentDescription = null,
                                                 tint = Color.White,
-                                                modifier = Modifier.size(15.dp)
+                                                modifier = Modifier
+                                                    .size(15.dp)
+                                                    .scale(checkScale.value)
                                             )
                                         } else {
                                             Box(
@@ -318,7 +369,8 @@ fun StreakCelebrationDialog(
                             onClick = onDismiss,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(50.dp),
+                                .heightIn(min = 50.dp)
+                                .alpha(footerAlpha.value),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFFFF9800),
@@ -339,10 +391,11 @@ fun StreakCelebrationDialog(
 }
 
 /**
- * Realistic Fire Canvas with dynamic wiggling flame paths and rising glowing sparks
+ * Canvas flame with wiggling paths and rising sparks. Fallback for [StreakFlame] when the Rive
+ * runtime cannot load on a device.
  */
 @Composable
-private fun AnimatedRealisticFireWithSparks(modifier: Modifier = Modifier) {
+internal fun AnimatedRealisticFireWithSparks(modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition(label = "realisticFire")
     val time by infiniteTransition.animateFloat(
         initialValue = 0f,
