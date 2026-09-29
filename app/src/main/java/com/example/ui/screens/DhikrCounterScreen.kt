@@ -1,9 +1,18 @@
 package com.example.ui.screens
 import com.example.ui.language.text
 import com.example.ui.language.shareText
+import com.example.ui.language.shareCard
+import com.example.share.appShareFooter
+import com.example.ui.components.RatingPromptDialog
+import com.example.ui.components.RatingPromptStore
+import com.example.share.shareAppCardImage
+import com.example.share.shareAppText
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.automirrored.filled.ShortText
 import com.example.ui.language.reference
 
-import android.content.Intent
 import androidx.compose.animation.animateColorAsState
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -128,6 +137,9 @@ fun DhikrCounterScreen(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     var showCongratsDialog by remember { mutableStateOf(false) }
+    var showRatingPrompt by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val ratingStore = remember(context) { RatingPromptStore(context) }
 
     BackHandler {
         viewModel.leaveCategory(categoryId)
@@ -212,6 +224,22 @@ fun DhikrCounterScreen(
                 fontScale = fontScale,
                 onDismiss = {
                     showCongratsDialog = false
+                    // A completed collection on an active streak is a good moment to ask for a rating.
+                    if (ratingStore.shouldAsk(streak)) {
+                        ratingStore.markAsked()
+                        showRatingPrompt = true
+                    } else {
+                        viewModel.leaveCategory(categoryId)
+                    }
+                }
+            )
+        }
+
+        if (showRatingPrompt) {
+            RatingPromptDialog(
+                store = ratingStore,
+                onDismiss = {
+                    showRatingPrompt = false
                     viewModel.leaveCategory(categoryId)
                 }
             )
@@ -521,26 +549,49 @@ fun DhikrItemCard(
                             modifier = Modifier.size(20.dp)
                         )
                     }
-                    IconButton(
-                        onClick = {
-                            val shareText = item.shareText(language)
-                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_SUBJECT, language.text("ذکر از اذکار نور"))
-                                putExtra(Intent.EXTRA_TEXT, shareText)
-                            }
-                            context.startActivity(
-                                Intent.createChooser(shareIntent, language.text("اشتراک‌گذاری ذکر"))
+                    Box {
+                        var showShareMenu by remember { mutableStateOf(false) }
+                        IconButton(
+                            onClick = { showShareMenu = true },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "اشتراک‌گذاری ذکر",
+                                tint = NightBlue.copy(alpha = 0.65f),
+                                modifier = Modifier.size(20.dp)
                             )
-                        },
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = "اشتراک‌گذاری ذکر",
-                            tint = NightBlue.copy(alpha = 0.65f),
-                            modifier = Modifier.size(20.dp)
-                        )
+                        }
+                        DropdownMenu(expanded = showShareMenu, onDismissRequest = { showShareMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text("اشتراک به‌صورت تصویر") },
+                                leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) },
+                                onClick = {
+                                    showShareMenu = false
+                                    coroutineScope.launch {
+                                        shareAppCardImage(
+                                            context,
+                                            item.shareCard(language),
+                                            caption = appShareFooter(language),
+                                            chooserTitle = language.text("اشتراک‌گذاری ذکر")
+                                        )
+                                    }
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("اشتراک به‌صورت متن") },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.ShortText, contentDescription = null) },
+                                onClick = {
+                                    showShareMenu = false
+                                    shareAppText(
+                                        context,
+                                        item.shareText(language),
+                                        chooserTitle = language.text("اشتراک‌گذاری ذکر"),
+                                        subject = language.text("ذکر از اذکار نور")
+                                    )
+                                }
+                            )
+                        }
                     }
                     if (item.currentCount > 0) {
                         IconButton(
