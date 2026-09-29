@@ -48,6 +48,18 @@ enum class QuranTafsir(
         title = "ابن كثير",
         credit = "تفسير القرآن العظيم — الحافظ ابن كثير"
     ),
+    ARABIC_TABARI(
+        id = "ar_tabari",
+        textLanguage = AppLanguage.ARABIC,
+        title = "الطبري",
+        credit = "جامع البيان عن تأويل آي القرآن — الإمام ابن جرير الطبري"
+    ),
+    ARABIC_QURTUBI(
+        id = "ar_qurtubi",
+        textLanguage = AppLanguage.ARABIC,
+        title = "القرطبي",
+        credit = "الجامع لأحكام القرآن — الإمام القرطبي"
+    ),
     ARABIC_BAGHAWI(
         id = "ar_baghawi",
         textLanguage = AppLanguage.ARABIC,
