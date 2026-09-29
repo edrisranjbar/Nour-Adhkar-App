@@ -146,7 +146,8 @@ object AccountRepository {
      */
     internal fun friendlyMessage(status: Int, serverMessage: String?): String {
         val message = serverMessage?.trim().orEmpty()
-        if (status in 400..499 && status != 429 && isPersianSentence(message)) return message
+        // 503 carries a specific Persian reason from our API (e.g. Google sign-in temporarily unavailable).
+        if ((status in 400..499 && status != 429 || status == 503) && isPersianSentence(message)) return message
         return when (status) {
             401 -> "ایمیل یا رمز عبور نادرست است."
             403 -> "دسترسی به این حساب ممکن نیست. لطفاً با پشتیبانی تماس بگیرید."
