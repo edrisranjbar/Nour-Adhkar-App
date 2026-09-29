@@ -35,5 +35,16 @@ class AccountFriendlyMessageTest {
         assertEquals("ایمیل یا رمز عبور نادرست است.", AccountRepository.friendlyMessage(401, "Server Error: خطا"))
         assertEquals(serverError, AccountRepository.friendlyMessage(500, "Server Error"))
         assertEquals(serverError, AccountRepository.friendlyMessage(500, "مشکل داخلی"))
+        assertEquals(serverError, AccountRepository.friendlyMessage(502, "ارتباط با گوگل برقرار نشد"))
+    }
+
+    @Test
+    fun showsPersianServiceUnavailableReason() {
+        val reason = "ورود با گوگل موقتاً در دسترس نیست."
+        assertEquals(reason, AccountRepository.friendlyMessage(503, reason))
+        assertEquals(
+            "این روش ورود در حال حاضر روی سرور فعال نیست. لطفاً با ایمیل وارد شوید.",
+            AccountRepository.friendlyMessage(503, "Service Unavailable")
+        )
     }
 }

@@ -14,3 +14,7 @@ New installations open a five-step, swipeable onboarding (the last step is an op
 
 
 The navigation drawer starts with a Telegram-style profile header (avatar, name/email, streak count) that opens Profile. It no longer lists Home, Quran, tasbih, daily checklist, Settings, achievements, Profile, messages, or favorites; those are reached from the bottom navigation, the header, Profile, and the home app bar (favorites heart beside the notifications icon).
+
+## Verses for a feeling
+
+Home's «امروز دلت چه حالی دارد؟» card has six feelings, each with 10 verses in `AdhkarData.emotionalAyat` (Arabic from the bundled Tanzil Uthmani text, Persian from Tanzil `fa.khorramdel`, the credited Khorramdel translation; long verses use the relevant clause). `PreferenceRepository.pickFeelingAyahId` keeps the same verse for a feeling all day, picks an unseen one on each new day, and starts a new round only after all 10 have been shown, so the same verse does not repeat for a feeling.
