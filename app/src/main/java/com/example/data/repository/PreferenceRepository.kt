@@ -185,6 +185,30 @@ class PreferenceRepository(context: Context) {
             .apply()
     }
 
+    /**
+     * Picks today's verse for a feeling without repeats: the same verse all day, and a new one
+     * each day that has not been shown for this feeling until every verse has been seen once.
+     */
+    fun pickFeelingAyahId(feeling: String, candidateIds: List<String>): String? {
+        if (candidateIds.isEmpty()) return null
+        val day = currentDayKey()
+        val todayKey = "feeling_ayah_today_$feeling"
+        val seenKey = "feeling_ayah_seen_$feeling"
+        prefs.getString(todayKey, null)?.split('|', limit = 2)?.takeIf { it.size == 2 }?.let { (storedDay, id) ->
+            if (storedDay.toLongOrNull() == day && id in candidateIds) return id
+        }
+        val seen = prefs.getStringSet(seenKey, emptySet()).orEmpty().filter { it in candidateIds }.toSet()
+        val unseen = candidateIds.filterNot { it in seen }
+        val chosen = unseen.ifEmpty { candidateIds }.random()
+        // Once every verse has been shown, start a new round with today's pick.
+        val newSeen = if (unseen.isEmpty()) setOf(chosen) else seen + chosen
+        prefs.edit()
+            .putString(todayKey, "$day|$chosen")
+            .putStringSet(seenKey, newSeen)
+            .apply()
+        return chosen
+    }
+
     fun clearSelectedFeeling() {
         prefs.edit()
             .remove("selected_feeling")

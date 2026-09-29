@@ -431,10 +431,8 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     private fun getEmotionalAyah(feeling: UserFeeling?): EmotionalAyah? {
         if (feeling == null) return null
         val choices = AdhkarData.emotionalAyat.filter { it.feeling == feeling }
-        if (choices.isEmpty()) return null
-        val calendar = Calendar.getInstance()
-        val dayKey = calendar.get(Calendar.YEAR) * 1000 + calendar.get(Calendar.DAY_OF_YEAR)
-        return choices[Math.floorMod(dayKey + feeling.ordinal * 31, choices.size)]
+        val id = prefs.pickFeelingAyahId(feeling.storageKey, choices.map { it.id }) ?: return null
+        return choices.first { it.id == id }
     }
 
     private fun playHapticAndAudio() {
