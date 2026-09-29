@@ -99,7 +99,8 @@ private fun formatTime(ms: Int): String {
 fun ScholarsScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
     val context = LocalContext.current
     val fontScale by viewModel.fontScale.collectAsState()
-    val scholars = remember { ScholarsRepository.load(context) }
+    var scholars by remember { mutableStateOf(ScholarsRepository.cached(context)) }
+    LaunchedEffect(Unit) { ScholarsRepository.refresh(context)?.let { scholars = it } }
     var scholarId by rememberSaveable { mutableStateOf<String?>(null) }
     var lectureId by rememberSaveable { mutableStateOf<String?>(null) }
     val scholar = scholars.firstOrNull { it.id == scholarId }
