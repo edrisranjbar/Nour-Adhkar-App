@@ -1,6 +1,6 @@
 package com.example.ui.screens
 
-import android.content.Intent
+import android.content.Context
 import androidx.annotation.DrawableRes
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -78,6 +78,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.R
+import com.example.share.ShareCardSpec
+import com.example.share.appShareFooter
+import com.example.share.shareAppCardImage
+import com.example.ui.language.AppLanguage
+import com.example.ui.language.LocalAppLanguage
+import com.example.ui.language.text
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import com.example.data.repository.PreferenceRepository
 import com.example.ui.theme.SunGold
 import com.example.ui.util.toPersianDigits
@@ -534,6 +542,8 @@ private fun AchievementTile(achievement: Achievement, onClick: () -> Unit) {
 @Composable
 private fun AchievementDetailScreen(achievement: Achievement, onDismiss: () -> Unit) {
     val context = LocalContext.current
+    val language = LocalAppLanguage.current
+    val scope = rememberCoroutineScope()
     BackHandler(onBack = onDismiss)
     Dialog(
         onDismissRequest = onDismiss,
@@ -660,11 +670,12 @@ private fun AchievementDetailScreen(achievement: Achievement, onDismiss: () -> U
                     }
                     Surface(shape = RoundedCornerShape(12.dp), color = Color.Black.copy(alpha = 0.35f)) {
                         IconButton(onClick = {
-                            val text = "${achievement.title}\n${achievement.progress.toPersianDigits()} ${achievement.unit} در اذکار نور"
-                            context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, text)
-                            }, "اشتراک‌گذاری دستاورد"))
+                            scope.launch {
+                                shareAchievement(
+                                    context, language, achievement,
+                                    "${achievement.progress.toPersianDigits()} ${language.text(achievement.unit)}"
+                                )
+                            }
                         }) {
                             Icon(Icons.Default.Share, contentDescription = "اشتراک‌گذاری", tint = Color.White)
                         }
@@ -731,6 +742,8 @@ private fun AchievementProgressCard(achievement: Achievement) {
 @Composable
 private fun AchievementCelebrationScreen(achievement: Achievement, onDismiss: () -> Unit) {
     val context = LocalContext.current
+    val language = LocalAppLanguage.current
+    val scope = rememberCoroutineScope()
     BackHandler(onBack = onDismiss)
     Dialog(
         onDismissRequest = onDismiss,
@@ -781,11 +794,12 @@ private fun AchievementCelebrationScreen(achievement: Achievement, onDismiss: ()
                 )
                 Surface(
                     modifier = Modifier.fillMaxWidth().padding(top = 28.dp).height(52.dp).clickable {
-                        val text = "${achievement.title}\nمرحله ${achievement.unlockedLevel.toPersianDigits()} در اذکار نور"
-                        context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, text)
-                        }, "اشتراک‌گذاری دستاورد"))
+                        scope.launch {
+                            shareAchievement(
+                                context, language, achievement,
+                                language.text("مرحله ${achievement.unlockedLevel.toPersianDigits()} از ۳")
+                            )
+                        }
                     },
                     shape = RoundedCornerShape(14.dp),
                     color = Color(0xFF4D963D)
@@ -806,4 +820,23 @@ private fun AchievementCelebrationScreen(achievement: Achievement, onDismiss: ()
             }
         }
     }
+}
+
+/** Shares the badge as an image card, with the store link on the card and in the caption. */
+private suspend fun shareAchievement(context: Context, language: AppLanguage, achievement: Achievement, detail: String) {
+    val title = language.text(achievement.title)
+    shareAppCardImage(
+        context,
+        ShareCardSpec(
+            eyebrow = language.text("دستاورد تازه در اذکار نور"),
+            headline = title,
+            body = detail,
+            caption = language.text(achievement.description),
+            badgeRes = achievement.artwork,
+            appName = language.text("اذکار نور"),
+            callToAction = language.text("دریافت رایگان از کافه‌بازار")
+        ),
+        caption = "$title — $detail\n\n${appShareFooter(language)}",
+        chooserTitle = language.text("اشتراک‌گذاری دستاورد")
+    )
 }

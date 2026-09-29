@@ -29,6 +29,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.rememberCoroutineScope
+import com.example.share.ShareCardSpec
+import com.example.share.appShareFooter
+import com.example.share.shareAppCardImage
+import com.example.ui.language.LocalAppLanguage
+import com.example.ui.language.text
+import kotlinx.coroutines.launch
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import com.example.ui.language.LocalizedIcon as Icon
@@ -86,6 +95,9 @@ fun StreakCelebrationDialog(
     fontScale: Float = 1.0f,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
+    val language = LocalAppLanguage.current
+    val scope = rememberCoroutineScope()
     val cardScale = remember { Animatable(0.75f) }
     val numberScale = remember { Animatable(0.3f) }
 
@@ -329,6 +341,37 @@ fun StreakCelebrationDialog(
                                 text = "ربّنا تَقَبَّلْ مِنَّا (ادامه)",
                                 fontSize = (15.5 * fontScale).sp,
                                 fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        TextButton(
+                            onClick = {
+                                scope.launch {
+                                    val days = streakCount.toPersianDigits()
+                                    shareAppCardImage(
+                                        context,
+                                        ShareCardSpec(
+                                            eyebrow = language.text("مداومت در ذکر"),
+                                            bigNumber = language.text(days),
+                                            headline = language.text("روز متوالی!"),
+                                            body = language.text("تبارک‌الله! با استمرار در اذکار روزانه، آتش عبادت خود را فروزان نگه داشته‌اید."),
+                                            appName = language.text("اذکار نور"),
+                                            callToAction = language.text("دریافت رایگان از کافه‌بازار")
+                                        ),
+                                        caption = language.text("{0} روز مداومت در اذکار نور".replace("{0}", days)) +
+                                            "\n\n" + appShareFooter(language),
+                                        chooserTitle = language.text("اشتراک‌گذاری مداومت")
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+                        ) {
+                            Icon(Icons.Default.Share, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.size(8.dp))
+                            Text(
+                                text = "اشتراک‌گذاری مداومت",
+                                fontSize = (14 * fontScale).sp,
+                                color = Color.White
                             )
                         }
                     }
