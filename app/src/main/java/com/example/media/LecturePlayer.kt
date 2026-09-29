@@ -88,7 +88,10 @@ object LecturePlayer {
         mp.seekTo(ms.coerceIn(0, mp.duration)); _state.value = _state.value.copy(positionMs = ms)
     }
 
-    fun skip(deltaMs: Int) = seekTo((player?.takeIf { prepared }?.currentPosition ?: return) + deltaMs)
+    fun skip(deltaMs: Int) {
+        val position = player?.takeIf { prepared }?.currentPosition ?: return
+        seekTo(position + deltaMs)
+    }
 
     fun setSpeed(speed: Float) {
         _state.value = _state.value.copy(speed = speed)
