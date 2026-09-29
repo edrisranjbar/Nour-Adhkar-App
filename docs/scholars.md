@@ -9,7 +9,7 @@ Managed from the admin panel and served by the backend; the app never needs a re
   - Scholar: `id`, `name`, `tagline`, `bio`, `hue` (0–360, tints the generated cover art), `lectures[]`.
   - Lecture: `id`, `title`, `description`, `audioUrl` (direct https mp3/m4a, ideally range-request capable so seeking works), optional `durationSec`.
 - `ScholarsRepository`: shows the last cached response (or the bundled `assets/scholars.json` on first launch/offline), refreshes silently in the background; a failed refresh keeps what is shown.
-- **Backend/admin panel work is not in this repo.** Needed there: `scholars` and `lectures` tables, admin CRUD (add/edit/reorder/publish, audio upload or URL), and the endpoint above. Until it exists the app uses the bundled file.
+- **Backend (nour-adhkar repo):** `scholars` and `lectures` tables serve the endpoint above; scholars and lectures are managed in the admin panel under «علما و سخنرانی‌ها» (add/edit/reorder/show-hide/delete; audio is an uploaded file up to 100 MB or an https link). Until the backend is deployed the app uses the bundled file.
 - Bundled شیخ ضیایی and شیخ پردل have no lectures yet; the UI shows «به‌زودی».
 
 ## UI
