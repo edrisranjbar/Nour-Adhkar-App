@@ -1,6 +1,13 @@
 package com.example.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.animation.core.animateDpAsState
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -23,6 +30,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -36,7 +44,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Pause
@@ -240,14 +248,6 @@ private fun ScholarListPage(
         ),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        item {
-            Text(
-                "سخنرانی و دروس بزرگان؛ گوش دهید و بهره ببرید.",
-                fontSize = (13 * fontScale).sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
-            )
-        }
         if (scholars.isEmpty()) item {
             Text("فهرستی برای نمایش نیست.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -320,7 +320,7 @@ private fun ScholarLecturesPage(
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                     Row(Modifier.fillMaxWidth()) {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "بازگشت", tint = Color.White)
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "بازگشت", tint = Color.White)
                         }
                     }
                     CoverArt(scholar, 132.dp, corner = 34.dp)
@@ -418,6 +418,7 @@ private fun LecturePlayerPage(
     }
 
     var dragging by remember { mutableStateOf<Float?>(null) }
+    var showSpeedSheet by remember { mutableStateOf(false) }
     val duration = if (current && state.durationMs > 0) state.durationMs else (lecture.durationSec ?: 0) * 1000
     val position = if (current) state.positionMs else 0
 
@@ -431,7 +432,7 @@ private fun LecturePlayerPage(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
-            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "بازگشت", tint = Color.White) }
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "بازگشت", tint = Color.White) }
         }
         Spacer(Modifier.height(6.dp))
         Box(
@@ -450,16 +451,39 @@ private fun LecturePlayerPage(
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Column(Modifier.fillMaxWidth()) {
                 val shown = dragging ?: position.toFloat()
+                val sliderInteraction = remember { MutableInteractionSource() }
+                val isDragged by sliderInteraction.collectIsDraggedAsState()
+                val thumbSize by animateDpAsState(if (isDragged) 20.dp else 12.dp, label = "thumb")
+                val activeColor = MaterialTheme.colorScheme.primary
+                val trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f)
                 Slider(
                     value = shown.coerceIn(0f, duration.coerceAtLeast(1).toFloat()),
                     onValueChange = { dragging = it },
                     onValueChangeFinished = { dragging?.let { LecturePlayer.seekTo(it.toInt()) }; dragging = null },
                     valueRange = 0f..duration.coerceAtLeast(1).toFloat(),
-                    enabled = current && !loading && duration > 0
+                    enabled = current && !loading && duration > 0,
+                    interactionSource = sliderInteraction,
+                    thumb = {
+                        Box(Modifier.size(thumbSize).shadow(if (isDragged) 6.dp else 2.dp, CircleShape).clip(CircleShape).background(activeColor))
+                    },
+                    track = { sliderState ->
+                        val range = sliderState.valueRange.endInclusive - sliderState.valueRange.start
+                        val fraction = if (range > 0f) ((sliderState.value - sliderState.valueRange.start) / range).coerceIn(0f, 1f) else 0f
+                        Box(Modifier.fillMaxWidth().height(if (isDragged) 6.dp else 4.dp).clip(CircleShape).background(trackColor)) {
+                            Box(Modifier.fillMaxWidth(fraction).fillMaxHeight().background(activeColor))
+                        }
+                    }
                 )
                 Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(formatTime(shown.toInt()), fontSize = (12 * fontScale).sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(formatTime(duration), fontSize = (12 * fontScale).sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        formatTime(shown.toInt()), fontSize = (12 * fontScale).sp, fontWeight = FontWeight.Medium,
+                        color = if (isDragged) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        // Time left, like Spotify: counts down as the lecture plays.
+                        if (duration > 0) "-" + formatTime((duration - shown.toInt()).coerceAtLeast(0)) else formatTime(0),
+                        fontSize = (12 * fontScale).sp, color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
                 Spacer(Modifier.height(10.dp))
                 Row(
@@ -467,6 +491,7 @@ private fun LecturePlayerPage(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    SpeedPill(state.speed, fontScale) { showSpeedSheet = true }
                     IconButton(onClick = { LecturePlayer.skip(-10_000) }, modifier = Modifier.size(56.dp)) {
                         Icon(Icons.Default.Replay10, "۱۰ ثانیه عقب", modifier = Modifier.size(34.dp))
                     }
@@ -489,32 +514,13 @@ private fun LecturePlayerPage(
                     IconButton(onClick = { LecturePlayer.skip(10_000) }, modifier = Modifier.size(56.dp)) {
                         Icon(Icons.Default.Forward10, "۱۰ ثانیه جلو", modifier = Modifier.size(34.dp))
                     }
+                    Spacer(Modifier.width(52.dp)) // balances the speed pill so play stays centred
                 }
             }
         }
         if (current && state.error != null) {
             Text(state.error!!, color = MaterialTheme.colorScheme.error, fontSize = (13 * fontScale).sp, textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 12.dp))
-        }
-
-        Spacer(Modifier.height(14.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(0.75f, 1f, 1.25f, 1.5f, 2f).forEach { s ->
-                val selected = state.speed == s
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                    modifier = Modifier.clickable { LecturePlayer.setSpeed(s) }
-                ) {
-                    Text(
-                        "${(if (s == 1f) "1" else s.toString()).toPersianDigits()}×",
-                        color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                        fontSize = (12.5f * fontScale).sp,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
-                    )
-                }
-            }
         }
 
         if (lecture.description.isNotBlank()) {
@@ -534,5 +540,68 @@ private fun LecturePlayerPage(
             }
         }
         Spacer(Modifier.height(24.dp))
+    }
+
+    if (showSpeedSheet) {
+        SpeedSheet(current = state.speed, onSelect = { LecturePlayer.setSpeed(it); showSpeedSheet = false }, onDismiss = { showSpeedSheet = false })
+    }
+}
+
+private val PlaybackSpeeds = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f)
+
+private fun speedLabel(speed: Float): String =
+    (if (speed % 1f == 0f) speed.toInt().toString() else speed.toString()).toPersianDigits() + "×"
+
+/** Compact current-speed button (like Spotify's "1x"); tints when the speed is not normal. */
+@Composable
+private fun SpeedPill(speed: Float, fontScale: Float, onClick: () -> Unit) {
+    val changed = speed != 1f
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = if (changed) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else Color.Transparent,
+        border = BorderStroke(1.dp, if (changed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
+        modifier = Modifier
+            .width(52.dp)
+            .clip(RoundedCornerShape(50))
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = "سرعت پخش، ${speedLabel(speed)}" }
+    ) {
+        Box(Modifier.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+            Text(
+                speedLabel(speed), fontSize = (13 * fontScale).sp, fontWeight = FontWeight.Bold,
+                color = if (changed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SpeedSheet(current: Float, onSelect: (Float) -> Unit, onDismiss: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.padding(bottom = 24.dp)) {
+            Text(
+                "سرعت پخش", fontWeight = FontWeight.Bold, fontSize = 16.sp,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+            )
+            PlaybackSpeeds.forEach { speed ->
+                val selected = speed == current
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { onSelect(speed) }
+                        .padding(horizontal = 24.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        if (speed == 1f) "عادی" else speedLabel(speed),
+                        modifier = Modifier.weight(1f), fontSize = 16.sp,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    )
+                    if (selected) Icon(Icons.Default.Check, "انتخاب‌شده", tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+        }
     }
 }
