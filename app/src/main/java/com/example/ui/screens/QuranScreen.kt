@@ -96,6 +96,20 @@ import com.example.quran.QuranKhatmRepository
 import com.example.quran.QuranPage
 import com.example.quran.QuranRepository
 import com.example.quran.QuranSurah
+import com.example.quran.QuranTafsir
+import com.example.quran.QuranTafsirs
+import com.example.quran.TafsirPassage
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.runtime.key
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.platform.LocalConfiguration
+import com.example.quran.QuranTranslation
+import com.example.quran.QuranTranslations
 import com.example.quran.QuranVerse
 import com.example.notifications.AdhkarNotificationManager
 import com.example.ui.language.AppLanguage
@@ -149,6 +163,21 @@ fun QuranScreen(
     val khatmRepository = remember(context) { QuranKhatmRepository(context) }
     val notificationManager = remember(context) { AdhkarNotificationManager(context) }
     var corpus by remember { mutableStateOf<QuranCorpus?>(null) }
+    var translationId by remember(language) { mutableStateOf(prefs.getQuranTranslation(language.code)) }
+    val translation = QuranTranslation.forLanguage(language, translationId)
+    val translationOptions = QuranTranslation.optionsFor(language)
+    var translationDialogOpen by remember { mutableStateOf(false) }
+    var tafsirId by remember(language) { mutableStateOf(prefs.getQuranTafsir(language.code)) }
+    val tafsir = QuranTafsir.forLanguage(language, tafsirId)
+    // Remembered while reading so the sheet reopens on the tab the reader last used.
+    var showTafsir by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    // null while loading; empty if the bundled file could not be read.
+    val translationTexts by androidx.compose.runtime.produceState<Map<String, String>?>(null, translation) {
+        value = null
+        value = runCatching {
+            withContext(Dispatchers.IO) { QuranTranslations.load(context, translation) }
+        }.getOrElse { emptyMap() }
+    }
     var selectedVerse by remember { mutableStateOf<QuranVerse?>(null) }
     var noteVerse by remember { mutableStateOf<QuranVerse?>(null) }
     var readerColor by remember { mutableStateOf(QuranReaderColor.fromId(prefs.getQuranReaderColor())) }
@@ -359,6 +388,15 @@ fun QuranScreen(
                                 colorDialogOpen = true
                             }
                         )
+                        if (translationOptions.size > 1) {
+                            DropdownMenuItem(
+                                text = { Text(labels.translationPicker) },
+                                onClick = {
+                                    moreMenuOpen = false
+                                    translationDialogOpen = true
+                                }
+                            )
+                        }
                     }
                 }
                 }
@@ -507,6 +545,37 @@ fun QuranScreen(
         )
     }
 
+    if (translationDialogOpen) {
+        AlertDialog(
+            onDismissRequest = { translationDialogOpen = false },
+            title = { Text(labels.translationPicker) },
+            text = {
+                Column {
+                    translationOptions.forEach { option ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    translationId = option.id
+                                    prefs.setQuranTranslation(language.code, option.id)
+                                    translationDialogOpen = false
+                                }
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(selected = translation == option, onClick = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text(option.title)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { translationDialogOpen = false }) { Text(labels.cancel) }
+            }
+        )
+    }
+
     if (khatmSetupOpen) {
         QuranKhatmSetupSheet(
             currentPage = pagerState.currentPage + 1,
@@ -596,6 +665,16 @@ fun QuranScreen(
         VerseActionsSheet(
             verse = verse,
             labels = labels,
+            translationText = translationTexts?.let { it[verse.id].orEmpty() },
+            translationCredit = translation.credit,
+            showTafsir = showTafsir,
+            onShowTafsirChange = { showTafsir = it },
+            tafsir = tafsir,
+            tafsirOptions = QuranTafsir.optionsFor(language),
+            onTafsirSelected = { option ->
+                tafsirId = option.id
+                prefs.setQuranTafsir(language.code, option.id)
+            },
             currentHighlight = highlights[verse.id],
             currentNote = notes[verse.id],
             onDismiss = { selectedVerse = null },
@@ -995,6 +1074,14 @@ private fun List<QuranVerse>.asMushafText(
 private fun VerseActionsSheet(
     verse: QuranVerse,
     labels: QuranLabels,
+    /** null while loading; blank if unavailable. */
+    translationText: String?,
+    translationCredit: String,
+    showTafsir: Boolean,
+    onShowTafsirChange: (Boolean) -> Unit,
+    tafsir: QuranTafsir,
+    tafsirOptions: List<QuranTafsir>,
+    onTafsirSelected: (QuranTafsir) -> Unit,
     currentHighlight: String?,
     currentNote: String?,
     onDismiss: () -> Unit,
@@ -1007,12 +1094,117 @@ private fun VerseActionsSheet(
     ) {
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
             Text(labels.noteFor(verse), style = MaterialTheme.typography.titleMedium)
+            // The sheet shows the verse's meaning; the Arabic text is already on the page behind it.
+            SingleChoiceSegmentedButtonRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp)
+            ) {
+                listOf(labels.translation, labels.tafsir).forEachIndexed { index, label ->
+                    SegmentedButton(
+                        selected = showTafsir == (index == 1),
+                        onClick = { onShowTafsirChange(index == 1) },
+                        shape = SegmentedButtonDefaults.itemShape(index, 2)
+                    ) { Text(label) }
+                }
+            }
+            if (showTafsir) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(top = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    tafsirOptions.forEach { option ->
+                        FilterChip(
+                            selected = option == tafsir,
+                            onClick = { onTafsirSelected(option) },
+                            label = { Text(option.title) }
+                        )
+                    }
+                }
+            }
+
+            val context = LocalContext.current
+            val tafsirState by produceState<TafsirState>(TafsirState.Loading, showTafsir, tafsir, verse.id) {
+                if (!showTafsir) return@produceState
+                value = TafsirState.Loading
+                value = runCatching {
+                    withContext(Dispatchers.IO) {
+                        QuranTafsirs.passage(context, tafsir, verse.surahNumber, verse.verseNumber)
+                    }
+                }.getOrNull()?.let { TafsirState.Ready(it) } ?: TafsirState.Missing
+            }
+            val maxTextHeight = (LocalConfiguration.current.screenHeightDp * 0.45f).dp
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+            ) {
+                // New scroll position whenever the shown text changes.
+                key(showTafsir, tafsir, verse.id) {
+                    Column(
+                        modifier = Modifier
+                            .heightIn(max = maxTextHeight)
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 16.dp, vertical = 14.dp)
+                    ) {
+                        val loading = if (showTafsir) tafsirState is TafsirState.Loading else translationText == null
+                        val body: String? = if (showTafsir) {
+                            (tafsirState as? TafsirState.Ready)?.passage?.text
+                        } else {
+                            translationText?.takeIf { it.isNotBlank() }
+                        }
+                        when {
+                            loading -> CircularProgressIndicator(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .size(24.dp)
+                                    .align(Alignment.CenterHorizontally),
+                                strokeWidth = 2.dp
+                            )
+                            body == null -> Text(
+                                text = if (showTafsir) labels.tafsirUnavailable else labels.translationUnavailable,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            else -> {
+                                val passage = (tafsirState as? TafsirState.Ready)?.passage
+                                if (showTafsir && passage != null) {
+                                    val scope = when {
+                                        passage.previousOnly -> labels.tafsirOfPrevious(passage)
+                                        passage.fromAyah != passage.toAyah -> labels.tafsirOfRange(passage)
+                                        else -> null
+                                    }
+                                    scope?.let {
+                                        Text(
+                                            text = it,
+                                            modifier = Modifier.padding(bottom = 8.dp),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                                SelectionContainer {
+                                    Text(
+                                        text = body,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        lineHeight = 30.sp,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             Text(
-                text = verse.text,
-                modifier = Modifier.padding(top = 6.dp),
-                fontFamily = AmiriQuran,
-                fontSize = 20.sp,
-                lineHeight = 32.sp,
+                text = if (showTafsir) tafsir.credit else translationCredit,
+                modifier = Modifier.padding(top = 6.dp, start = 4.dp),
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
@@ -1131,6 +1323,30 @@ private class QuranLabels(private val language: AppLanguage) {
     val verse get() = if (arabic) "آية" else "آیه"
     val highlight get() = if (arabic) "تمييز الآية" else "هایلایت آیه"
     val removeHighlight get() = if (arabic) "إزالة التمييز" else "حذف هایلایت"
+    // Arabic readers get al-Muyassar's plain meaning here, so "المعنى" rather than "الترجمة".
+    val translation get() = if (arabic) "المعنى" else "ترجمه"
+    val translationPicker get() = if (arabic) "ترجمة الآيات" else "ترجمهٔ آیات"
+    val tafsir get() = if (arabic) "التفسير" else "تفسیر"
+    val tafsirUnavailable get() = if (arabic) "لا يوجد تفسير لهذه الآية في هذا الكتاب." else "این تفسیر برای این آیه متنی ندارد."
+
+    private fun ayahRange(passage: TafsirPassage): String {
+        val from = passage.fromAyah.toPersianDigits()
+        val to = passage.toAyah.toPersianDigits()
+        return when {
+            passage.fromAyah == passage.toAyah -> if (arabic) "الآية $from" else "آیهٔ $from"
+            arabic -> "الآيات $from–$to"
+            else -> "آیه‌های $from تا $to"
+        }
+    }
+
+    fun tafsirOfRange(passage: TafsirPassage): String =
+        if (arabic) "تفسير ${ayahRange(passage)}" else "تفسیر ${ayahRange(passage)}"
+
+    fun tafsirOfPrevious(passage: TafsirPassage): String =
+        if (arabic) "لا يفرد هذا التفسير هذه الآية بكلام؛ هذا تفسير ${ayahRange(passage)}:"
+        else "این تفسیر برای این آیه متن جداگانه‌ای ندارد؛ تفسیر ${ayahRange(passage)}:"
+
+    val translationUnavailable get() = if (arabic) "المعنى غير متاح حاليًا." else "ترجمهٔ این آیه در دسترس نیست."
     val addNote get() = if (arabic) "إضافة ملاحظة" else "افزودن یادداشت"
     val editNote get() = if (arabic) "ویرایش یادداشت" else "ویرایش یادداشت"
     val writeNote get() = if (arabic) "اكتب ملاحظتك" else "یادداشت خود را بنویسید"
@@ -1153,4 +1369,10 @@ private class QuranLabels(private val language: AppLanguage) {
         QuranReaderColor.Sage -> if (arabic) "سبز ملایم" else "سبز ملایم"
         QuranReaderColor.Night -> if (arabic) "ليلي" else "شب"
     }
+}
+
+private sealed interface TafsirState {
+    data object Loading : TafsirState
+    data object Missing : TafsirState
+    data class Ready(val passage: TafsirPassage) : TafsirState
 }
