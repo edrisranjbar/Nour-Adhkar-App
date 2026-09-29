@@ -67,6 +67,7 @@ import com.example.ui.theme.TextArabic
 import com.example.ui.theme.TextPersian
 import com.example.ui.util.toPersianDigits
 import com.example.ui.viewmodel.AdhkarViewModel
+import com.example.share.appShareFooter
 
 @Composable
 fun ArticlesScreen(
@@ -175,7 +176,7 @@ private fun ArticleDetailPage(article: ArticleItem, fontScale: Float, innerPaddi
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
                         putExtra(Intent.EXTRA_SUBJECT, article.title)
-                        putExtra(Intent.EXTRA_TEXT, "${article.title}\n\n${article.content}\n\n${language.text("اذکار نور")}")
+                        putExtra(Intent.EXTRA_TEXT, "${article.title}\n\n${article.content}\n\n${appShareFooter(language)}")
                     }
                     context.startActivity(Intent.createChooser(intent, language.text("اشتراک‌گذاری مقاله")))
                 }) { Icon(Icons.Default.Share, "اشتراک‌گذاری مقاله") }

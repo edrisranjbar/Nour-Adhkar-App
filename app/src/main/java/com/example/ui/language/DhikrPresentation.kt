@@ -1,6 +1,8 @@
 package com.example.ui.language
 
 import com.example.data.model.DhikrItem
+import com.example.share.ShareCardSpec
+import com.example.share.appShareFooter
 
 /** Source metadata only; never applied to the original Quran or adhkar text. */
 fun AppLanguage.reference(source: String): String {
@@ -28,5 +30,16 @@ fun DhikrItem.shareText(language: AppLanguage): String = buildString {
         append("\n\n"); append(persianTranslation.trim())
     }
     if (source.isNotBlank()) { append("\n\n"); append(language.reference(source.trim())) }
-    append("\n\n"); append(language.text("اذکار نور"))
+    append("\n\n"); append(appShareFooter(language))
 }
+
+/** Image-card version of [shareText]; the store link is printed on the card itself. */
+fun DhikrItem.shareCard(language: AppLanguage): ShareCardSpec = ShareCardSpec(
+    eyebrow = language.text("ذکری برای امروز"),
+    headline = arabicText.trim(),
+    headlineIsArabic = true,
+    body = persianTranslation.trim().takeIf { language.showPersianTranslation && it.isNotBlank() },
+    caption = source.trim().takeIf { it.isNotBlank() }?.let { language.reference(it) },
+    appName = language.text("اذکار نور"),
+    callToAction = language.text("دریافت رایگان از کافه‌بازار")
+)
