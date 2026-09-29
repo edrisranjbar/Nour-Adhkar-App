@@ -23,6 +23,16 @@ class QuranTranslationsTest {
     }
 
     @Test
+    fun savedChoiceAppliesOnlyToItsLanguage() {
+        assertEquals(
+            QuranTranslation.PERSIAN_KHORRAMDEL,
+            QuranTranslation.forLanguage(AppLanguage.FARSI, "fa_khorramdel")
+        )
+        assertEquals(QuranTranslation.ARABIC_MUYASSAR, QuranTranslation.forLanguage(AppLanguage.ARABIC, "fa_khorramdel"))
+        assertEquals(QuranTranslation.PERSIAN_ISLAMHOUSE, QuranTranslation.forLanguage(AppLanguage.FARSI, "removed_id"))
+    }
+
+    @Test
     fun everyTranslationCoversEveryVerse() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val verseIds = QuranRepository.load(context).verses.map { it.id }.toSet()

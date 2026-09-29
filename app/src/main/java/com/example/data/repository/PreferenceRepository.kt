@@ -106,6 +106,13 @@ class PreferenceRepository(context: Context) {
         prefs.edit().putString("quran_reader_color", colorId).apply()
     }
 
+    /** Chosen Quran translation id for [languageCode]; null means that language's default. */
+    fun getQuranTranslation(languageCode: String): String? = prefs.getString("quran_translation_$languageCode", null)
+
+    fun setQuranTranslation(languageCode: String, translationId: String) {
+        prefs.edit().putString("quran_translation_$languageCode", translationId).apply()
+    }
+
     fun getQuranHighlights(): Map<String, String> = getQuranMap("quran_highlights")
 
     fun setQuranHighlight(verseId: String, color: String?) {

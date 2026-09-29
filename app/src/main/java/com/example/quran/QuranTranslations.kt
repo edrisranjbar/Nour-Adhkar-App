@@ -6,26 +6,49 @@ import java.io.InputStream
 
 /** A bundled, offline Sunni translation/tafsir of the Quran, one entry per verse. */
 enum class QuranTranslation(
+    /** Stable id saved in preferences; never rename. */
+    val id: String,
+    val language: AppLanguage,
     val asset: String,
+    /** Name shown in the translation picker. */
+    val title: String,
     /** Attribution line shown under the text. */
     val credit: String
 ) {
-    /** Islamhouse.com Persian team, published on QuranEnc (Rowwad Translation Center). */
+    /** Islamhouse.com Persian team, published on QuranEnc (Rowwad Translation Center). Persian default. */
     PERSIAN_ISLAMHOUSE(
+        id = "fa_islamhouse",
+        language = AppLanguage.FARSI,
         asset = "quran/translation-fa-islamhouse.txt",
+        title = "ترجمهٔ گروه اسلام‌هاوس (QuranEnc)",
         credit = "ترجمهٔ فارسی گروه اسلام‌هاوس (QuranEnc)"
+    ),
+
+    /** Tafsir-e Nur by Dr. Mostafa Khorramdel (Tanzil fa.khorramdel). */
+    PERSIAN_KHORRAMDEL(
+        id = "fa_khorramdel",
+        language = AppLanguage.FARSI,
+        asset = "quran/translation-fa-khorramdel.txt",
+        title = "تفسیر نور — دکتر مصطفی خرمدل",
+        credit = "تفسیر نور، دکتر مصطفی خرمدل"
     ),
 
     /** al-Tafsir al-Muyassar, King Fahd Glorious Quran Printing Complex. */
     ARABIC_MUYASSAR(
+        id = "ar_muyassar",
+        language = AppLanguage.ARABIC,
         asset = "quran/translation-ar-muyassar.txt",
+        title = "التفسير الميسر",
         credit = "التفسير الميسر — مجمع الملك فهد لطباعة المصحف الشريف"
     );
 
     companion object {
-        fun forLanguage(language: AppLanguage): QuranTranslation = when (language) {
-            AppLanguage.FARSI -> PERSIAN_ISLAMHOUSE
-            AppLanguage.ARABIC -> ARABIC_MUYASSAR
+        fun optionsFor(language: AppLanguage): List<QuranTranslation> = entries.filter { it.language == language }
+
+        /** The saved choice if it belongs to [language], otherwise that language's default (first) option. */
+        fun forLanguage(language: AppLanguage, savedId: String? = null): QuranTranslation {
+            val options = optionsFor(language)
+            return options.firstOrNull { it.id == savedId } ?: options.first()
         }
     }
 }

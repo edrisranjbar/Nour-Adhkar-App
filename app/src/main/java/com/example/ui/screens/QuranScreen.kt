@@ -151,7 +151,10 @@ fun QuranScreen(
     val khatmRepository = remember(context) { QuranKhatmRepository(context) }
     val notificationManager = remember(context) { AdhkarNotificationManager(context) }
     var corpus by remember { mutableStateOf<QuranCorpus?>(null) }
-    val translation = QuranTranslation.forLanguage(language)
+    var translationId by remember(language) { mutableStateOf(prefs.getQuranTranslation(language.code)) }
+    val translation = QuranTranslation.forLanguage(language, translationId)
+    val translationOptions = QuranTranslation.optionsFor(language)
+    var translationDialogOpen by remember { mutableStateOf(false) }
     // null while loading; empty if the bundled file could not be read.
     val translationTexts by androidx.compose.runtime.produceState<Map<String, String>?>(null, translation) {
         value = null
@@ -369,6 +372,15 @@ fun QuranScreen(
                                 colorDialogOpen = true
                             }
                         )
+                        if (translationOptions.size > 1) {
+                            DropdownMenuItem(
+                                text = { Text(labels.translation) },
+                                onClick = {
+                                    moreMenuOpen = false
+                                    translationDialogOpen = true
+                                }
+                            )
+                        }
                     }
                 }
                 }
@@ -513,6 +525,37 @@ fun QuranScreen(
             },
             confirmButton = {
                 TextButton(onClick = { colorDialogOpen = false }) { Text(labels.cancel) }
+            }
+        )
+    }
+
+    if (translationDialogOpen) {
+        AlertDialog(
+            onDismissRequest = { translationDialogOpen = false },
+            title = { Text(labels.translation) },
+            text = {
+                Column {
+                    translationOptions.forEach { option ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    translationId = option.id
+                                    prefs.setQuranTranslation(language.code, option.id)
+                                    translationDialogOpen = false
+                                }
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(selected = translation == option, onClick = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text(option.title)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { translationDialogOpen = false }) { Text(labels.cancel) }
             }
         )
     }
@@ -1180,6 +1223,7 @@ private class QuranLabels(private val language: AppLanguage) {
     val verse get() = if (arabic) "آية" else "آیه"
     val highlight get() = if (arabic) "تمييز الآية" else "هایلایت آیه"
     val removeHighlight get() = if (arabic) "إزالة التمييز" else "حذف هایلایت"
+    val translation get() = if (arabic) "التفسير" else "ترجمهٔ آیات"
     val translationUnavailable get() = if (arabic) "التفسير غير متاح حاليًا." else "ترجمهٔ این آیه در دسترس نیست."
     val addNote get() = if (arabic) "إضافة ملاحظة" else "افزودن یادداشت"
     val editNote get() = if (arabic) "ویرایش یادداشت" else "ویرایش یادداشت"
