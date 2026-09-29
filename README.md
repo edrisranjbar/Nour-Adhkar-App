@@ -6,7 +6,13 @@
 
 [دریافت از کافه‌بازار](https://cafebazaar.ir/app/ir.adhkar.app) · [حمایت از پروژه](https://edrisranjbar.ir/donation) · [مخزن GitHub](https://github.com/edrisranjbar/Nour-Adhkar-App)
 
-▶️ [ویدئوی معرفی برنامه را در سایت اذکار نور ببینید](https://adhkar.ir)
+## ویدئوی معرفی
+
+<video src="https://raw.githubusercontent.com/edrisranjbar/nour-adhkar/main/Nour%20Adhkar/src/assets/videos/nour-intro.mp4" poster="https://raw.githubusercontent.com/edrisranjbar/nour-adhkar/main/Nour%20Adhkar/src/assets/videos/nour-intro-poster.jpg" controls width="100%"></video>
+
+[![ویدئوی معرفی اذکار نور](https://raw.githubusercontent.com/edrisranjbar/nour-adhkar/main/Nour%20Adhkar/src/assets/videos/nour-intro-poster.jpg)](https://adhkar.ir)
+
+اگر ویدئو بالا پخش نشد، روی تصویر بزنید تا در [سایت اذکار نور](https://adhkar.ir) ببینید.
 
 ## امکانات
 
