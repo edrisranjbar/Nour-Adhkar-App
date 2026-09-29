@@ -1,6 +1,8 @@
-# Mirrors Google's public sign-in keys into google-jwks.json on main.
-# The backend (api.adhkar.ir) runs in Iran, where Google's APIs are blocked, so it reads the keys
-# from raw.githubusercontent.com instead. Keys are public; this file holds no secrets.
+# Delivers Google's public sign-in keys to the backend, which cannot fetch them itself:
+# api.adhkar.ir runs in Iran, where Google's APIs and GitHub's raw/API/CDN hosts are blocked.
+# Every run fetches the keys from Google and POSTs them to the API (secret JWKS_PUSH_TOKEN,
+# matching GOOGLE_JWKS_PUSH_TOKEN in the backend .env). google-jwks.json in this repo is kept as
+# a readable mirror. Keys are public; the only secret is the push token.
 name: Mirror Google sign-in keys
 
 on:
@@ -24,6 +26,20 @@ jobs:
           jq -e '.keys | length > 0 and all(.[]; .kty == "RSA" and .kid and .n and .e)' jwks.new.json > /dev/null
           jq . jwks.new.json > google-jwks.json
           rm jwks.new.json
+
+      - name: Push keys to the API
+        env:
+          JWKS_PUSH_TOKEN: ${{ secrets.JWKS_PUSH_TOKEN }}
+          JWKS_PUSH_URL: ${{ vars.JWKS_PUSH_URL || 'https://api.adhkar.ir/api/internal/google-jwks' }}
+        run: |
+          if [ -z "$JWKS_PUSH_TOKEN" ]; then
+            echo "::warning::JWKS_PUSH_TOKEN secret is not set; skipping push to the API."
+            exit 0
+          fi
+          curl -fsS --retry 3 -X POST "$JWKS_PUSH_URL" \
+            -H "Authorization: Bearer $JWKS_PUSH_TOKEN" \
+            -H "Content-Type: application/json" -H "Accept: application/json" \
+            --data @google-jwks.json
 
       - name: Commit if changed
         run: |
