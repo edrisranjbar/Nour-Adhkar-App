@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -62,7 +61,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
@@ -80,9 +78,8 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import com.example.R
 
-private enum class LoginStep { Welcome, Email, Verify }
+private enum class LoginStep { Welcome, Email, Verify, ForgotPassword, ResetPassword }
 
-private val HeroGlow = Color(0xFFF2C94C)
 
 /**
  * Signed-out profile: a welcome page with an illustration and two choices (Google or email).
@@ -94,12 +91,16 @@ fun LoginScreen(innerPadding: PaddingValues, onOpenAchievements: () -> Unit) {
     val auth = rememberAuthController(onSignedIn = {})
     var emailChosen by rememberSaveable { mutableStateOf(false) }
     val step = when {
+        auth.resetEmail != null -> LoginStep.ResetPassword
+        auth.forgotMode -> LoginStep.ForgotPassword
         auth.pendingEmail != null -> LoginStep.Verify
         emailChosen -> LoginStep.Email
         else -> LoginStep.Welcome
     }
     fun back() {
         when (step) {
+            LoginStep.ResetPassword -> auth.startForgotPassword()
+            LoginStep.ForgotPassword -> auth.cancelForgotPassword()
             LoginStep.Verify -> auth.changeEmail()
             LoginStep.Email -> { emailChosen = false; auth.error = null }
             LoginStep.Welcome -> Unit
@@ -144,6 +145,14 @@ fun LoginScreen(innerPadding: PaddingValues, onOpenAchievements: () -> Unit) {
                             BackRow(enabled = !auth.loading, onBack = ::back)
                             Spacer(Modifier.height(8.dp))
                             VerificationStep(auth)
+                        }
+                        LoginStep.ForgotPassword -> {
+                            BackRow(enabled = !auth.loading, onBack = ::back)
+                            ForgotPasswordStep(auth)
+                        }
+                        LoginStep.ResetPassword -> {
+                            BackRow(enabled = !auth.loading, onBack = ::back)
+                            ResetPasswordStep(auth)
                         }
                     }
                 }
@@ -209,7 +218,7 @@ private fun androidx.compose.foundation.layout.ColumnScope.WelcomeStep(
     }
 }
 
-/** Green gradient panel with a warm glow behind the Nour character. */
+/** Green gradient panel with the night-scene illustration. */
 @Composable
 private fun HeroIllustration() {
     Box(
@@ -237,22 +246,12 @@ private fun HeroIllustration() {
                 .clip(CircleShape)
                 .background(Color.White.copy(alpha = 0.05f))
         )
-        Box(
-            Modifier
-                .size(260.dp)
-                .align(Alignment.Center)
-                .background(
-                    Brush.radialGradient(listOf(HeroGlow.copy(alpha = 0.32f), Color.Transparent)),
-                    CircleShape
-                )
-        )
+        // Night scene: crescent, stars, lantern and mosque (vector, drawn for this 300dp panel).
         Image(
-            painter = painterResource(R.drawable.onboarding_nour_boy),
+            painter = painterResource(R.drawable.login_illustration),
             contentDescription = null,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .fillMaxHeight(0.94f)
-                .padding(top = 12.dp)
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
         )
     }
 }
@@ -350,6 +349,16 @@ private fun EmailStep(auth: AuthController) {
             modifier = Modifier.fillMaxWidth()
         )
 
+        if (!register) {
+            TextButton(
+                onClick = auth::startForgotPassword,
+                enabled = !auth.loading,
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Text("فراموشی رمز عبور؟", color = ProfileGreen)
+            }
+        }
+
         auth.error?.let { ErrorBanner(it) }
 
         Button(
@@ -394,7 +403,7 @@ private fun BackRow(enabled: Boolean, onBack: () -> Unit) {
 }
 
 @Composable
-private fun ErrorBanner(message: String) {
+internal fun ErrorBanner(message: String) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),

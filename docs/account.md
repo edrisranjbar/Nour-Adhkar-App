@@ -22,6 +22,15 @@ All app requests send `X-Nour-Client: android`. For these requests the API does 
 
 Codes expire after 10 minutes, are stored hashed, and lock after 5 wrong attempts (request a new code). The password is required with the code, so a guessed code alone never grants access. Already-verified accounts cannot be signed in through the verify endpoint. The website does not send the header, so web sign-in is unchanged.
 
+## Password reset (5-digit code)
+
+On the email login form, «فراموشی رمز عبور؟» opens the reset flow (`PasswordResetSteps.kt`):
+
+1. Enter the account email → `POST /api/auth/password-reset/request`. The API emails a 5-digit code (same branded template, reset wording) and answers the same way whether or not the email is registered.
+2. Enter the code and a new password (at least 6 characters) → `POST /api/auth/password-reset/confirm`. The password is changed, the email is marked verified (the code proves ownership), and the user is signed in with a toast.
+
+Same rules as verification codes: 10-minute expiry, hashed storage, 5 wrong attempts lock the code, 60 s resend cooldown (countdown on «ارسال دوباره کد»). Reset codes live in their own table, so they never overwrite a pending verification code. The website keeps its link-based reset.
+
 ## Google sign-in
 
 The login page (and the onboarding form) has a standard "Sign in with Google" button (unmodified four-colour G, white/dark neutral surface, 1dp outline, pill shape). It uses Credential Manager (`GetSignInWithGoogleOption`) to get an ID token and posts it to `POST /api/auth/google`; the API verifies it with Google (`aud` must be in `GOOGLE_CLIENT_IDS`) and signs in or creates the user as already email-verified, so no code step is needed. Closing Google's chooser shows nothing; no Google account on the device, network, or server problems show friendly Persian messages.
