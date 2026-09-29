@@ -63,6 +63,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Article
+import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.VolunteerActivism
@@ -108,6 +109,7 @@ import com.example.ui.screens.TasbihScreen
 import com.example.ui.screens.AboutScreen
 import com.example.ui.screens.AppInboxScreen
 import com.example.ui.screens.ArticlesScreen
+import com.example.ui.screens.ScholarsScreen
 import com.example.ui.screens.AdhkarCollectionsScreen
 import com.example.ui.screens.FavoritesScreen
 import com.example.ui.screens.QuranScreen
@@ -314,6 +316,7 @@ fun AppMainScaffold(
                             val drawerItems = listOf(
                                 Triple("adhkar", "اذکار و ادعیه", Icons.Default.Article),
                                 Triple("qibla", "قبله‌نما", Icons.Default.Explore),
+                                Triple("scholars", "علما و مشاهیر", Icons.Default.RecordVoiceOver),
                                 Triple("articles", "مقالات", Icons.Default.Article),
                                 Triple("donation", "حمایت مالی", Icons.Default.VolunteerActivism),
                                 Triple("about", "درباره برنامه", Icons.Default.Info)
@@ -403,6 +406,7 @@ fun AppMainScaffold(
                                 "about" -> "درباره برنامه"
                                 "app_inbox" -> "پیام‌ها"
                                 "account" -> if (accountUser == null) "ورود به حساب" else "پروفایل"
+                                "scholars" -> "علما و مشاهیر"
                                 "articles" -> "مقالات"
                                 "adhkar" -> "اذکار و ادعیه"
                                 "quran" -> "قرآن کریم"
@@ -627,6 +631,7 @@ fun AppMainScaffold(
                             innerPadding = innerPadding,
                             onOpenAchievements = { viewModel.selectTab("achievements") }
                         )
+                        "scholars" -> ScholarsScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "articles" -> ArticlesScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "adhkar" -> AdhkarCollectionsScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "quran" -> QuranScreen(
