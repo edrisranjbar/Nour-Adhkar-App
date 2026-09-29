@@ -227,6 +227,8 @@ fun AppMainScaffold(
     val context = LocalContext.current
     val language = LocalAppLanguage.current
     val currentTab by viewModel.currentTab.collectAsState()
+    remember { com.example.data.repository.AccountRepository.init(context) }
+    val accountUser by com.example.data.repository.AccountRepository.user.collectAsState()
     val selectedCategoryId by viewModel.selectedCategoryId.collectAsState()
     val fontScale by viewModel.fontScale.collectAsState()
     var availableUpdate by remember { mutableStateOf<AppUpdate?>(null) }
@@ -400,7 +402,7 @@ fun AppMainScaffold(
                                 "settings" -> "تنظیمات"
                                 "about" -> "درباره برنامه"
                                 "app_inbox" -> "پیام‌ها"
-                                "account" -> "پروفایل"
+                                "account" -> if (accountUser == null) "ورود به حساب" else "پروفایل"
                                 "articles" -> "مقالات"
                                 "adhkar" -> "اذکار و ادعیه"
                                 "quran" -> "قرآن کریم"

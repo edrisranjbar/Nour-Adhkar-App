@@ -7,7 +7,10 @@
 
 ## Profile screen
 
-The email login/register card (or, when signed in, the account-details card with logout), then the achievements banner last. There is no separate identity card; the drawer header shows the avatar.
+- Signed out: the Profile destination shows a dedicated login page (`LoginScreen.kt`, app-bar title «ورود به حساب») instead of a form. It has the Nour illustration on a green gradient panel at the top, a short welcome, and two buttons at the bottom: «ورود با گوگل» and «ورود با ایمیل». A small «فعلاً بدون حساب؛ دیدن نشان‌ها و دستاوردها» link keeps achievements reachable without an account.
+- «ورود با ایمیل» opens the email step: login by default, with «حساب کاربری ندارید؟ ثبت‌نام کنید» / «قبلاً حساب ساخته‌اید؟ وارد شوید» to switch. Register adds a name field. Email and password are typed left-to-right; the keyboard's Next/Done moves between fields and submits. Errors appear in a banner above the button. The back arrow (and system back) returns to the welcome page; from the code step it returns to the form.
+- Signed in: the account-details card with logout, then the achievements banner last. There is no separate identity card; the drawer header shows the avatar.
+- The onboarding account page keeps the compact `AuthForm` (segmented login/register, then Google). Both UIs share `AuthController` for validation, API calls, Google sign-in and the code step.
 
 ## Email verification (5-digit code via Resend)
 
@@ -21,7 +24,7 @@ Codes expire after 10 minutes, are stored hashed, and lock after 5 wrong attempt
 
 ## Google sign-in
 
-The login card has a standard "Sign in with Google" button (unmodified four-colour G, white/dark neutral surface, 1dp outline, pill shape). It uses Credential Manager (`GetSignInWithGoogleOption`) to get an ID token and posts it to `POST /api/auth/google`; the API verifies it with Google (`aud` must be in `GOOGLE_CLIENT_IDS`) and signs in or creates the user as already email-verified, so no code step is needed. Closing Google's chooser shows nothing; no Google account on the device, network, or server problems show friendly Persian messages.
+The login page (and the onboarding form) has a standard "Sign in with Google" button (unmodified four-colour G, white/dark neutral surface, 1dp outline, pill shape). It uses Credential Manager (`GetSignInWithGoogleOption`) to get an ID token and posts it to `POST /api/auth/google`; the API verifies it with Google (`aud` must be in `GOOGLE_CLIENT_IDS`) and signs in or creates the user as already email-verified, so no code step is needed. Closing Google's chooser shows nothing; no Google account on the device, network, or server problems show friendly Persian messages.
 
 ### One-time setup (required for the button to work)
 
