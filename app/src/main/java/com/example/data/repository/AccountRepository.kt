@@ -1,10 +1,13 @@
 package com.example.data.repository
 
 import android.content.Context
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -64,17 +67,37 @@ object AccountRepository {
             JSONObject().put("email", email.trim()).put("password", password).put("code", code)
         )
 
+    /** Emails a 5-digit password reset code. Returns seconds to wait before another request. */
+    suspend fun requestPasswordReset(email: String): Int {
+        val (_, json) = request(
+            "auth/password-reset/request", JSONObject().put("email", email.trim()), null, allowStatus = setOf(429)
+        )
+        return json.optInt("retry_after", 60)
+    }
+
+    /** Sets a new password with the emailed code and signs in. */
+    suspend fun confirmPasswordReset(context: Context, email: String, code: String, newPassword: String): AuthResult =
+        authenticate(
+            context, "auth/password-reset/confirm",
+            JSONObject().put("email", email.trim()).put("code", code).put("password", newPassword)
+        )
+
     /** Requests a new code. Returns seconds to wait before the next request. */
     suspend fun resendCode(email: String): Int {
         val (_, json) = request("auth/resend-code", JSONObject().put("email", email.trim()), null, allowStatus = setOf(429))
         return json.optInt("retry_after", 60)
     }
 
-    suspend fun logout(context: Context) {
+    /** Signs out locally right away; revoking the token on the server happens in the background. */
+    fun logout(context: Context) {
         val token = prefs(context).getString("token", null)
         prefs(context).edit().clear().apply()
         _user.value = null
-        if (token != null) runCatching { request("auth/logout", JSONObject(), token) }
+        if (token != null) {
+            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                runCatching { request("auth/logout", JSONObject(), token) }
+            }
+        }
     }
 
     private suspend fun authenticate(context: Context, path: String, body: JSONObject): AuthResult {

@@ -100,7 +100,6 @@ fun AccountScreen(innerPadding: PaddingValues, onOpenAchievements: () -> Unit) {
     val context = LocalContext.current
     LaunchedInit(context)
     val user by AccountRepository.user.collectAsState()
-    val scope = rememberCoroutineScope()
     val current = user
     if (current == null) {
         LoginScreen(innerPadding = innerPadding, onOpenAchievements = onOpenAchievements)
@@ -115,7 +114,14 @@ fun AccountScreen(innerPadding: PaddingValues, onOpenAchievements: () -> Unit) {
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        AccountDetailsCard(current) { scope.launch { AccountRepository.logout(context) } }
+        AccountDetailsCard(current) {
+            AccountRepository.logout(context)
+            android.widget.Toast.makeText(
+                context.applicationContext,
+                "با موفقیت از حساب خود خارج شدید.",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+        }
         AchievementsEntryCard(onClick = onOpenAchievements)
     }
 }
@@ -307,6 +313,14 @@ internal class AuthController(
         private set
     var resendIn by mutableStateOf(0)
 
+    /** Password reset: true while on the "forgot password" email step or its code step. */
+    var forgotMode by mutableStateOf(false)
+        private set
+    /** Email the reset code was sent to; non-null means the code + new password step. */
+    var resetEmail by mutableStateOf<String?>(null)
+        private set
+    var newPassword by mutableStateOf("")
+
     fun switchMode(register: Boolean) {
         registerMode = register
         error = null
@@ -392,6 +406,63 @@ internal class AuthController(
         }
     }
 
+    /** Opens the "forgot password" step, keeping the email typed so far. */
+    fun startForgotPassword() {
+        forgotMode = true
+        resetEmail = null
+        code = ""
+        newPassword = ""
+        error = null
+        info = null
+    }
+
+    /** Leaves password reset and returns to the login form. */
+    fun cancelForgotPassword() {
+        forgotMode = false
+        resetEmail = null
+        code = ""
+        newPassword = ""
+        error = null
+        info = null
+    }
+
+    /** Emails a reset code (also used for "send again"). */
+    fun sendResetCode() {
+        if (loading) return
+        val target = resetEmail ?: email.trim()
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(target).matches()) {
+            error = "ایمیل معتبر نیست."
+            return
+        }
+        launchAuth {
+            val wait = AccountRepository.requestPasswordReset(target)
+            val resending = resetEmail != null
+            resetEmail = target
+            resendIn = wait
+            if (resending) info = "کد جدید ارسال شد." else code = ""
+        }
+    }
+
+    /** Sets the new password with the emailed code; success signs in. */
+    fun confirmPasswordReset() {
+        val target = resetEmail ?: return
+        when {
+            loading -> Unit
+            code.length != 5 -> error = "کد ۵ رقمی را کامل وارد کنید."
+            newPassword.length < 6 -> error = "رمز عبور تازه باید حداقل ۶ کاراکتر باشد."
+            else -> launchAuth {
+                val result = AccountRepository.confirmPasswordReset(context, target, code, newPassword)
+                forgotMode = false
+                resetEmail = null
+                password = newPassword
+                android.widget.Toast.makeText(
+                    context.applicationContext, "رمز عبور شما تغییر کرد و وارد حساب شدید.", android.widget.Toast.LENGTH_SHORT
+                ).show()
+                handle(result)
+            }
+        }
+    }
+
     /** Leaves the code step and returns to the email form. */
     fun changeEmail() {
         pendingEmail = null
@@ -403,7 +474,10 @@ internal class AuthController(
     companion object {
         fun saver(context: Context, scope: CoroutineScope, onSignedIn: () -> Unit) = listSaver<AuthController, Any>(
             save = {
-                listOf(it.registerMode, it.name, it.email, it.password, it.showPassword, it.pendingEmail.orEmpty(), it.code, it.resendIn)
+                listOf(
+                    it.registerMode, it.name, it.email, it.password, it.showPassword, it.pendingEmail.orEmpty(), it.code, it.resendIn,
+                    it.forgotMode, it.resetEmail.orEmpty(), it.newPassword
+                )
             },
             restore = { saved ->
                 AuthController(context, scope, onSignedIn).apply {
@@ -415,6 +489,9 @@ internal class AuthController(
                     pendingEmail = (saved[5] as String).ifEmpty { null }
                     code = saved[6] as String
                     resendIn = saved[7] as Int
+                    forgotMode = saved[8] as Boolean
+                    resetEmail = (saved[9] as String).ifEmpty { null }
+                    newPassword = saved[10] as String
                 }
             }
         )
@@ -532,6 +609,53 @@ internal fun OrDivider() {
     }
 }
 
+/** Five boxes drawn over one hidden field, so paste and SMS-style autofill both work. */
+@Composable
+internal fun CodeInput(
+    code: String,
+    onCodeChange: (String) -> Unit,
+    focusRequester: androidx.compose.ui.focus.FocusRequester,
+    description: String
+) {
+    androidx.compose.foundation.text.BasicTextField(
+        value = code,
+        onValueChange = onCodeChange,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+        singleLine = true,
+        modifier = Modifier
+            .focusRequester(focusRequester)
+            .semantics { contentDescription = description },
+        decorationBox = {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    repeat(5) { index ->
+                        val char = code.getOrNull(index)
+                        val active = index == code.length
+                        Box(
+                            Modifier
+                                .size(width = 48.dp, height = 56.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                .border(
+                                    width = if (active) 2.dp else 1.dp,
+                                    color = if (active) ProfileGreen else MaterialTheme.colorScheme.outlineVariant,
+                                    shape = RoundedCornerShape(14.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                char?.toString() ?: "",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    )
+}
+
 /** Enter the 5-digit code emailed through Resend; supports resend with a countdown. */
 @Composable
 internal fun VerificationStep(auth: AuthController, modifier: Modifier = Modifier) {
@@ -558,44 +682,7 @@ internal fun VerificationStep(auth: AuthController, modifier: Modifier = Modifie
         )
         Text(email, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
 
-        // Five boxes drawn over one hidden field, so paste and SMS-style autofill both work.
-        androidx.compose.foundation.text.BasicTextField(
-            value = code,
-            onValueChange = auth::onCodeChange,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-            singleLine = true,
-            modifier = Modifier
-                .focusRequester(focusRequester)
-                .semantics { contentDescription = "کد تأیید ۵ رقمی" },
-            decorationBox = {
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        repeat(5) { index ->
-                            val char = code.getOrNull(index)
-                            val active = index == code.length
-                            Box(
-                                Modifier
-                                    .size(width = 48.dp, height = 56.dp)
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                                    .border(
-                                        width = if (active) 2.dp else 1.dp,
-                                        color = if (active) ProfileGreen else MaterialTheme.colorScheme.outlineVariant,
-                                        shape = RoundedCornerShape(14.dp)
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    char?.toString() ?: "",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        )
+        CodeInput(code, auth::onCodeChange, focusRequester, "کد تأیید ۵ رقمی")
 
         auth.error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center) }
         auth.info?.let { Text(it, color = ProfileGreen, style = MaterialTheme.typography.bodySmall) }
