@@ -18,8 +18,9 @@ val AmiriQuran = FontFamily(
     Font(R.font.amiri_quran_regular, weight = FontWeight.Normal)
 )
 
-// KFGQPC HAFS Uthmanic Script (King Fahd Complex) renders the Uthmani mushaf text on the Quran
+// KFGQPC HAFS Uthmanic Script v18 (King Fahd Complex) renders the Uthmani mushaf text on the Quran
 // screen. Its license allows free use and redistribution but forbids modifying the font file.
+// It expects KFGQPC-encoded text (QuranVerse.displayText); Tanzil text shows placeholder circles.
 val UthmanicHafs = FontFamily(
     Font(R.font.uthmanic_hafs, weight = FontWeight.Normal)
 )

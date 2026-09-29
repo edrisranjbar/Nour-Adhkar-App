@@ -11,7 +11,9 @@ data class QuranVerse(
     val verseNumber: Int,
     val text: String,
     val bismillah: String?,
-    val pageNumber: Int
+    val pageNumber: Int,
+    /** KFGQPC-encoded text for the bundled UthmanicHafs font; [text] stays Tanzil for search. */
+    val displayText: String = text
 ) {
     val id: String = "$surahNumber:$verseNumber"
 }
@@ -37,6 +39,10 @@ data class QuranCorpus(
 /**
  * Loads the unchanged Tanzil Uthmani text and maps it to the 604 Madani pages.
  * The original text and its required copyright notice are bundled in assets.
+ *
+ * The KFGQPC HAFS font uses KFGQPC's own mark encoding (e.g. U+06E1 for sukun, U+0652 for the
+ * rounded zero), so Tanzil text shows placeholder circles in it. Each verse therefore also carries
+ * the matching KFGQPC text for display, and bismillah headers use KFGQPC's 1:1.
  */
 object QuranRepository {
     const val PAGE_COUNT = 604
@@ -54,7 +60,17 @@ object QuranRepository {
 
     private fun parse(context: Context): QuranCorpus {
         val pageByVerse = parsePageIndex(context)
-        val verses = parseVerses(context, pageByVerse)
+        val displayTextByVerse = parseDisplayText(context)
+        check(displayTextByVerse.size == VERSE_COUNT) {
+            "Expected $VERSE_COUNT KFGQPC verses, found ${displayTextByVerse.size}."
+        }
+        val displayBismillah = requireNotNull(displayTextByVerse["1:1"])
+        val verses = parseVerses(context, pageByVerse).map { verse ->
+            verse.copy(
+                displayText = requireNotNull(displayTextByVerse[verse.id]) { "No KFGQPC text for ${verse.id}." },
+                bismillah = verse.bismillah?.let { displayBismillah }
+            )
+        }
         check(verses.size == VERSE_COUNT) { "Expected $VERSE_COUNT Quran verses, found ${verses.size}." }
 
         val pages = (1..PAGE_COUNT).map { pageNumber ->
@@ -90,6 +106,17 @@ object QuranRepository {
                 for (ayah in range.getInt("a1")..range.getInt("a2")) {
                     result["$surah:$ayah"] = pageNumber
                 }
+            }
+        }
+        return result
+    }
+
+    private fun parseDisplayText(context: Context): Map<String, String> {
+        val result = HashMap<String, String>(VERSE_COUNT)
+        context.assets.open("quran/kfgqpc-hafs.txt").bufferedReader().useLines { lines ->
+            lines.filter { it.isNotBlank() && !it.startsWith("#") }.forEach { line ->
+                val parts = line.split('|', limit = 3)
+                result["${parts[0]}:${parts[1]}"] = parts[2]
             }
         }
         return result

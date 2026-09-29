@@ -28,6 +28,19 @@ class QuranRepositoryTest {
         assertEquals(604, corpus.surahs.last().firstPage)
         assertEquals(7, corpus.surahs.first().verseCount)
         assertTrue(corpus.verses.first { it.id == "2:1" }.bismillah?.isNotBlank() == true)
+        assertEquals(null, corpus.verses.first { it.id == "9:1" }.bismillah)
+    }
+
+    @Test
+    fun displayTextUsesKfgqpcEncodingForTheUthmanicFont() {
+        val corpus = QuranRepository.load(ApplicationProvider.getApplicationContext())
+        val verse = corpus.verses.first { it.id == "2:2" }
+
+        // KFGQPC writes sukun as U+06E1; Tanzil (search text) keeps U+0652.
+        assertTrue(verse.displayText.contains('\u06E1'))
+        assertTrue(verse.text.contains('\u0652'))
+        assertTrue(corpus.verses.all { it.displayText.isNotBlank() && !it.displayText.contains('\u06DF') })
+        assertEquals(corpus.verses.first { it.id == "1:1" }.displayText, corpus.verses.first { it.id == "2:1" }.bismillah)
     }
 
     @Test

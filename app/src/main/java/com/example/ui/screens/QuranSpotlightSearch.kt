@@ -282,7 +282,7 @@ private fun VerseResult(verse: QuranVerse, arabic: Boolean, quranFont: FontFamil
         )
         Spacer(Modifier.size(4.dp))
         Text(
-            verse.text,
+            verse.displayText,
             fontFamily = quranFont,
             fontSize = 19.sp,
             lineHeight = 32.sp,

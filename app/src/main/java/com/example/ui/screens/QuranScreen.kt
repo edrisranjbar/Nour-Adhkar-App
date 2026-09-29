@@ -1,11 +1,8 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -100,6 +97,7 @@ import com.example.quran.QuranTafsir
 import com.example.quran.QuranTafsirs
 import com.example.quran.TafsirPassage
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
@@ -109,7 +107,12 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.runtime.key
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import com.example.quran.QuranTranslation
 import com.example.quran.QuranTranslations
 import com.example.quran.QuranVerse
@@ -869,7 +872,6 @@ private fun SurahPickerSheet(
 }
 
 @Composable
-@OptIn(ExperimentalFoundationApi::class)
 private fun QuranPageView(
     page: QuranPage,
     palette: QuranPalette,
@@ -922,48 +924,58 @@ private fun QuranPageView(
             )
         }
         HorizontalDivider(color = palette.header.copy(alpha = 0.35f))
-        Column(
+        // A mushaf page is one fixed page: scale the text to fit the available height instead of scrolling.
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 14.dp, vertical = 12.dp)
         ) {
-            surahSections.forEach { verses ->
-                val openingVerse = verses.first()
-                val bringIntoViewRequester = remember(openingVerse.surahNumber) {
-                    BringIntoViewRequester()
+            val textMeasurer = rememberTextMeasurer()
+            val density = LocalDensity.current
+            val textAlign = if (page.number <= 2) TextAlign.Center else TextAlign.Justify
+            val sectionTexts = remember(surahSections, highlights, notes, palette) {
+                surahSections.map { it.asMushafText(highlights, notes, palette) }
+            }
+            val openingBismillahs = surahSections.map { verses ->
+                verses.first().takeIf { it.verseNumber == 1 }?.let { it.bismillah.orEmpty() }
+            }
+            val maxWidthPx = constraints.maxWidth
+            val maxHeightPx = constraints.maxHeight
+            val scale = remember(sectionTexts, openingBismillahs, maxWidthPx, maxHeightPx, density, textAlign) {
+                fitQuranPageScale(
+                    textMeasurer = textMeasurer,
+                    density = density,
+                    maxWidthPx = maxWidthPx,
+                    maxHeightPx = maxHeightPx,
+                    sectionTexts = sectionTexts,
+                    openingBismillahs = openingBismillahs,
+                    textAlign = textAlign
+                )
+            }
+            LaunchedEffect(focusedSurahNumber) {
+                if (focusedSurahNumber != null && surahSections.any { it.first().surahNumber == focusedSurahNumber }) {
+                    onSurahFocused()
                 }
-                val shouldFocus = focusedSurahNumber == openingVerse.surahNumber &&
-                    openingVerse.verseNumber == 1
-                LaunchedEffect(shouldFocus) {
-                    if (shouldFocus) {
-                        bringIntoViewRequester.bringIntoView()
-                        onSurahFocused()
-                    }
-                }
-                Column(
-                    modifier = Modifier.bringIntoViewRequester(bringIntoViewRequester)
-                ) {
+            }
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = if (page.number <= 2) Arrangement.Center else Arrangement.Top
+            ) {
+                surahSections.forEachIndexed { index, verses ->
+                    val openingVerse = verses.first()
                     if (openingVerse.verseNumber == 1) {
                         SurahOpeningHeader(
                             surahName = openingVerse.surahName,
                             bismillah = openingVerse.bismillah,
-                            palette = palette
+                            palette = palette,
+                            scale = scale
                         )
                     }
-                    val sectionText = remember(verses, highlights, notes, palette) {
-                        verses.asMushafText(highlights, notes, palette)
-                    }
+                    val sectionText = sectionTexts[index]
                     ClickableText(
                         text = sectionText,
                         modifier = Modifier.fillMaxWidth(),
-                        style = TextStyle(
-                            fontFamily = UthmanicHafs,
-                            fontSize = 23.sp,
-                            lineHeight = 45.sp,
-                            textAlign = if (page.number <= 2) TextAlign.Center else TextAlign.Justify,
-                            color = palette.text
-                        ),
+                        style = quranVerseStyle(scale, textAlign).copy(color = palette.text),
                         onClick = { offset ->
                             sectionText.getStringAnnotations(tag = VERSE_TAG, start = offset, end = offset)
                                 .firstOrNull()
@@ -974,6 +986,73 @@ private fun QuranPageView(
             }
         }
     }
+}
+
+private const val QURAN_VERSE_FONT_SP = 23f
+// ~1.78em: the KFGQPC font's own line box is 1.76em, so tall mark stacks still clear the next line.
+private const val QURAN_VERSE_LINE_HEIGHT_SP = 41f
+private const val SURAH_HEADER_HEIGHT_DP = 112f
+private const val BISMILLAH_FONT_SP = 27f
+private const val BISMILLAH_LINE_HEIGHT_SP = 40f
+private const val BISMILLAH_BOTTOM_PADDING_DP = 14f
+
+private fun quranVerseStyle(scale: Float, textAlign: TextAlign) = TextStyle(
+    fontFamily = UthmanicHafs,
+    fontSize = (QURAN_VERSE_FONT_SP * scale).sp,
+    lineHeight = (QURAN_VERSE_LINE_HEIGHT_SP * scale).sp,
+    textAlign = textAlign
+)
+
+private fun bismillahStyle(scale: Float) = TextStyle(
+    fontFamily = UthmanicHafs,
+    fontSize = (BISMILLAH_FONT_SP * scale).sp,
+    lineHeight = (BISMILLAH_LINE_HEIGHT_SP * scale).sp,
+    textAlign = TextAlign.Center
+)
+
+/**
+ * Largest scale (up to the default size) at which every surah header, bismillah and verse block on
+ * the page fits [maxHeightPx]. The text keeps the user's font scale, so large system fonts shrink
+ * only as much as the page needs.
+ */
+private fun fitQuranPageScale(
+    textMeasurer: TextMeasurer,
+    density: Density,
+    maxWidthPx: Int,
+    maxHeightPx: Int,
+    sectionTexts: List<AnnotatedString>,
+    openingBismillahs: List<String?>,
+    textAlign: TextAlign
+): Float {
+    if (maxWidthPx <= 0 || maxHeightPx <= 0) return 1f
+    val widthConstraints = Constraints(maxWidth = maxWidthPx)
+    fun pageHeight(scale: Float): Float = with(density) {
+        sectionTexts.indices.sumOf { index ->
+            var height = 0f
+            openingBismillahs[index]?.let { bismillah ->
+                height += (SURAH_HEADER_HEIGHT_DP * scale).dp.toPx()
+                if (bismillah.isNotBlank()) {
+                    height += textMeasurer.measure(bismillah, bismillahStyle(scale), constraints = widthConstraints)
+                        .size.height
+                    height += (BISMILLAH_BOTTOM_PADDING_DP * scale).dp.toPx()
+                }
+            }
+            height += textMeasurer.measure(
+                sectionTexts[index],
+                quranVerseStyle(scale, textAlign),
+                constraints = widthConstraints
+            ).size.height
+            height.toDouble()
+        }.toFloat()
+    }
+    if (pageHeight(1f) <= maxHeightPx) return 1f
+    var low = 0.3f
+    var high = 1f
+    repeat(10) {
+        val mid = (low + high) / 2
+        if (pageHeight(mid) <= maxHeightPx) low = mid else high = mid
+    }
+    return low
 }
 
 @Composable
@@ -1011,13 +1090,14 @@ private fun QuranHeaderSelector(
 private fun SurahOpeningHeader(
     surahName: String,
     bismillah: String?,
-    palette: QuranPalette
+    palette: QuranPalette,
+    scale: Float = 1f
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(112.dp)
-            .padding(top = 4.dp, bottom = 10.dp),
+            .height((SURAH_HEADER_HEIGHT_DP * scale).dp)
+            .padding(top = (4 * scale).dp, bottom = (10 * scale).dp),
         contentAlignment = Alignment.Center
     ) {
         Image(
@@ -1032,8 +1112,8 @@ private fun SurahOpeningHeader(
                 .fillMaxWidth()
                 .offset(y = (-3).dp),
             fontFamily = UthmanicHafs,
-            fontSize = 18.sp,
-            lineHeight = 24.sp,
+            fontSize = (18 * scale).sp,
+            lineHeight = (24 * scale).sp,
             color = palette.text,
             textAlign = TextAlign.Center,
             maxLines = 1
@@ -1044,11 +1124,8 @@ private fun SurahOpeningHeader(
             text = bismillah,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 14.dp),
-            fontFamily = UthmanicHafs,
-            fontSize = 27.sp,
-            lineHeight = 40.sp,
-            textAlign = TextAlign.Center,
+                .padding(bottom = (BISMILLAH_BOTTOM_PADDING_DP * scale).dp),
+            style = bismillahStyle(scale),
             color = palette.text
         )
     }
@@ -1070,11 +1147,13 @@ private fun List<QuranVerse>.asMushafText(
                 textDecoration = if (notes[verse.id].isNullOrBlank()) null else TextDecoration.Underline
             )
         ) {
-            append(verse.text)
-            append(' ')
-            withStyle(SpanStyle(color = palette.accent, fontSize = 18.sp)) {
-                append("۝${verse.verseNumber.toPersianDigits()} ")
+            append(verse.displayText)
+            // The KFGQPC font draws Arabic-Indic digits inside its own ayah ornament, so no U+06DD here.
+            append('\u00A0')
+            withStyle(SpanStyle(color = palette.accent)) {
+                append(verse.verseNumber.toArabicIndicDigits())
             }
+            append(' ')
         }
         pop()
     }
@@ -1432,3 +1511,6 @@ private fun QuranReaderAppBarTitle(
         )
     }
 }
+
+private fun Int.toArabicIndicDigits(): String =
+    toString().map { digit -> '\u0660' + (digit - '0') }.joinToString("")
