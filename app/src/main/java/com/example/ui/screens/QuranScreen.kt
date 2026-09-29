@@ -116,7 +116,7 @@ import com.example.ui.language.AppLanguage
 import com.example.media.QuranAudioPlayer
 import com.example.media.QuranReciters
 import com.example.ui.language.LocalAppLanguage
-import com.example.ui.theme.AmiriQuran
+import com.example.ui.theme.UthmanicHafs
 import com.example.ui.util.toPersianDigits
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -462,7 +462,7 @@ fun QuranScreen(
         QuranSpotlightSearch(
             corpus = loadedCorpus,
             arabic = language == AppLanguage.ARABIC,
-            quranFont = AmiriQuran,
+            quranFont = UthmanicHafs,
             searchVerses = { loadedCorpus.search(it) },
             normalize = { it.normalizeArabic() },
             onDismiss = { searchOpen = false },
@@ -831,7 +831,7 @@ private fun SurahPickerSheet(
                                 Column(Modifier.weight(1f)) {
                                     Text(
                                         text = surah.name,
-                                        fontFamily = AmiriQuran,
+                                        fontFamily = UthmanicHafs,
                                         fontSize = 20.sp,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -947,7 +947,7 @@ private fun QuranPageView(
                         text = sectionText,
                         modifier = Modifier.fillMaxWidth(),
                         style = TextStyle(
-                            fontFamily = AmiriQuran,
+                            fontFamily = UthmanicHafs,
                             fontSize = 23.sp,
                             lineHeight = 45.sp,
                             textAlign = if (page.number <= 2) TextAlign.Center else TextAlign.Justify,
@@ -1020,7 +1020,7 @@ private fun SurahOpeningHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .offset(y = (-3).dp),
-            fontFamily = AmiriQuran,
+            fontFamily = UthmanicHafs,
             fontSize = 18.sp,
             lineHeight = 24.sp,
             color = palette.text,
@@ -1034,7 +1034,7 @@ private fun SurahOpeningHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 14.dp),
-            fontFamily = AmiriQuran,
+            fontFamily = UthmanicHafs,
             fontSize = 27.sp,
             lineHeight = 40.sp,
             textAlign = TextAlign.Center,
