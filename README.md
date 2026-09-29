@@ -6,6 +6,8 @@
 
 [دریافت از کافه‌بازار](https://cafebazaar.ir/app/ir.adhkar.app) · [حمایت از پروژه](https://edrisranjbar.ir/donation) · [مخزن GitHub](https://github.com/edrisranjbar/Nour-Adhkar-App)
 
+▶️ [ویدئوی معرفی برنامه را در سایت اذکار نور ببینید](https://adhkar.ir)
+
 ## امکانات
 
 - اذکار صبحگاه، شامگاه، روزانه، خواب، رمضان و استخاره
