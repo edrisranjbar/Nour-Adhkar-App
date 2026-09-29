@@ -90,6 +90,7 @@ fun TasbihScreen(
 ) {
     val count by viewModel.tasbihCount.collectAsState()
     val selectedDhikr by viewModel.selectedTasbihDhikr.collectAsState()
+    val tasbihCounts by viewModel.tasbihCounts.collectAsState()
     val recentSessions by viewModel.recentTasbihSessions.collectAsState()
     val fontScale by viewModel.fontScale.collectAsState()
     val customDhikr by viewModel.customDhikr.collectAsState()
@@ -234,6 +235,7 @@ fun TasbihScreen(
                             items(options) { phrase ->
                                 val isSelected = phrase == selectedDhikr
                                 val isCustom = phrase in customDhikr
+                                val phraseCount = tasbihCounts[phrase] ?: 0
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(12.dp))
@@ -257,13 +259,32 @@ fun TasbihScreen(
                                         .padding(horizontal = 14.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = phrase,
-                                        fontFamily = AmiriQuran,
-                                        color = if (isSelected) SunGold else SandDark,
-                                        fontSize = (12 * fontScale).sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = phrase,
+                                            fontFamily = AmiriQuran,
+                                            color = if (isSelected) SunGold else SandDark,
+                                            fontSize = (12 * fontScale).sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        if (phraseCount > 0) {
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Box(
+                                                modifier = Modifier
+                                                    .clip(CircleShape)
+                                                    .background(if (isSelected) SunGold else MaterialTheme.colorScheme.secondaryContainer)
+                                                    .border(0.5.dp, if (isSelected) SunGold else SoftBorder, CircleShape)
+                                                    .padding(horizontal = 6.dp, vertical = 1.dp)
+                                            ) {
+                                                Text(
+                                                    text = phraseCount.toPersianDigits(),
+                                                    fontSize = (10 * fontScale).sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = if (isSelected) Color.White else SandDark
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             item(key = "add_custom_dhikr") {
