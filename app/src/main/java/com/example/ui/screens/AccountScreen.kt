@@ -84,13 +84,17 @@ import com.example.data.repository.AccountUser
 import com.example.data.repository.AuthException
 import com.example.ui.theme.SunGold
 import com.example.ui.util.toPersianDigits
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.listSaver
 
-private val ProfileGreenDark = Color(0xFF0E4B38)
-private val ProfileGreen = Color(0xFF2E6B4E)
-private val ProfileGradient = Brush.linearGradient(listOf(ProfileGreenDark, ProfileGreen))
+internal val ProfileGreenDark = Color(0xFF0E4B38)
+internal val ProfileGreen = Color(0xFF2E6B4E)
+internal val ProfileGradient = Brush.linearGradient(listOf(ProfileGreenDark, ProfileGreen))
 
-/** Profile: sign-in form or account details, with the achievements banner last. */
+/** Profile: signed-out users get the [LoginScreen]; signed-in users see account details and achievements. */
 @Composable
 fun AccountScreen(innerPadding: PaddingValues, onOpenAchievements: () -> Unit) {
     val context = LocalContext.current
@@ -98,6 +102,10 @@ fun AccountScreen(innerPadding: PaddingValues, onOpenAchievements: () -> Unit) {
     val user by AccountRepository.user.collectAsState()
     val scope = rememberCoroutineScope()
     val current = user
+    if (current == null) {
+        LoginScreen(innerPadding = innerPadding, onOpenAchievements = onOpenAchievements)
+        return
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -107,15 +115,7 @@ fun AccountScreen(innerPadding: PaddingValues, onOpenAchievements: () -> Unit) {
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        if (current != null) {
-            AccountDetailsCard(current) { scope.launch { AccountRepository.logout(context) } }
-        } else {
-            SectionCard {
-                Text("ورود یا ساخت حساب", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(14.dp))
-                AuthForm(onSignedIn = {})
-            }
-        }
+        AccountDetailsCard(current) { scope.launch { AccountRepository.logout(context) } }
         AchievementsEntryCard(onClick = onOpenAchievements)
     }
 }
@@ -275,37 +275,49 @@ private fun AchievementsEntryCard(onClick: () -> Unit) {
 }
 
 @Composable
-private fun LaunchedInit(context: Context) {
+internal fun LaunchedInit(context: Context) {
     remember { AccountRepository.init(context); true }
 }
 
-/** Email login/register. Used in onboarding and the profile screen. */
-@Composable
-fun AuthForm(onSignedIn: () -> Unit, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    LaunchedInit(context)
-    val scope = rememberCoroutineScope()
-    var registerMode by rememberSaveable { mutableStateOf(false) }
-    var name by rememberSaveable { mutableStateOf("") }
-    var email by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
-    var showPassword by rememberSaveable { mutableStateOf(false) }
-    var loading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var pendingEmail by rememberSaveable { mutableStateOf<String?>(null) }
-    var code by rememberSaveable { mutableStateOf("") }
-    var resendIn by rememberSaveable { mutableStateOf(0) }
-    var info by remember { mutableStateOf<String?>(null) }
-    var googlePending by remember { mutableStateOf(false) }
+/**
+ * Shared state and actions for email login/register, Google sign-in and the code step.
+ * Used by the onboarding [AuthForm] and the signed-out [LoginScreen].
+ */
+@Stable
+internal class AuthController(
+    private val context: Context,
+    private val scope: CoroutineScope,
+    private val onSignedIn: () -> Unit
+) {
+    var registerMode by mutableStateOf(false)
+    var name by mutableStateOf("")
+    var email by mutableStateOf("")
+    var password by mutableStateOf("")
+    var showPassword by mutableStateOf(false)
+    var loading by mutableStateOf(false)
+        private set
+    var googlePending by mutableStateOf(false)
+        private set
+    var error by mutableStateOf<String?>(null)
+    var info by mutableStateOf<String?>(null)
+        private set
+    var pendingEmail by mutableStateOf<String?>(null)
+        private set
+    var code by mutableStateOf("")
+        private set
+    var resendIn by mutableStateOf(0)
 
-    LaunchedEffect(resendIn) {
-        if (resendIn > 0) {
-            kotlinx.coroutines.delay(1000)
-            resendIn -= 1
-        }
+    fun switchMode(register: Boolean) {
+        registerMode = register
+        error = null
     }
 
-    fun handle(result: AuthResult) {
+    fun onCodeChange(value: String) {
+        code = value.filter(Char::isDigit).take(5)
+        error = null
+    }
+
+    private fun handle(result: AuthResult) {
         when (result) {
             is AuthResult.SignedIn -> onSignedIn()
             is AuthResult.VerificationRequired -> {
@@ -317,7 +329,7 @@ fun AuthForm(onSignedIn: () -> Unit, modifier: Modifier = Modifier) {
         }
     }
 
-    fun launchAuth(block: suspend () -> Unit) {
+    private fun launchAuth(block: suspend () -> Unit) {
         error = null
         loading = true
         scope.launch {
@@ -337,10 +349,10 @@ fun AuthForm(onSignedIn: () -> Unit, modifier: Modifier = Modifier) {
 
     fun submit() {
         when {
+            loading -> Unit
             registerMode && name.isBlank() -> error = "نام را وارد کنید."
             !android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches() -> error = "ایمیل معتبر نیست."
             password.length < 6 -> error = "رمز عبور باید حداقل ۶ کاراکتر باشد."
-            loading -> Unit
             else -> launchAuth {
                 handle(
                     if (registerMode) AccountRepository.register(context, name, email, password)
@@ -350,29 +362,91 @@ fun AuthForm(onSignedIn: () -> Unit, modifier: Modifier = Modifier) {
         }
     }
 
-    val verifying = pendingEmail
-    if (verifying != null) {
-        VerificationStep(
-            email = verifying,
-            code = code,
-            onCodeChange = { value -> code = value.filter(Char::isDigit).take(5); error = null },
-            loading = loading,
-            error = error,
-            info = info,
-            resendIn = resendIn,
-            onVerify = {
-                if (code.length != 5) error = "کد ۵ رقمی را کامل وارد کنید."
-                else launchAuth { handle(AccountRepository.verifyEmail(context, verifying, password, code)) }
+    fun signInWithGoogle() {
+        if (loading) return
+        if (!isGoogleSignInConfigured) {
+            error = "ورود با گوگل در این نسخه هنوز فعال نشده است. لطفاً با ایمیل وارد شوید."
+            return
+        }
+        googlePending = true
+        launchAuth {
+            try {
+                handle(AccountRepository.loginWithGoogle(context, requestGoogleIdToken(context)))
+            } finally {
+                googlePending = false
+            }
+        }
+    }
+
+    fun verify() {
+        val verifying = pendingEmail ?: return
+        if (code.length != 5) error = "کد ۵ رقمی را کامل وارد کنید."
+        else launchAuth { handle(AccountRepository.verifyEmail(context, verifying, password, code)) }
+    }
+
+    fun resend() {
+        val verifying = pendingEmail ?: return
+        launchAuth {
+            resendIn = AccountRepository.resendCode(verifying)
+            info = "کد جدید ارسال شد."
+        }
+    }
+
+    /** Leaves the code step and returns to the email form. */
+    fun changeEmail() {
+        pendingEmail = null
+        code = ""
+        error = null
+        info = null
+    }
+
+    companion object {
+        fun saver(context: Context, scope: CoroutineScope, onSignedIn: () -> Unit) = listSaver<AuthController, Any>(
+            save = {
+                listOf(it.registerMode, it.name, it.email, it.password, it.showPassword, it.pendingEmail.orEmpty(), it.code, it.resendIn)
             },
-            onResend = {
-                launchAuth {
-                    resendIn = AccountRepository.resendCode(verifying)
-                    info = "کد جدید ارسال شد."
+            restore = { saved ->
+                AuthController(context, scope, onSignedIn).apply {
+                    registerMode = saved[0] as Boolean
+                    name = saved[1] as String
+                    email = saved[2] as String
+                    password = saved[3] as String
+                    showPassword = saved[4] as Boolean
+                    pendingEmail = (saved[5] as String).ifEmpty { null }
+                    code = saved[6] as String
+                    resendIn = saved[7] as Int
                 }
-            },
-            onChangeEmail = { pendingEmail = null; code = ""; error = null; info = null },
-            modifier = modifier
+            }
         )
+    }
+}
+
+@Composable
+internal fun rememberAuthController(onSignedIn: () -> Unit): AuthController {
+    val context = LocalContext.current
+    LaunchedInit(context)
+    val scope = rememberCoroutineScope()
+    val latestOnSignedIn by rememberUpdatedState(onSignedIn)
+    val signedIn = { latestOnSignedIn() }
+    val controller = rememberSaveable(saver = AuthController.saver(context, scope, signedIn)) {
+        AuthController(context, scope, signedIn)
+    }
+    LaunchedEffect(controller.resendIn) {
+        if (controller.resendIn > 0) {
+            kotlinx.coroutines.delay(1000)
+            controller.resendIn -= 1
+        }
+    }
+    return controller
+}
+
+/** Compact email login/register with Google below. Used in onboarding. */
+@Composable
+fun AuthForm(onSignedIn: () -> Unit, modifier: Modifier = Modifier) {
+    val auth = rememberAuthController(onSignedIn)
+
+    if (auth.pendingEmail != null) {
+        VerificationStep(auth, modifier)
         return
     }
 
@@ -380,15 +454,15 @@ fun AuthForm(onSignedIn: () -> Unit, modifier: Modifier = Modifier) {
         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
             listOf("ورود", "ثبت‌نام").forEachIndexed { index, label ->
                 SegmentedButton(
-                    selected = registerMode == (index == 1),
-                    onClick = { registerMode = index == 1; error = null },
+                    selected = auth.registerMode == (index == 1),
+                    onClick = { auth.switchMode(index == 1) },
                     shape = SegmentedButtonDefaults.itemShape(index, 2)
                 ) { Text(label) }
             }
         }
-        if (registerMode) {
+        if (auth.registerMode) {
             OutlinedTextField(
-                value = name, onValueChange = { name = it },
+                value = auth.name, onValueChange = { auth.name = it },
                 label = { Text("نام") }, singleLine = true,
                 leadingIcon = { Icon(Icons.Rounded.Person, contentDescription = null) },
                 shape = RoundedCornerShape(14.dp),
@@ -396,7 +470,7 @@ fun AuthForm(onSignedIn: () -> Unit, modifier: Modifier = Modifier) {
             )
         }
         OutlinedTextField(
-            value = email, onValueChange = { email = it },
+            value = auth.email, onValueChange = { auth.email = it },
             label = { Text("ایمیل") }, singleLine = true,
             leadingIcon = { Icon(Icons.Rounded.Email, contentDescription = null) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
@@ -404,83 +478,69 @@ fun AuthForm(onSignedIn: () -> Unit, modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth()
         )
         OutlinedTextField(
-            value = password, onValueChange = { password = it },
+            value = auth.password, onValueChange = { auth.password = it },
             label = { Text("رمز عبور") }, singleLine = true,
-            visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+            visualTransformation = if (auth.showPassword) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            trailingIcon = {
-                IconButton(onClick = { showPassword = !showPassword }) {
-                    Icon(
-                        if (showPassword) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
-                        contentDescription = if (showPassword) "پنهان کردن رمز" else "نمایش رمز"
-                    )
-                }
-            },
+            trailingIcon = { PasswordToggle(auth) },
             shape = RoundedCornerShape(14.dp),
             modifier = Modifier.fillMaxWidth()
         )
-        error?.let {
+        auth.error?.let {
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         }
         Button(
-            onClick = ::submit,
-            enabled = !loading,
+            onClick = auth::submit,
+            enabled = !auth.loading,
             modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(containerColor = ProfileGreen, contentColor = Color.White)
         ) {
-            if (loading) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
-            else Text(if (registerMode) "ساخت حساب" else "ورود", fontWeight = FontWeight.Bold)
+            if (auth.loading && !auth.googlePending) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
+            else Text(if (auth.registerMode) "ساخت حساب" else "ورود", fontWeight = FontWeight.Bold)
         }
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            androidx.compose.material3.HorizontalDivider(Modifier.weight(1f))
-            Text(
-                "یا",
-                modifier = Modifier.padding(horizontal = 12.dp),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            androidx.compose.material3.HorizontalDivider(Modifier.weight(1f))
-        }
+        OrDivider()
         GoogleSignInButton(
-            loading = loading && googlePending,
-            enabled = !loading,
-            onClick = {
-                if (!isGoogleSignInConfigured) {
-                    error = "ورود با گوگل در این نسخه هنوز فعال نشده است. لطفاً با ایمیل وارد شوید."
-                } else {
-                    googlePending = true
-                    launchAuth {
-                        try {
-                            handle(AccountRepository.loginWithGoogle(context, requestGoogleIdToken(context)))
-                        } finally {
-                            googlePending = false
-                        }
-                    }
-                }
-            }
+            loading = auth.loading && auth.googlePending,
+            enabled = !auth.loading,
+            onClick = auth::signInWithGoogle
         )
+    }
+}
+
+@Composable
+internal fun PasswordToggle(auth: AuthController) {
+    IconButton(onClick = { auth.showPassword = !auth.showPassword }) {
+        Icon(
+            if (auth.showPassword) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
+            contentDescription = if (auth.showPassword) "پنهان کردن رمز" else "نمایش رمز"
+        )
+    }
+}
+
+@Composable
+internal fun OrDivider() {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        androidx.compose.material3.HorizontalDivider(Modifier.weight(1f))
+        Text(
+            "یا",
+            modifier = Modifier.padding(horizontal = 12.dp),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        androidx.compose.material3.HorizontalDivider(Modifier.weight(1f))
     }
 }
 
 /** Enter the 5-digit code emailed through Resend; supports resend with a countdown. */
 @Composable
-private fun VerificationStep(
-    email: String,
-    code: String,
-    onCodeChange: (String) -> Unit,
-    loading: Boolean,
-    error: String?,
-    info: String?,
-    resendIn: Int,
-    onVerify: () -> Unit,
-    onResend: () -> Unit,
-    onChangeEmail: () -> Unit,
-    modifier: Modifier = Modifier
-) {
+internal fun VerificationStep(auth: AuthController, modifier: Modifier = Modifier) {
+    val email = auth.pendingEmail ?: return
+    val code = auth.code
+    val loading = auth.loading
     val focusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
-    LaunchedEffect(code) { if (code.length == 5 && !loading) onVerify() }
+    LaunchedEffect(code) { if (code.length == 5 && !auth.loading) auth.verify() }
 
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
@@ -501,7 +561,7 @@ private fun VerificationStep(
         // Five boxes drawn over one hidden field, so paste and SMS-style autofill both work.
         androidx.compose.foundation.text.BasicTextField(
             value = code,
-            onValueChange = onCodeChange,
+            onValueChange = auth::onCodeChange,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
             singleLine = true,
             modifier = Modifier
@@ -537,11 +597,11 @@ private fun VerificationStep(
             }
         )
 
-        error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center) }
-        info?.let { Text(it, color = ProfileGreen, style = MaterialTheme.typography.bodySmall) }
+        auth.error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center) }
+        auth.info?.let { Text(it, color = ProfileGreen, style = MaterialTheme.typography.bodySmall) }
 
         Button(
-            onClick = onVerify,
+            onClick = auth::verify,
             enabled = !loading,
             modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
             shape = RoundedCornerShape(16.dp),
@@ -551,9 +611,9 @@ private fun VerificationStep(
             else Text("تأیید و ورود", fontWeight = FontWeight.Bold)
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = onChangeEmail, enabled = !loading) { Text("تغییر ایمیل") }
-            TextButton(onClick = onResend, enabled = !loading && resendIn == 0) {
-                Text(if (resendIn > 0) "ارسال دوباره (${resendIn.toPersianDigits()})" else "ارسال دوباره کد")
+            TextButton(onClick = auth::changeEmail, enabled = !loading) { Text("تغییر ایمیل") }
+            TextButton(onClick = auth::resend, enabled = !loading && auth.resendIn == 0) {
+                Text(if (auth.resendIn > 0) "ارسال دوباره (${auth.resendIn.toPersianDigits()})" else "ارسال دوباره کد")
             }
         }
     }
