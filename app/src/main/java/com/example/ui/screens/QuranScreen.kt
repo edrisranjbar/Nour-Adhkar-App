@@ -102,12 +102,14 @@ import com.example.quran.TafsirPassage
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.runtime.key
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.style.TextOverflow
 import com.example.quran.QuranTranslation
 import com.example.quran.QuranTranslations
 import com.example.quran.QuranVerse
@@ -115,6 +117,8 @@ import com.example.notifications.AdhkarNotificationManager
 import com.example.ui.language.AppLanguage
 import com.example.media.QuranAudioPlayer
 import com.example.media.QuranReciters
+import com.example.quran.QuranKhatmGoal
+import com.example.quran.QuranKhatmPlan
 import com.example.ui.language.LocalAppLanguage
 import com.example.ui.theme.UthmanicHafs
 import com.example.ui.util.toPersianDigits
@@ -278,6 +282,7 @@ fun QuranScreen(
             color = Color(0xFF4D3524),
             tonalElevation = 0.dp
         ) {
+            Box(modifier = Modifier.fillMaxSize()) {
                 Row(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -289,11 +294,13 @@ fun QuranScreen(
                             tint = Color(0xFFF5EDE2)
                         )
                     }
-                    Text(
-                        text = labels.readerTitle,
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color(0xFFFDF8EF)
+                    QuranReaderAppBarTitle(
+                        title = labels.readerTitle,
+                        khatmGoal = khatmGoal,
+                        khatmPlan = khatmPlan,
+                        khatmLabels = khatmLabels,
+                        onKhatmClick = { khatmDetailsOpen = true },
+                        modifier = Modifier.weight(1f)
                     )
                     val reciter = QuranReciters.firstOrNull { it.id == reciterId } ?: QuranReciters.first()
                     Box {
@@ -400,19 +407,23 @@ fun QuranScreen(
                     }
                 }
                 }
+                // Khatm progress lives inside the app bar so the reader page keeps the full height.
+                val barPlan = khatmPlan
+                if (khatmGoal != null && barPlan != null) {
+                    LinearProgressIndicator(
+                        progress = { barPlan.progress },
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .height(2.dp),
+                        color = Color(0xFFE9C46A),
+                        trackColor = Color(0x33F5EDE2),
+                        gapSize = 0.dp,
+                        drawStopIndicator = {}
+                    )
+                }
+            }
         }
-
-        val visibleGoal = khatmGoal
-        val visiblePlan = khatmPlan
-        if (visibleGoal != null && visiblePlan != null) {
-            QuranKhatmProgressStrip(
-                goal = visibleGoal,
-                plan = visiblePlan,
-                labels = khatmLabels,
-                onClick = { khatmDetailsOpen = true }
-            )
-        }
-
 
         HorizontalPager(
             state = pagerState,
@@ -1375,4 +1386,49 @@ private sealed interface TafsirState {
     data object Loading : TafsirState
     data object Missing : TafsirState
     data class Ready(val passage: TafsirPassage) : TafsirState
+}
+
+@Composable
+private fun QuranReaderAppBarTitle(
+    title: String,
+    khatmGoal: QuranKhatmGoal?,
+    khatmPlan: QuranKhatmPlan?,
+    khatmLabels: QuranKhatmLabels,
+    onKhatmClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (khatmGoal == null || khatmPlan == null) {
+        Text(
+            text = title,
+            modifier = modifier,
+            style = MaterialTheme.typography.titleMedium,
+            color = Color(0xFFFDF8EF),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        return
+    }
+    val progressText = if (khatmGoal.paused) khatmLabels.paused else khatmLabels.percent(khatmPlan.progress)
+    val summary = "${khatmLabels.compactTitle(khatmPlan)} · $progressText"
+    Column(
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .clickable(onClickLabel = khatmLabels.goalTitle, onClick = onKhatmClick),
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = Color(0xFFFDF8EF),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = summary,
+            style = MaterialTheme.typography.labelSmall,
+            color = Color(0xFFE9C46A),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
 }
