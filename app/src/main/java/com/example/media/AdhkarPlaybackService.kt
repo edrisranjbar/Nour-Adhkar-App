@@ -33,6 +33,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.ensureActive
+import kotlin.coroutines.coroutineContext
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
@@ -69,6 +71,7 @@ class AdhkarPlaybackService : Service(), AudioManager.OnAudioFocusChangeListener
     private lateinit var audioManager: AudioManager
     private lateinit var mediaSession: MediaSession
     private var mediaPlayer: MediaPlayer? = null
+    private var playerPrepared = false
     private var downloadJob: Job? = null
     private var progressJob: Job? = null
     private var activeTrack: Track? = null
@@ -107,6 +110,7 @@ class AdhkarPlaybackService : Service(), AudioManager.OnAudioFocusChangeListener
     }
 
     fun seekTo(positionMs: Long) {
+        if (!playerPrepared) return
         val player = mediaPlayer ?: return
         val safePosition = positionMs.coerceIn(0L, player.duration.toLong().coerceAtLeast(0L))
         player.seekTo(safePosition.toInt())
@@ -122,6 +126,7 @@ class AdhkarPlaybackService : Service(), AudioManager.OnAudioFocusChangeListener
     private fun playOrToggle(categoryId: String) {
         val track = trackFor(categoryId) ?: return
         if (activeTrack?.categoryId == categoryId && mediaPlayer != null) {
+            if (!playerPrepared) return
             if (mediaPlayer?.isPlaying == true) pausePlayback() else resumePlayback()
             return
         }
@@ -154,8 +159,7 @@ class AdhkarPlaybackService : Service(), AudioManager.OnAudioFocusChangeListener
         val result = runCatching {
             withContext(Dispatchers.IO) {
                 destination.parentFile?.mkdirs()
-                val temporary = File(destination.parentFile, "${destination.name}.part")
-                if (temporary.exists()) temporary.delete()
+                val temporary = File.createTempFile(destination.name, ".part", destination.parentFile)
                 val connection = (URL(track.url).openConnection() as HttpURLConnection).apply {
                     connectTimeout = 20_000
                     readTimeout = 30_000
@@ -172,7 +176,9 @@ class AdhkarPlaybackService : Service(), AudioManager.OnAudioFocusChangeListener
                             var downloaded = 0L
                             var lastPercent = -1
                             while (true) {
+                                coroutineContext.ensureActive()
                                 val read = input.read(buffer)
+                                coroutineContext.ensureActive()
                                 if (read < 0) break
                                 output.write(buffer, 0, read)
                                 downloaded += read
@@ -180,25 +186,32 @@ class AdhkarPlaybackService : Service(), AudioManager.OnAudioFocusChangeListener
                                     val percent = ((downloaded * 100L) / totalBytes).toInt().coerceIn(0, 100)
                                     if (percent != lastPercent) {
                                         lastPercent = percent
-                                        _state.value = _state.value.copy(downloadPercent = percent)
+                                        withContext(Dispatchers.Main) {
+                                            if (activeTrack == track) publishState(downloadPercent = percent)
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                     check(temporary.length() > MIN_VALID_AUDIO_BYTES) { "Downloaded file is incomplete" }
+                    coroutineContext.ensureActive()
                     if (destination.exists()) destination.delete()
                     check(temporary.renameTo(destination)) { "Could not save audio" }
                 } finally {
                     connection.disconnect()
+                    temporary.delete()
                 }
             }
         }
 
         result.onSuccess {
+            if (activeTrack != track) return@onSuccess
             publishState(isDownloading = false, downloadPercent = 100)
             prepareAndPlay(destination, track)
         }.onFailure {
+            if (it is kotlinx.coroutines.CancellationException) throw it
+            if (activeTrack != track) return@onFailure
             publishState(
                 isDownloading = false,
                 isLoading = false,
@@ -211,57 +224,74 @@ class AdhkarPlaybackService : Service(), AudioManager.OnAudioFocusChangeListener
     }
 
     private fun prepareAndPlay(file: File, track: Track) {
-        val player = MediaPlayer().apply {
-            setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .build()
-            )
-            setWakeMode(this@AdhkarPlaybackService, PowerManager.PARTIAL_WAKE_LOCK)
-            setDataSource(file.absolutePath)
-            setOnPreparedListener {
-                publishState(
-                    isLoading = false,
-                    isDownloading = false,
-                    downloadPercent = null,
-                    durationMs = it.duration.toLong(),
-                    errorMessage = null
+        try {
+            val player = MediaPlayer()
+            mediaPlayer = player
+            player.apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .build()
                 )
-                resumePlayback()
-            }
-            setOnCompletionListener {
-                publishState(isPlaying = false, positionMs = state.value.durationMs)
-                updateMediaSession()
-                updateNotification()
-                stopProgressUpdates()
-                serviceScope.launch {
-                    val alreadyCompletedToday = preferences.isAdhkarCompletedToday(track.categoryId)
-                    repository.completeCategory(
-                        categoryId = track.categoryId,
-                        recordHistory = !alreadyCompletedToday
+                setWakeMode(this@AdhkarPlaybackService, PowerManager.PARTIAL_WAKE_LOCK)
+                setDataSource(file.absolutePath)
+                setOnPreparedListener {
+                    if (mediaPlayer !== it) return@setOnPreparedListener
+                    playerPrepared = true
+                    publishState(
+                        isLoading = false,
+                        isDownloading = false,
+                        downloadPercent = null,
+                        durationMs = it.duration.toLong(),
+                        errorMessage = null
                     )
-                    preferences.markAdhkarCompletedToday(track.categoryId)
-                    publishState(completionEventId = System.nanoTime())
+                    resumePlayback()
                 }
+                setOnCompletionListener {
+                    if (mediaPlayer !== it) return@setOnCompletionListener
+                    publishState(isPlaying = false, positionMs = state.value.durationMs)
+                    updateMediaSession()
+                    updateNotification()
+                    stopProgressUpdates()
+                    serviceScope.launch {
+                        val alreadyCompletedToday = preferences.isAdhkarCompletedToday(track.categoryId)
+                        repository.completeCategory(
+                            categoryId = track.categoryId,
+                            recordHistory = !alreadyCompletedToday
+                        )
+                        preferences.markAdhkarCompletedToday(track.categoryId)
+                        publishState(completionEventId = System.nanoTime())
+                    }
+                }
+                setOnErrorListener { failedPlayer, _, _ ->
+                    if (mediaPlayer !== failedPlayer) return@setOnErrorListener true
+                    playerPrepared = false
+                    releasePlayer()
+                    publishState(
+                        isPlaying = false,
+                        isLoading = false,
+                        errorMessage = "پخش فایل صوتی با مشکل روبه‌رو شد."
+                    )
+                    updateNotification()
+                    stopForegroundSafely()
+                    true
+                }
+                prepareAsync()
             }
-            setOnErrorListener { _, _, _ ->
-                publishState(
-                    isPlaying = false,
-                    isLoading = false,
-                    errorMessage = "پخش فایل صوتی با مشکل روبه‌رو شد."
-                )
-                updateNotification()
-                true
-            }
-            prepareAsync()
+            activeTrack = track
+            updateMediaMetadata(track)
+        } catch (_: Exception) {
+            releasePlayer()
+            publishState(isPlaying = false, isLoading = false, isDownloading = false,
+                errorMessage = "پخش فایل صوتی با مشکل روبه‌رو شد.")
+            updateNotification()
+            stopForegroundSafely()
         }
-        mediaPlayer = player
-        activeTrack = track
-        updateMediaMetadata(track)
     }
 
     private fun resumePlayback() {
+        if (!playerPrepared) return
         val player = mediaPlayer ?: return
         if (!requestAudioFocus()) return
         if (player.currentPosition >= player.duration) player.seekTo(0)
@@ -274,6 +304,7 @@ class AdhkarPlaybackService : Service(), AudioManager.OnAudioFocusChangeListener
     }
 
     private fun pausePlayback() {
+        if (!playerPrepared) return
         mediaPlayer?.takeIf { it.isPlaying }?.pause()
         publishState(isPlaying = false)
         stopProgressUpdates()
@@ -431,7 +462,13 @@ class AdhkarPlaybackService : Service(), AudioManager.OnAudioFocusChangeListener
             current.isLoading -> "در حال آماده‌سازی"
             else -> "مشاری راشد العفاسی"
         }
-        return Notification.Builder(this, CHANNEL_ID)
+        @Suppress("DEPRECATION")
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(this, CHANNEL_ID)
+        } else {
+            Notification.Builder(this)
+        }
+        return builder
             .setSmallIcon(R.drawable.ic_notification_adhkar)
             .setContentTitle(language.text(track?.title ?: "اذکار نور"))
             .setContentText(language.text(status))
@@ -460,6 +497,7 @@ class AdhkarPlaybackService : Service(), AudioManager.OnAudioFocusChangeListener
     }
 
     private fun releasePlayer() {
+        playerPrepared = false
         stopProgressUpdates()
         mediaPlayer?.release()
         mediaPlayer = null

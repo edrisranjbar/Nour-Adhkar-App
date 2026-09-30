@@ -111,9 +111,14 @@ private suspend fun currentLocation(context: Context, manager: LocationManager, 
             continuation.invokeOnCancellation { signals.forEach { it.cancel() } }
             var remaining = providers.size
             providers.forEachIndexed { index, provider ->
-                LocationManagerCompat.getCurrentLocation(manager, provider, signals[index], ContextCompat.getMainExecutor(context)) { location ->
-                    remaining--
-                    if (continuation.isActive && (location != null || remaining == 0)) continuation.resume(location)
+                if (!continuation.isActive) return@forEachIndexed
+                try {
+                    LocationManagerCompat.getCurrentLocation(manager, provider, signals[index], ContextCompat.getMainExecutor(context)) { location ->
+                        remaining--
+                        if (continuation.isActive && (location != null || remaining == 0)) continuation.resume(location)
+                    }
+                } catch (denied: SecurityException) {
+                    if (continuation.isActive) continuation.resumeWith(Result.failure(denied))
                 }
             }
         }

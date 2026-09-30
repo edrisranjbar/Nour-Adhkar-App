@@ -6,7 +6,7 @@ The app-sharing action is available in «درباره برنامه» rather than
 
 The daily checklist home-screen widget shows today's tasks and progress. Tapping a task's row, status icon, or title toggles its completion for the current day, refreshes the list and progress, and uses the same saved checklist state as the in-app screen. The widget header and footer open the full checklist.
 
-The achievements destination is opened from the Profile screen (drawer item «پروفایل»), not from the drawer, and its back button returns to Profile. It derives three awards from existing local data: active days, completed daily-checklist tasks, and saved tasbih counts. An emerald summary hero shows unlocked levels out of the total and the closest next goal; below it, scrollable filter chips and a warm-ivory two-column gallery (dark-mode aware) uses dedicated illustrated artwork, shield-shaped level badges, category filters, clear progress bars, and locked/unlocked milestones. Its centered app bar has a back button on the right and no information action. Tapping an award opens a full-screen visual detail page with a full-bleed hero, overlapping emblem, recent activity, current progress, and all three thresholds. The first visit establishes the current levels as a baseline; later level increases open a full-screen celebration with an explicit share action and Continue button. No account or network connection is required.
+The achievements destination is opened from the trophy icon beside the favorites heart in the Home app bar, or from the banner on the signed-in Profile screen (not from the drawer). Its back button returns to wherever it was opened from. It derives three awards from existing local data: active days, completed daily-checklist tasks, and saved tasbih counts. An emerald summary hero shows unlocked levels out of the total and the closest next goal; below it, scrollable filter chips and a warm-ivory two-column gallery (dark-mode aware) uses dedicated illustrated artwork, shield-shaped level badges, category filters, clear progress bars, and locked/unlocked milestones. Its centered app bar has a back button on the right and no information action. Tapping an award opens a full-screen visual detail page with a full-bleed hero, overlapping emblem, recent activity, current progress, and all three thresholds. The first visit establishes the current levels as a baseline; later level increases open a full-screen celebration with an explicit share action and Continue button. No account or network connection is required.
 
 ## First-run onboarding
 
@@ -18,3 +18,11 @@ The navigation drawer starts with a Telegram-style profile header (avatar, name/
 ## Verses for a feeling
 
 Home's «امروز دلت چه حالی دارد؟» card has six feelings, each with 10 verses in `AdhkarData.emotionalAyat` (Arabic from the bundled Tanzil Uthmani text, Persian from Tanzil `fa.khorramdel`, the credited Khorramdel translation; long verses use the relevant clause). `PreferenceRepository.pickFeelingAyahId` keeps the same verse for a feeling all day, picks an unseen one on each new day, and starts a new round only after all 10 have been shown, so the same verse does not repeat for a feeling.
+
+## Audio playback safety
+
+Adhkar playback controls wait until MediaPlayer is prepared. Cancelled downloads cannot start playback or overwrite a newer session; preparation errors remain recoverable and stale player callbacks are ignored.
+
+Audio notifications use the legacy notification builder on Android 7/API 24–25 and notification channels from API 26 onward. Foreground location requests handle permission revocation during acquisition and return the existing recovery message; no background location is requested.
+
+Release bundles include all language resources (language splitting is disabled), so switching Persian/Arabic works offline after installation from an AAB.

@@ -99,6 +99,8 @@ android {
     compose = true
     buildConfig = true
   }
+  // In-app language switching must work offline after an AAB installation.
+  bundle { language { enableSplit = false } }
   testOptions { unitTests { isIncludeAndroidResources = true } }
 }
 
