@@ -31,6 +31,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.Alarm
@@ -97,6 +98,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.example.streak.StreakEngine
+import com.example.streak.StreakState
 import com.example.ui.components.StreakCelebrationDialog
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -800,35 +803,50 @@ fun AyahOfTheDayCard(viewModel: AdhkarViewModel, fontScale: Float) {
     }
 }
 
-/** Current consecutive-day streak; today may still be pending, so a streak ending yesterday counts. */
+/**
+ * Streak state shared by Home, the drawer and the streak dialog. Today may still be pending, so a
+ * streak ending yesterday counts; one missed day per week is covered by a freeze (see [StreakEngine]).
+ */
 @Composable
-fun rememberCurrentStreak(viewModel: AdhkarViewModel): Int {
+fun rememberStreakState(viewModel: AdhkarViewModel): StreakState {
     val allProgress by viewModel.allProgress.collectAsState()
     val recentSessions by viewModel.recentTasbihSessions.collectAsState()
     val activityDayKeys by viewModel.activityDayKeys.collectAsState()
     return remember(allProgress, recentSessions, activityDayKeys) {
-        var s = 0
-        val streakCal = Calendar.getInstance()
-        val todayActive = isDayActive(streakCal, allProgress, recentSessions, activityDayKeys)
-        if (todayActive) {
-            s = 1
-            streakCal.add(Calendar.DAY_OF_YEAR, -1)
-            while (isDayActive(streakCal, allProgress, recentSessions, activityDayKeys)) {
-                s++
-                streakCal.add(Calendar.DAY_OF_YEAR, -1)
-            }
-        } else {
-            streakCal.add(Calendar.DAY_OF_YEAR, -1)
-            if (isDayActive(streakCal, allProgress, recentSessions, activityDayKeys)) {
-                s = 1
-                streakCal.add(Calendar.DAY_OF_YEAR, -1)
-                while (isDayActive(streakCal, allProgress, recentSessions, activityDayKeys)) {
-                    s++
-                    streakCal.add(Calendar.DAY_OF_YEAR, -1)
-                }
-            }
+        val now = Calendar.getInstance()
+        val today = StreakEngine.dayNumber(now.timeInMillis)
+        StreakEngine.compute(today) { day ->
+            // Calendar.add keeps daylight-saving changes correct, unlike millisecond arithmetic.
+            val cal = (now.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, (day - today).toInt()) }
+            isDayActive(cal, allProgress, recentSessions, activityDayKeys)
         }
-        s
+    }
+}
+
+/** Current consecutive-day streak (days of real activity; covered days do not add to it). */
+@Composable
+fun rememberCurrentStreak(viewModel: AdhkarViewModel): Int = rememberStreakState(viewModel).count
+
+/** The last seven days, oldest first, marking days a weekly freeze covered (or may cover today). */
+fun buildWeekActivity(
+    progressList: List<DhikrProgressEntity>,
+    sessions: List<TasbihSessionEntity>,
+    activityDayKeys: Set<Long>,
+    streak: StreakState
+): List<DayActivity> {
+    val now = Calendar.getInstance()
+    val today = StreakEngine.dayNumber(now.timeInMillis)
+    return (6 downTo 0).map { back ->
+        val cal = (now.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -back) }
+        val day = today - back
+        DayActivity(
+            dayLabel = getPersianDayAbbreviation(cal.get(Calendar.DAY_OF_WEEK)),
+            isActive = isDayActive(cal, progressList, sessions, activityDayKeys),
+            isToday = back == 0,
+            dateMillis = cal.timeInMillis,
+            isFrozen = day in streak.frozenDays,
+            isFreezePending = day == streak.pendingFreezeDay
+        )
     }
 }
 
@@ -840,30 +858,12 @@ fun StreakCalendarCard(
     val allProgress by viewModel.allProgress.collectAsState()
     val recentSessions by viewModel.recentTasbihSessions.collectAsState()
     val activityDayKeys by viewModel.activityDayKeys.collectAsState()
+    val streakState = rememberStreakState(viewModel)
+    val streak = streakState.count
 
-    // Generate last 7 days (from 6 days ago to today)
-    val days = remember(allProgress, recentSessions, activityDayKeys) {
-        val list = mutableListOf<DayActivity>()
-        for (i in 6 downTo 0) {
-            val cal = Calendar.getInstance()
-            cal.add(Calendar.DAY_OF_YEAR, -i)
-            val isToday = i == 0
-            val isActive = isDayActive(cal, allProgress, recentSessions, activityDayKeys)
-            val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
-            val dayLabel = getPersianDayAbbreviation(dayOfWeek)
-            list.add(
-                DayActivity(
-                    dayLabel = dayLabel,
-                    isActive = isActive,
-                    isToday = isToday,
-                    dateMillis = cal.timeInMillis
-                )
-            )
-        }
-        list
+    val days = remember(allProgress, recentSessions, activityDayKeys, streakState) {
+        buildWeekActivity(allProgress, recentSessions, activityDayKeys, streakState)
     }
-
-    val streak = rememberCurrentStreak(viewModel)
 
     var showStreakDialog by remember { mutableStateOf(false) }
 
@@ -984,6 +984,7 @@ fun StreakCalendarCard(
                                     width = if (day.isToday && !day.isActive) 1.5.dp else 1.dp,
                                     color = when {
                                         day.isActive -> Color(0xFF4CAF50) // active green
+                                        day.isFrozen || day.isFreezePending -> FreezeBlue
                                         day.isToday -> SunGold // gold border for today
                                         else -> SoftBorder.copy(alpha = 0.6f)
                                     },
@@ -996,6 +997,13 @@ fun StreakCalendarCard(
                                     imageVector = Icons.Default.Check,
                                     contentDescription = null,
                                     tint = Color(0xFF4CAF50),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            } else if (day.isFrozen || day.isFreezePending) {
+                                Icon(
+                                    imageVector = Icons.Default.AcUnit,
+                                    contentDescription = if (day.isFrozen) "روز حفظ‌شده با سپر هفتگی" else "روز در انتظار سپر هفتگی",
+                                    tint = FreezeBlue,
                                     modifier = Modifier.size(14.dp)
                                 )
                             }
@@ -1013,6 +1021,15 @@ fun StreakCalendarCard(
                     }
                 }
             }
+
+            if (streakState.pendingFreezeDay != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "دیروز را از دست دادید؛ امروز ذکری بخوانید تا سپر هفتگی زنجیره‌تان را حفظ کند.",
+                    fontSize = (11 * fontScale).sp,
+                    color = FreezeBlue
+                )
+            }
         }
     }
 }
@@ -1021,8 +1038,14 @@ data class DayActivity(
     val dayLabel: String,
     val isActive: Boolean,
     val isToday: Boolean,
-    val dateMillis: Long
+    val dateMillis: Long,
+    /** A missed day a weekly freeze covered; the streak continues through it. */
+    val isFrozen: Boolean = false,
+    /** A missed yesterday that stays covered only if the user is active today. */
+    val isFreezePending: Boolean = false
 )
+
+internal val FreezeBlue = Color(0xFF42A5F5)
 
 fun isDayActive(
     cal: Calendar,

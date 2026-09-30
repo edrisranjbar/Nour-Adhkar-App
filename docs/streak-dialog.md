@@ -31,3 +31,17 @@ Rive draws objects that come earlier in the file on top. The generator therefore
 ### Previewing without a device
 
 The file was checked with Rive's web runtime (`@rive-app/canvas` 2.43.1) in headless Chromium. It loaded with the artboard, animations, state machine and both inputs; the checks captured the pop-in, squash, idle and level-3 frames; re-firing `celebrate` replayed the burst; and the render loop ran at 60 fps. To repeat: serve a page that creates `new rive.Rive({ src: 'streak_flame.riv', stateMachines: 'StreakFlame', autoplay: true, canvas })`, then screenshot it with Playwright. The file can also be dropped into the Rive editor to inspect or restyle it.
+
+## Streak freeze (weekly grace day)
+
+The streak (`StreakEngine`, shared by Home, the drawer badge and this dialog through `rememberStreakState`) forgives one missed day per week:
+
+- A single missed day is covered when the days on **both sides** have real activity, the **three days before it** are all active (a streak must exist before it is protected), and no other day of the same week was already covered. Weeks run Saturday through Friday, like the calendar strip.
+- Two missed days in a row always break the streak; freezes never chain.
+- Covered days keep the chain alive but **do not add to the count**. The count is always days of real activity.
+- Nothing is stored. The result depends only on which days were active, so it cannot be spent twice or drift. Achievements and the activity calendar still count real activity only, so a covered day never counts as an active day there.
+- If yesterday was missed and today has no activity yet, the streak is shown as saved but pending: the strip marks yesterday with a snowflake outline and Home/the dialog say to practise today. If today then passes without activity, the next day the streak is 0.
+- Covered days show a snowflake in the 7-day strip (Home card and dialog), and the dialog explains it in one line.
+- `DhikrCounterScreen` and Home build the week through the same `buildWeekActivity`, so the dialog can no longer show a different streak from Home.
+
+Tuning lives in `StreakEngine` (`MIN_ACTIVE_DAYS_BEFORE_FREEZE`, week start). `StreakEngineTest` covers the rules. Reminder schedules are unchanged.
