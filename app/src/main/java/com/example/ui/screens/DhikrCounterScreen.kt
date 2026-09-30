@@ -169,14 +169,15 @@ fun DhikrCounterScreen(
 
         val allProgress by viewModel.allProgress.collectAsState()
         val recentSessions by viewModel.recentTasbihSessions.collectAsState()
+        val activityDayKeys by viewModel.activityDayKeys.collectAsState()
 
-        val days = remember(allProgress, recentSessions) {
+        val days = remember(allProgress, recentSessions, activityDayKeys) {
             val list = mutableListOf<DayActivity>()
             for (i in 6 downTo 0) {
                 val cal = Calendar.getInstance()
                 cal.add(Calendar.DAY_OF_YEAR, -i)
                 val isToday = i == 0
-                val isActive = isDayActive(cal, allProgress, recentSessions)
+                val isActive = isDayActive(cal, allProgress, recentSessions, activityDayKeys)
                 val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
                 val dayLabel = getPersianDayAbbreviation(dayOfWeek)
                 list.add(
@@ -191,30 +192,8 @@ fun DhikrCounterScreen(
             list
         }
 
-        val streak = remember(allProgress, recentSessions) {
-            var s = 0
-            val streakCal = Calendar.getInstance()
-            val todayActive = isDayActive(streakCal, allProgress, recentSessions)
-            if (todayActive) {
-                s = 1
-                streakCal.add(Calendar.DAY_OF_YEAR, -1)
-                while (isDayActive(streakCal, allProgress, recentSessions)) {
-                    s++
-                    streakCal.add(Calendar.DAY_OF_YEAR, -1)
-                }
-            } else {
-                streakCal.add(Calendar.DAY_OF_YEAR, -1)
-                if (isDayActive(streakCal, allProgress, recentSessions)) {
-                    s = 1
-                    streakCal.add(Calendar.DAY_OF_YEAR, -1)
-                    while (isDayActive(streakCal, allProgress, recentSessions)) {
-                        s++
-                        streakCal.add(Calendar.DAY_OF_YEAR, -1)
-                    }
-                }
-            }
-            s
-        }
+        // Same streak as the Home screen, including days counted only through the activity log.
+        val streak = rememberCurrentStreak(viewModel)
 
         // Duolingo-style Streak Celebration Dialog when all dhikrs are completed
         if (showCongratsDialog) {
