@@ -34,9 +34,11 @@ Opening the chooser never sends anything by itself; the user picks the recipient
 - shown only after the streak celebration that follows completing an adhkar collection,
   and only when the current streak is at least 3 days;
 - at most 3 times in total, at least 7 days apart;
-- never again after the user chooses to rate or to send feedback.
+- never again after the user chooses to rate.
 
-«بله، امتیاز می‌دهم» opens Bazaar's rating page (`ACTION_EDIT` on `bazaar://details?id=ir.adhkar.app`,
-package `com.farsitel.bazaar`), falling back to the web listing when Bazaar is not installed.
-«نه چندان؛ پیشنهاد می‌دهم» opens an email to the support address so unhappy users reach the
-developer instead of leaving a low rating. «بعداً» or dismissing snoozes the prompt for a week.
+The dialog shows five gold stars (popping in one after another) above the question and offers only
+two buttons. «بله، امتیاز می‌دهم» opens Bazaar's rating page (`ACTION_EDIT` on
+`bazaar://details?id=ir.adhkar.app`, package `com.farsitel.bazaar`), falling back to the web listing
+when Bazaar is not installed, and ends the prompts. «بعداً» or dismissing snoozes the prompt for a
+week. There is no feedback button here; suggestions and criticism are sent from the About screen
+(«ارسال نظر و پیشنهاد»).

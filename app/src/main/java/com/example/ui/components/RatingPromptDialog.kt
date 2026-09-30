@@ -4,33 +4,43 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.example.share.AppLinks
-import com.example.ui.language.LocalAppLanguage
-import com.example.ui.language.text
 import com.example.ui.language.LocalizedIcon as Icon
 import com.example.ui.language.LocalizedText as Text
-import com.example.ui.theme.SunGold
+import kotlinx.coroutines.delay
 
 /**
  * Decides when to ask for a Cafe Bazaar rating. Only asks users with an active streak, at most
- * three times, a week apart, and never again once they rated or said they were unhappy.
+ * three times, a week apart, and never again once they chose to rate.
  */
 class RatingPromptStore(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences("rating_prompt", Context.MODE_PRIVATE)
@@ -48,7 +58,7 @@ class RatingPromptStore(context: Context) {
             .apply()
     }
 
-    /** The user rated or sent feedback; don't ask again. */
+    /** The user chose to rate; don't ask again. */
     fun markDone() {
         prefs.edit().putBoolean(KEY_DONE, true).apply()
     }
@@ -74,24 +84,49 @@ fun openBazaarRating(context: Context) {
     }
 }
 
-private fun openFeedbackEmail(context: Context, subject: String) {
-    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:${AppLinks.FEEDBACK_EMAIL}"))
-        .putExtra(Intent.EXTRA_SUBJECT, subject)
-    runCatching { context.startActivity(intent) }
+private val RatingStarGold = Color(0xFFFFB300)
+private const val STAR_COUNT = 5
+
+/** Five gold stars that pop in one after another when the dialog opens. */
+@Composable
+private fun RatingStars() {
+    var shown by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { shown = true }
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        repeat(STAR_COUNT) { index ->
+            var visible by remember { mutableStateOf(false) }
+            LaunchedEffect(shown) {
+                if (shown) {
+                    delay(index * 90L)
+                    visible = true
+                }
+            }
+            val scale by animateFloatAsState(
+                targetValue = if (visible) 1f else 0f,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+                label = "ratingStar$index"
+            )
+            Icon(
+                Icons.Default.Star,
+                contentDescription = null,
+                modifier = Modifier.size(34.dp).scale(scale),
+                tint = RatingStarGold
+            )
+        }
+    }
 }
 
 /**
- * Asks whether the user is happy before sending them to Bazaar. Happy users go to the rating
- * page; unhappy users are offered a direct email so their feedback reaches the developer.
+ * Asks for a Cafe Bazaar rating: five gold stars, one button to rate and one to ask again later.
+ * Feedback and suggestions live in the About screen.
  */
 @Composable
 fun RatingPromptDialog(store: RatingPromptStore, onDismiss: () -> Unit) {
     val context = LocalContext.current
-    val language = LocalAppLanguage.current
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         AlertDialog(
             onDismissRequest = onDismiss,
-            icon = { Icon(Icons.Default.Star, contentDescription = null, tint = SunGold) },
+            icon = { RatingStars() },
             title = { Text("از اذکار نور راضی هستید؟", textAlign = TextAlign.Center) },
             text = {
                 Text(
@@ -112,14 +147,6 @@ fun RatingPromptDialog(store: RatingPromptStore, onDismiss: () -> Unit) {
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) { Text("بله، امتیاز می‌دهم") }
-                    OutlinedButton(
-                        onClick = {
-                            store.markDone()
-                            openFeedbackEmail(context, language.text("پیشنهاد برای اذکار نور"))
-                            onDismiss()
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text("نه چندان؛ پیشنهاد می‌دهم") }
                     TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text("بعداً") }
                 }
             }
