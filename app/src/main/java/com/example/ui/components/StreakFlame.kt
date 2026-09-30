@@ -37,7 +37,7 @@ internal fun streakFlameLevel(streak: Int): Float = when {
     else -> 0f
 }
 
-private object RiveSupport {
+internal object RiveSupport {
     @Volatile
     private var ready: Boolean? = null
 
