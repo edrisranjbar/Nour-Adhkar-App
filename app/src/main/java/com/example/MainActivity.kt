@@ -319,7 +319,7 @@ fun AppMainScaffold(
                             val drawerItems = listOf(
                                 Triple("adhkar", "اذکار و ادعیه", Icons.Default.Article),
                                 Triple("qibla", "قبله‌نما", Icons.Default.Explore),
-                                Triple("qaza", "قضای نماز و روزه", Icons.Default.EventRepeat),
+                                Triple("qaza", "قضای روزه", Icons.Default.EventRepeat),
                                 Triple("scholars", "علما و مشاهیر", Icons.Default.RecordVoiceOver),
                                 Triple("articles", "مقالات", Icons.Default.Article),
                                 Triple("donation", "حمایت مالی", Icons.Default.VolunteerActivism),
@@ -399,7 +399,7 @@ fun AppMainScaffold(
                                 "tasbih" -> "ذکرشمار"
                                 "achievements" -> "نشان‌ها و دستاوردها"
                                 "qibla" -> "قبله‌نما"
-                                "qaza" -> "قضای نماز و روزه"
+                                "qaza" -> "قضای روزه"
                                 "settings" -> "تنظیمات"
                                 "about" -> "درباره برنامه"
                                 "app_inbox" -> "پیام‌ها"

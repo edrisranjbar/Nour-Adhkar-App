@@ -121,7 +121,7 @@ fun DailyChecklistScreen(
             contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            dailyChecklistSections.forEachIndexed { sectionIndex, section ->
+            dailyChecklistSections.forEach { section ->
                 item(key = "section_${section.title}") {
                     Text(
                         text = section.title,
@@ -140,12 +140,6 @@ fun DailyChecklistScreen(
                             viewModel.setDailyChecklistItemCompleted(item.id, completed)
                         }
                     )
-                }
-                // The missed-prayer tracker sits right under the daily obligatory prayers.
-                if (sectionIndex == 0) {
-                    item(key = "qaza_card") {
-                        QazaChecklistCard(viewModel = viewModel, onOpen = { viewModel.selectTab("qaza") })
-                    }
                 }
             }
         }

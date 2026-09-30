@@ -15,7 +15,7 @@ New installations open a five-step, swipeable onboarding (the last step is an op
 
 The navigation drawer starts with a Telegram-style profile header (avatar, name/email, streak count) that opens Profile. It no longer lists Home, Quran, tasbih, daily checklist, Settings, achievements, Profile, messages, or favorites; those are reached from the bottom navigation, the header, Profile, and the home app bar (favorites heart beside the notifications icon).
 
-The drawer lists «اذکار و ادعیه», «قبله‌نما», «قضای نماز و روزه», «علما و مشاهیر», «مقالات», «حمایت مالی» and «درباره برنامه». «قضای نماز و روزه» opens the missed-prayer and missed-fast tracker (see [docs/qaza-tracker.md](qaza-tracker.md)). A compact card directly under «فرائض روزانه» on the daily checklist shows the prayers still owed and opens the same screen; the bottom navigation is unchanged.
+The drawer lists «اذکار و ادعیه», «قبله‌نما», «قضای روزه», «علما و مشاهیر», «مقالات», «حمایت مالی» and «درباره برنامه». «قضای روزه» opens the missed-fast tracker (see [docs/qaza-tracker.md](qaza-tracker.md)); the bottom navigation is unchanged.
 
 ## Verses for a feeling
 
