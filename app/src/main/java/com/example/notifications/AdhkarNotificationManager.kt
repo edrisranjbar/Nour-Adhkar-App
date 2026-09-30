@@ -126,6 +126,24 @@ class AdhkarNotificationManager(private val context: Context) {
         )?.let(alarmManager::cancel)
     }
 
+    /**
+     * Schedules a test notification through the same alarm call as the real reminders, so it shows
+     * whether reminders survive the phone's battery management. It never changes saved schedules.
+     */
+    fun scheduleTestReminder(delaySeconds: Int = 10) {
+        try {
+            val pendingIntent = reminderPendingIntent("test", REQUEST_TEST)
+            alarmManager.cancel(pendingIntent)
+            alarmManager.setAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                System.currentTimeMillis() + delaySeconds * 1_000L,
+                pendingIntent
+            )
+        } catch (_: Exception) {
+            // A test must never crash the settings screen.
+        }
+    }
+
     fun triggerTestNotification() {
         context.sendBroadcast(Intent(context, ReminderReceiver::class.java).apply {
             action = ACTION_SHOW_REMINDER
@@ -143,6 +161,7 @@ class AdhkarNotificationManager(private val context: Context) {
         private const val REQUEST_EVENING = 102
         private const val REQUEST_FRIDAY_KAHF = 103
         private const val REQUEST_QURAN_KHATM = 104
+        private const val REQUEST_TEST = 105
         private const val REQUEST_SNOOZE_MORNING = 201
         private const val REQUEST_SNOOZE_EVENING = 202
         private const val REQUEST_SNOOZE_FRIDAY = 203
