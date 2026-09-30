@@ -41,11 +41,6 @@ class QazaCalculatorTest {
         assertEquals(0, QazaCalculator.totalDays(QazaPeriod(years = -3, months = -1, days = -9)))
     }
 
-    @Test fun periodBetweenAgesUsesTheDifferenceInYears() {
-        assertEquals(QazaPeriod(years = 7), QazaCalculator.periodBetweenAges(12, 19))
-        assertEquals(QazaPeriod(years = 0), QazaCalculator.periodBetweenAges(20, 15))
-    }
-
     @Test fun hugePeriodsAreCappedPerPrayer() {
         val estimate = QazaCalculator.estimate(QazaPeriod(years = 500), exemptDays = 0, includeWitr = false)
         assertTrue(estimate.values.all { it == QazaLimits.MAX_PER_PRAYER })

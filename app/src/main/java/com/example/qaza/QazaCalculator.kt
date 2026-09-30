@@ -44,10 +44,6 @@ object QazaCalculator {
         return total.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
     }
 
-    /** The period between the age someone started praying and the age they began to pray regularly. */
-    fun periodBetweenAges(startAge: Int, endAge: Int): QazaPeriod =
-        QazaPeriod(years = (endAge - startAge).coerceAtLeast(0))
-
     /**
      * One prayer per day for the period, minus days the person was not required to pray.
      * Witr is included only when asked for.

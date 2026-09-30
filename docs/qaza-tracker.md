@@ -30,16 +30,16 @@ free input, never a hard-coded assumption.
 
 ### Setup helper (estimate)
 
-A bottom sheet for people who do not know their number. The user enters either an age range («از چه
-سنی…» / «تا چه سنی؟») or a length of time (years, months, days), optionally days they were not required
-to pray, and whether to include Witr. The sheet suggests one prayer per day for that period (a year is
-365 days and a month 30), minus the exempt days, and shows an editable number per prayer.
+A bottom sheet for people who do not know their number. It asks for a single thing: how many days
+the user did not pray («تعداد روزهایی که نماز نخوانده‌اید»), plus whether to include Witr. The sheet
+suggests one prayer per day for that many days and shows an editable number per prayer, so anything
+else (days not required, a different count) is handled by editing the suggestions.
 
 - It is labelled as an estimate, not a ruling.
 - Nothing is saved until «ذخیره». Saving replaces the counters (undoable) and records a «ثبت برآورد
   اولیه» history entry.
-- Hand-edited numbers are dropped when an input changes, so they never go stale. Inputs use
-  `rememberSaveable`, so they survive rotation and language changes.
+- Hand-edited numbers are dropped when the days or the Witr choice change, so they never go stale.
+  Inputs use `rememberSaveable`, so they survive rotation and language changes.
 
 ## Fasts tab («روزه»)
 

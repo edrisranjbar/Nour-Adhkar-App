@@ -95,6 +95,7 @@ fun QazaScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(top = innerPadding.calculateTopPadding())
             .padding(horizontal = 16.dp)
     ) {
         SegmentedPills(
@@ -584,23 +585,12 @@ private fun QazaSetupSheet(
     onDismiss: () -> Unit,
     onConfirm: (Map<QazaPrayer, Int>) -> Unit
 ) {
-    var byAge by rememberSaveable { mutableIntStateOf(0) }
-    var startAge by rememberSaveable { mutableStateOf("") }
-    var endAge by rememberSaveable { mutableStateOf("") }
-    var years by rememberSaveable { mutableStateOf("") }
-    var months by rememberSaveable { mutableStateOf("") }
     var days by rememberSaveable { mutableStateOf("") }
-    var exempt by rememberSaveable { mutableStateOf("") }
     var includeWitr by rememberSaveable { mutableStateOf(witrDefault) }
 
-    val period = if (byAge == 0) {
-        QazaCalculator.periodBetweenAges(parseCount(startAge) ?: 0, parseCount(endAge) ?: 0)
-    } else {
-        QazaPeriod(parseCount(years) ?: 0, parseCount(months) ?: 0, parseCount(days) ?: 0)
-    }
-    val estimate = QazaCalculator.estimate(period, parseCount(exempt) ?: 0, includeWitr)
+    val estimate = QazaCalculator.estimate(QazaPeriod(days = parseCount(days) ?: 0), 0, includeWitr)
     // Numbers edited by hand are dropped whenever the inputs change, so they never go stale.
-    val signature = "$byAge|$startAge|$endAge|$years|$months|$days|$exempt|$includeWitr"
+    val signature = "$days|$includeWitr"
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -614,21 +604,7 @@ private fun QazaSetupSheet(
         ) {
             Text("برآورد نمازهای فوت‌شده", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(ESTIMATE_NOTE, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            SegmentedPills(
-                labels = listOf("بر اساس سن", "بر اساس مدت"),
-                selected = byAge,
-                onSelect = { byAge = it },
-                fontScale = 1f
-            )
-            if (byAge == 0) {
-                NumberField("از چه سنی نماز نخوانده‌اید؟", startAge) { startAge = it }
-                NumberField("تا چه سنی؟", endAge) { endAge = it }
-            } else {
-                NumberField("سال", years) { years = it }
-                NumberField("ماه", months) { months = it }
-                NumberField("روز", days) { days = it }
-            }
-            NumberField("روزهای بدون تکلیف (اختیاری)", exempt) { exempt = it }
+            NumberField("تعداد روزهایی که نماز نخوانده‌اید", days) { days = it }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(checked = includeWitr, onCheckedChange = { includeWitr = it })
                 Text("نماز وتر هم برآورد شود")
