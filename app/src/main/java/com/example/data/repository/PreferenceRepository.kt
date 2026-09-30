@@ -164,6 +164,37 @@ class PreferenceRepository(context: Context) {
         return updated.sorted()
     }
 
+    fun getTasbihCounts(): Map<String, Int> = runCatching {
+        val obj = JSONObject(prefs.getString("tasbih_counts_map", "{}").orEmpty())
+        buildMap {
+            val keys = obj.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                val count = obj.optInt(key, 0)
+                if (count > 0) put(key, count)
+            }
+        }
+    }.getOrDefault(emptyMap())
+
+    fun setTasbihCount(dhikr: String, count: Int) {
+        val updated = getTasbihCounts().toMutableMap().apply {
+            if (count <= 0) remove(dhikr) else put(dhikr, count)
+        }
+        val serialized = JSONObject(updated as Map<*, *>).toString()
+        prefs.edit().putString("tasbih_counts_map", serialized).apply()
+    }
+
+    fun clearTasbihCounts() {
+        prefs.edit().remove("tasbih_counts_map").apply()
+    }
+
+    fun getSelectedTasbihDhikr(): String =
+        prefs.getString("selected_tasbih_dhikr", "سبحان الله") ?: "سبحان الله"
+
+    fun setSelectedTasbihDhikr(dhikr: String) {
+        prefs.edit().putString("selected_tasbih_dhikr", dhikr).apply()
+    }
+
     fun getFavoriteDhikrKeys(): Set<String> =
         prefs.getStringSet("favorite_dhikr_keys", emptySet())?.toSet().orEmpty()
 

@@ -190,11 +190,14 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     // Virtual Tasbih State
-    private val _tasbihCount = MutableStateFlow(0)
-    val tasbihCount: StateFlow<Int> = _tasbihCount.asStateFlow()
-
-    private val _selectedTasbihDhikr = MutableStateFlow("سبحان الله")
+    private val _selectedTasbihDhikr = MutableStateFlow(prefs.getSelectedTasbihDhikr())
     val selectedTasbihDhikr: StateFlow<String> = _selectedTasbihDhikr.asStateFlow()
+
+    private val _tasbihCounts = MutableStateFlow(prefs.getTasbihCounts())
+    val tasbihCounts: StateFlow<Map<String, Int>> = _tasbihCounts.asStateFlow()
+
+    private val _tasbihCount = MutableStateFlow(_tasbihCounts.value[_selectedTasbihDhikr.value] ?: 0)
+    val tasbihCount: StateFlow<Int> = _tasbihCount.asStateFlow()
 
     val recentTasbihSessions: StateFlow<List<TasbihSessionEntity>> = repository.getRecentTasbihSessions()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -282,12 +285,19 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
 
     // Tasbih triggers
     fun incrementTasbih() {
-        _tasbihCount.value += 1
+        val currentDhikr = _selectedTasbihDhikr.value
+        val newCount = (_tasbihCounts.value[currentDhikr] ?: 0) + 1
+        val updatedMap = _tasbihCounts.value.toMutableMap().apply {
+            put(currentDhikr, newCount)
+        }
+        _tasbihCounts.value = updatedMap
+        _tasbihCount.value = newCount
+        prefs.setTasbihCount(currentDhikr, newCount)
         playHapticAndAudio()
     }
 
     fun resetTasbih() {
-        _tasbihCount.value = 0
+        setTasbihCount(_selectedTasbihDhikr.value, 0)
     }
 
     fun saveTasbihSession() {
@@ -297,9 +307,20 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
             viewModelScope.launch {
                 repository.saveTasbihSession(name, count)
                 _activityDayKeys.value = prefs.markActivityToday()
-                _tasbihCount.value = 0
+                // Deduct the saved taps from the dhikr that was saved, not whichever dhikr is
+                // selected now: the user may have switched or kept tapping during the save.
+                setTasbihCount(name, (_tasbihCounts.value[name] ?: 0) - count)
             }
         }
+    }
+
+    private fun setTasbihCount(dhikr: String, count: Int) {
+        val remaining = count.coerceAtLeast(0)
+        _tasbihCounts.value = _tasbihCounts.value.toMutableMap().apply {
+            if (remaining > 0) put(dhikr, remaining) else remove(dhikr)
+        }
+        if (_selectedTasbihDhikr.value == dhikr) _tasbihCount.value = remaining
+        prefs.setTasbihCount(dhikr, remaining)
     }
 
     fun deleteTasbihSession(id: Int) {
@@ -310,7 +331,8 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
 
     fun selectTasbihDhikr(dhikr: String) {
         _selectedTasbihDhikr.value = dhikr
-        resetTasbih()
+        prefs.setSelectedTasbihDhikr(dhikr)
+        _tasbihCount.value = _tasbihCounts.value[dhikr] ?: 0
     }
 
     fun addCustomDhikr(text: String) {
@@ -322,6 +344,7 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
 
     fun removeCustomDhikr(text: String, fallbackDhikr: String) {
         _customDhikr.value = prefs.removeCustomDhikr(text)
+        setTasbihCount(text, 0)
         if (_selectedTasbihDhikr.value == text) {
             selectTasbihDhikr(fallbackDhikr)
         }
@@ -418,6 +441,8 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             repository.resetAllProgress()
             repository.clearTasbihHistory()
+            prefs.clearTasbihCounts()
+            _tasbihCounts.value = emptyMap()
             _tasbihCount.value = 0
         }
     }
