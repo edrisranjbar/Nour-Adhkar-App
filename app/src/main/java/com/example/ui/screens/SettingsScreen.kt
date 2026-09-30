@@ -2,7 +2,7 @@ package com.example.ui.screens
 
 import com.example.ui.language.LocalAppLanguage
 import com.example.notifications.BatteryOptimization
-import com.example.ui.components.BatteryOptimizationNotice
+import com.example.ui.components.ReminderHealthCard
 import com.example.ui.language.text
 import android.app.TimePickerDialog
 import androidx.compose.foundation.BorderStroke
@@ -154,7 +154,7 @@ fun SettingsScreen(
                             }
 
                             if (notificationsEnabled) {
-                                BatteryOptimizationNotice(Modifier.padding(top = 8.dp))
+                                ReminderHealthCard(onSendTest = viewModel::scheduleTestReminder, modifier = Modifier.padding(top = 8.dp))
                                 Spacer(modifier = Modifier.height(16.dp))
                                 HorizontalDivider(color = SoftBorder)
                                 Spacer(modifier = Modifier.height(16.dp))

@@ -46,3 +46,12 @@ Adhan alarms and adhkar reminders must fire while the app is closed and the phon
 - Until the exemption is granted, `BatteryOptimizationNotice` appears under the adhan checkboxes and under the reminder switch, with the button «اجازه اجرا بدون محدودیت باتری». It re-checks on every resume and hides once granted.
 - If the direct dialog is unavailable, the battery-optimization list and then the app's details page open instead.
 - Some vendors (e.g. Xiaomi autostart) have extra background limits outside Android's API; those must still be enabled by the user in the phone's settings.
+
+### Reminder health card
+
+Under the reminder switch (Settings → reminders), `ReminderHealthCard` replaces the plain battery notice:
+
+- Two read-only checks refresh on every resume: notifications allowed (app-level and the `nour_adhkar_reminders` channel, `ReminderHealth.notificationsAllowed`) and battery exemption. A failing check shows a button that opens the matching system screen.
+- «ارسال اعلان آزمایشی» schedules a notification about 10 seconds later with the same `setAndAllowWhileIdle` call as real reminders (`AdhkarNotificationManager.scheduleTestReminder`), so the user can lock the phone and see whether reminders survive battery management. It never changes saved reminder times, days, snooze or other schedules.
+- After a test, «اگر اعلان نرسید» shows short steps for the phone's brand (`ReminderVendorGuide`, by `Build.MANUFACTURER`: Xiaomi/Redmi/POCO, Huawei/Honor, Oppo/Realme/OnePlus, Vivo/iQOO, Samsung, generic otherwise) and a button to the app's settings page. The text describes what to enable and notes that menu names vary by model; no vendor-specific settings screens are launched.
+- Morning/evening reminders still use inexact `setAndAllowWhileIdle`; only adhan alarms are exact. No permissions were added.

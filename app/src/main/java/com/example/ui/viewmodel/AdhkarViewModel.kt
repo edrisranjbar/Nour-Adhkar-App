@@ -393,6 +393,10 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         notificationManager.scheduleReminders()
     }
 
+    fun scheduleTestReminder() {
+        notificationManager.scheduleTestReminder()
+    }
+
     fun triggerTestNotification() {
         notificationManager.triggerTestNotification()
     }

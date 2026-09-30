@@ -61,7 +61,7 @@ class ReminderReceiver : BroadcastReceiver() {
             }
         }
 
-        val channelId = "nour_adhkar_reminders"
+        val channelId = ReminderHealth.REMINDER_CHANNEL_ID
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -98,6 +98,11 @@ class ReminderReceiver : BroadcastReceiver() {
                     "$intro\n\n$content"
                 )
             }
+            "test" -> Triple(
+                "🔔 اعلان آزمایشی اذکار نور",
+                "یادآورها روی این گوشی نمایش داده می‌شوند.",
+                "اگر این پیام را می‌بینید، اعلان‌های یادآوری اذکار نور روی گوشی شما کار می‌کنند."
+            )
             "friday_kahf" -> Triple(
                 "📖 جمعه با سوره کهف",
                 "یادآوری تلاوت سوره مبارکه کهف",
