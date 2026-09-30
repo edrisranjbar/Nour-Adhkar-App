@@ -9,21 +9,22 @@ possible follow-up.
 
 ## Entry point
 
-The drawer item «قضای روزه» (`qaza` tab in `MainActivity`). The bottom navigation and the daily
-checklist are unchanged.
+The drawer item «قضای روزه» (`qaza` tab in `MainActivity`), placed right after «مقالات». The bottom
+navigation and the daily checklist are unchanged.
 
 ## Screen
 
-- **Empty state:** one sentence explaining the feature and «افزودن روزه‌ی فوت‌شده».
+- **Empty state:** an icon, one sentence explaining the feature and «افزودن روزه‌ی فوت‌شده».
 - **Adding fasts:** the dialog asks for a single thing, the number of days («تعداد روزها»). More can be
   added at any time.
-- **Summary card:** a progress ring (made up ÷ owed), the remaining fasts, and «از X روزه، Y ادا شده».
-  «ویرایش تعداد باقی‌مانده» edits the remaining number directly; progress already made is kept, and the
-  number is never negative (capped at 9,999, still editable).
-- **«یک روز ادا شد»:** marks one fast as made up today. It does nothing when none remain.
-- **«واگرد آخرین روز»:** takes back the most recent made-up day.
-- **«آخرین روزهای ادا‌شده»:** the dates (Persian calendar) of the last five made-up days; the last 30
-  dates are stored. Dates are the stored timestamps and are never recomputed.
+- **Summary card:** a large progress ring (made up ÷ owed, animated) with the remaining number in the
+  centre, or a check mark and «همه‌ی روزه‌ها ادا شد» when nothing remains. Two chips below it show the
+  made-up and total counts. «ویرایش تعداد باقی‌مانده» edits the remaining number directly; progress
+  already made is kept, and the number is never negative (capped at 9,999, still editable).
+- **«یک روز ادا شد»:** the main button; marks one fast as made up today. It does nothing when none remain.
+- **«افزودن روزه‌ی فوت‌شده»** and **«واگرد آخرین روز»:** add more, or take back the most recent made-up day.
+- **«آخرین روزهای ادا‌شده»:** a card with the dates (Persian calendar) of the last five made-up days; the
+  last 30 dates are stored. Dates are the stored timestamps and are never recomputed.
 
 ## Streak
 

@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
@@ -17,13 +19,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EventRepeat
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
@@ -44,8 +47,11 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.qaza.FastingState
 import com.example.ui.language.LocalizedIcon as Icon
 import com.example.ui.language.LocalizedText as Text
 import com.example.ui.theme.CardBackground
@@ -70,97 +76,43 @@ fun QazaScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
             .padding(top = innerPadding.calculateTopPadding())
             .padding(horizontal = 16.dp),
         contentPadding = PaddingValues(top = 12.dp, bottom = innerPadding.calculateBottomPadding() + 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         if (!state.hasData) {
-            item(key = "empty") {
-                QazaCard {
-                    Text(
-                        "قضای روزه‌های فوت‌شده را اینجا بشمارید و یکی‌یکی ادا کنید. عددها فقط روی همین دستگاه می‌مانند و برنامه حکم شرعی صادر نمی‌کند.",
-                        color = NightBlue,
-                        fontSize = (15 * fontScale).sp,
-                        lineHeight = (24 * fontScale).sp
-                    )
-                    Spacer(Modifier.height(14.dp))
-                    Button(
-                        onClick = { showAdd = true },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 48.dp)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                        Spacer(Modifier.width(6.dp))
-                        Text("افزودن روزه‌ی فوت‌شده")
-                    }
-                }
-            }
+            item(key = "empty") { EmptyState(fontScale, onAdd = { showAdd = true }) }
         } else {
-            item(key = "summary") {
-                val progress = state.madeUp / state.owed.toFloat()
-                QazaCard {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        ProgressRing(progress = progress, modifier = Modifier.size(96.dp)) {
-                            Text(
-                                "${(progress * 100).toInt().toPersianDigits()}٪",
-                                color = NightBlue,
-                                fontSize = (18 * fontScale).sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                if (state.remaining == 0) "همه‌ی روزه‌ها ادا شد"
-                                else "${state.remaining.toPersianDigits()} روزه باقی‌مانده",
-                                color = NightBlue,
-                                fontSize = (18 * fontScale).sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                "از ${state.owed.toPersianDigits()} روزه، ${state.madeUp.toPersianDigits()} ادا شده",
-                                color = NightBlue.copy(alpha = 0.7f),
-                                fontSize = (13 * fontScale).sp
-                            )
-                        }
-                    }
-                    TextButton(
-                        onClick = { showEdit = true },
-                        modifier = Modifier
-                            .padding(top = 8.dp)
-                            .heightIn(min = 48.dp)
-                    ) {
-                        Icon(Icons.Default.Edit, contentDescription = null, tint = SunGold, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("ویرایش تعداد باقی‌مانده", color = SunGold)
-                    }
-                }
-            }
+            item(key = "summary") { SummaryCard(state, fontScale, onEdit = { showEdit = true }) }
             item(key = "made_up") {
                 Button(
                     onClick = { viewModel.qazaMarkMadeUp() },
                     enabled = state.remaining > 0,
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 52.dp)
+                        .heightIn(min = 56.dp)
                 ) {
                     Icon(Icons.Default.Check, contentDescription = null)
-                    Spacer(Modifier.width(6.dp))
-                    Text("یک روز ادا شد")
+                    Spacer(Modifier.width(8.dp))
+                    Text("یک روز ادا شد", fontSize = (16 * fontScale).sp, fontWeight = FontWeight.Bold)
                 }
             }
             item(key = "actions") {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedButton(
                         onClick = { showAdd = true },
+                        shape = RoundedCornerShape(14.dp),
                         modifier = Modifier
                             .weight(1f)
                             .heightIn(min = 48.dp)
-                    ) { Text("افزودن روزه‌ی فوت‌شده") }
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("افزودن روزه‌ی فوت‌شده")
+                    }
                     OutlinedButton(
                         onClick = { viewModel.qazaUndoMadeUp() },
                         enabled = state.madeUp > 0,
+                        shape = RoundedCornerShape(14.dp),
                         modifier = Modifier
                             .weight(1f)
                             .heightIn(min = 48.dp)
@@ -168,20 +120,34 @@ fun QazaScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
                 }
             }
             if (state.recentDates.isNotEmpty()) {
-                item(key = "recent_title") {
-                    Text(
-                        "آخرین روزهای ادا‌شده",
-                        color = SunGold,
-                        fontSize = (16 * fontScale).sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                items(state.recentDates.takeLast(5).asReversed()) { date ->
-                    Text(
-                        formatPersianDate(date),
-                        color = NightBlue.copy(alpha = 0.75f),
-                        fontSize = (14 * fontScale).sp
-                    )
+                item(key = "recent") {
+                    QazaCard {
+                        Text(
+                            "آخرین روزهای ادا‌شده",
+                            color = SunGold,
+                            fontSize = (15 * fontScale).sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        state.recentDates.takeLast(5).asReversed().forEach { date ->
+                            Row(
+                                modifier = Modifier.padding(top = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = SunGold,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    formatPersianDate(date),
+                                    color = NightBlue.copy(alpha = 0.8f),
+                                    fontSize = (14 * fontScale).sp
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -214,10 +180,140 @@ fun QazaScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
 }
 
 @Composable
+private fun EmptyState(fontScale: Float, onAdd: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = CardBackground,
+        border = BorderStroke(1.dp, SoftBorder)
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Surface(
+                modifier = Modifier.size(72.dp),
+                shape = CircleShape,
+                color = SunGold.copy(alpha = 0.12f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Default.EventRepeat,
+                        contentDescription = null,
+                        tint = SunGold,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            Text(
+                "قضای روزه‌های فوت‌شده را اینجا بشمارید و یکی‌یکی ادا کنید. عددها فقط روی همین دستگاه می‌مانند و برنامه حکم شرعی صادر نمی‌کند.",
+                color = NightBlue,
+                textAlign = TextAlign.Center,
+                fontSize = (15 * fontScale).sp,
+                lineHeight = (24 * fontScale).sp
+            )
+            Spacer(Modifier.height(20.dp))
+            Button(
+                onClick = onAdd,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 52.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("افزودن روزه‌ی فوت‌شده")
+            }
+        }
+    }
+}
+
+@Composable
+private fun SummaryCard(state: FastingState, fontScale: Float, onEdit: () -> Unit) {
+    val target = if (state.owed == 0) 0f else state.madeUp / state.owed.toFloat()
+    val progress by animateFloatAsState(
+        targetValue = target,
+        animationSpec = tween(durationMillis = 700),
+        label = "fastingProgress"
+    )
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = SunGold.copy(alpha = 0.08f),
+        border = BorderStroke(1.dp, SunGold.copy(alpha = 0.35f))
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            ProgressRing(progress = progress, strokeWidth = 14.dp, modifier = Modifier.size(172.dp)) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 26.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (state.remaining == 0) {
+                        Icon(Icons.Default.Check, contentDescription = null, tint = SunGold, modifier = Modifier.size(40.dp))
+                        Text(
+                            "همه‌ی روزه‌ها ادا شد",
+                            color = NightBlue,
+                            textAlign = TextAlign.Center,
+                            fontSize = (14 * fontScale).sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    } else {
+                        Text(
+                            state.remaining.toPersianDigits(),
+                            color = NightBlue,
+                            fontSize = (40 * fontScale).sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "روزه باقی‌مانده",
+                            color = NightBlue.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center,
+                            fontSize = (13 * fontScale).sp
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                StatChip("ادا شده: ${state.madeUp.toPersianDigits()}", fontScale)
+                StatChip("مجموع: ${state.owed.toPersianDigits()}", fontScale)
+            }
+            TextButton(
+                onClick = onEdit,
+                modifier = Modifier
+                    .padding(top = 6.dp)
+                    .heightIn(min = 48.dp)
+            ) {
+                Icon(Icons.Default.Edit, contentDescription = null, tint = SunGold, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("ویرایش تعداد باقی‌مانده", color = SunGold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatChip(text: String, fontScale: Float) {
+    Surface(shape = RoundedCornerShape(50), color = SunGold.copy(alpha = 0.14f)) {
+        Text(
+            text,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            color = NightBlue,
+            fontSize = (13 * fontScale).sp,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+@Composable
 private fun QazaCard(content: @Composable ColumnScope.() -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         color = CardBackground,
         border = BorderStroke(1.dp, SoftBorder)
     ) {
@@ -226,11 +322,16 @@ private fun QazaCard(content: @Composable ColumnScope.() -> Unit) {
 }
 
 @Composable
-private fun ProgressRing(progress: Float, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+private fun ProgressRing(
+    progress: Float,
+    modifier: Modifier = Modifier,
+    strokeWidth: Dp = 10.dp,
+    content: @Composable () -> Unit
+) {
     val track = SoftBorder
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val stroke = 10.dp.toPx()
+            val stroke = strokeWidth.toPx()
             val topLeft = Offset(stroke / 2, stroke / 2)
             val arcSize = Size(size.width - stroke, size.height - stroke)
             drawArc(

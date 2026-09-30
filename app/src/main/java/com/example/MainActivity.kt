@@ -319,9 +319,9 @@ fun AppMainScaffold(
                             val drawerItems = listOf(
                                 Triple("adhkar", "اذکار و ادعیه", Icons.Default.Article),
                                 Triple("qibla", "قبله‌نما", Icons.Default.Explore),
-                                Triple("qaza", "قضای روزه", Icons.Default.EventRepeat),
                                 Triple("scholars", "علما و مشاهیر", Icons.Default.RecordVoiceOver),
                                 Triple("articles", "مقالات", Icons.Default.Article),
+                                Triple("qaza", "قضای روزه", Icons.Default.EventRepeat),
                                 Triple("donation", "حمایت مالی", Icons.Default.VolunteerActivism),
                                 Triple("about", "درباره برنامه", Icons.Default.Info)
                             )
