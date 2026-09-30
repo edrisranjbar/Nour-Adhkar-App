@@ -238,8 +238,9 @@ fun AppMainScaffold(
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(notificationCategory) {
-        if (notificationCategory == "morning" || notificationCategory == "evening") {
-            viewModel.selectCategory(notificationCategory)
+        val category = notificationCategory
+        if (category != null && category in setOf("morning", "evening", "after_salah")) {
+            viewModel.selectCategory(category)
             onNotificationCategoryConsumed()
         }
     }

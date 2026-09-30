@@ -44,6 +44,7 @@
         <service android:name=".prayer.AdhanAlertService" android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
         <receiver android:name=".prayer.AdhanAlarmReceiver" android:exported="false" />
+        <receiver android:name=".prayer.PostPrayerReminderReceiver" android:exported="false" />
         <receiver android:name=".prayer.AdhanRescheduleReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

@@ -54,6 +54,7 @@ fun PrayerSettingsEditor(viewModel: AdhkarViewModel) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(24.dp)) {
         PrayerSettingsGroup("صدای اذان") { AdhanSoundSettings(viewModel) }
         PrayerSettingsGroup("پخش اذان در") { AdhanPrayerSettings(viewModel) }
+        PrayerSettingsGroup("یادآوری اذکار پس از نماز") { PostPrayerReminderSettings(viewModel) }
         PrayerSettingsGroup("موقعیت و منطقه زمانی") {
         Text("اوقات به‌صورت آفلاین و بر اساس موقعیت ذخیره‌شده محاسبه می‌شوند. هنگام سفر موقعیت را تغییر دهید.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
