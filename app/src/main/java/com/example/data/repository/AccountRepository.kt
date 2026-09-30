@@ -197,7 +197,8 @@ object AccountRepository {
     }
 
     private fun isArabicScriptLetter(c: Char): Boolean =
-        c in '؀'..'ۿ' || c in 'ݐ'..'ݿ' || c in 'ﭐ'..'﷿' || c in 'ﹰ'..'﻿'
+        c in '\u0600'..'\u06FF' || c in '\u0750'..'\u077F' ||
+            c in '\uFB50'..'\uFDFF' || c in '\uFE70'..'\uFEFF'
 
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

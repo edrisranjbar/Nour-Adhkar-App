@@ -5,9 +5,13 @@
 - Email login/register call `POST /api/auth/login` and `POST /api/auth/register` on `https://api.adhkar.ir`.
 - The JWT and basic profile are stored in the `account` shared preferences (`AccountRepository`). All app content stays offline and works without an account.
 
+## Google-only sign-in (temporary)
+
+`EmailSignInEnabled` (in `AccountScreen.kt`) is `false`: users can sign in with **Google only**, or continue without an account. The login page shows «ورود با گوگل» and «ادامه بدون حساب» (opens Home) instead of «ورود با ایمیل», and the onboarding account page shows only the Google button. The email login/register, verification-code and password-reset flows below are unchanged and can be re-enabled by setting the switch to `true`. The backend endpoints stay available.
+
 ## Profile screen
 
-- Signed out: the Profile destination shows a dedicated login page (`LoginScreen.kt`, app-bar title «ورود به حساب») instead of a form. It has the Nour illustration on a green gradient panel at the top, a short welcome, and two buttons at the bottom: «ورود با گوگل» and «ورود با ایمیل». A small «فعلاً بدون حساب؛ دیدن نشان‌ها و دستاوردها» link keeps achievements reachable without an account.
+- Signed out: the Profile destination shows a dedicated login page (`LoginScreen.kt`, app-bar title «ورود به حساب») instead of a form. It has the Nour illustration on a green gradient panel at the top, a short welcome, and two buttons at the bottom: «ورود با گوگل» and «ورود با ایمیل». Achievements stay reachable without an account through the trophy icon in the Home app bar.
 - «ورود با ایمیل» opens the email step: login by default, with «حساب کاربری ندارید؟ ثبت‌نام کنید» / «قبلاً حساب ساخته‌اید؟ وارد شوید» to switch. Register adds a name field. Email and password are typed left-to-right; the keyboard's Next/Done moves between fields and submits. Errors appear in a banner above the button. The back arrow (and system back) returns to the welcome page; from the code step it returns to the form.
 - Signed in: the account-details card with logout, then the achievements banner last. There is no separate identity card; the drawer header shows the avatar.
 - The onboarding account page keeps the compact `AuthForm` (segmented login/register, then Google). Both UIs share `AuthController` for validation, API calls, Google sign-in and the code step.
@@ -42,3 +46,7 @@ The login page (and the onboarding form) has a standard "Sign in with Google" bu
 3. Create an OAuth client of type **Android**: package `ir.adhkar.app`, SHA-1 of the release signing certificate `A0:2B:BE:E0:EE:1E:EB:A7:7E:3E:6F:07:85:1E:8C:DD:13:D6:02:DB`. (For debug builds add another Android client for `ir.adhkar.app.debug` with the debug keystore SHA-1.) If the app is distributed through a store that re-signs it, also add that store's signing SHA-1.
 4. App: add `googleWebClientId=<web client id>` to `local.properties` (or set `GOOGLE_WEB_CLIENT_ID`) and rebuild. Without it the button explains that Google sign-in is not enabled yet.
 5. Backend `.env`: `GOOGLE_CLIENT_IDS=<web client id>`, then deploy. Without it the API answers 503 and the app shows a friendly message.
+
+## Backup privacy
+
+Account credentials and the per-installation inbox identity are excluded from Android cloud backup and device transfer. Restored installations require sign-in again and receive a new inbox installation ID; ordinary app updates preserve both. Progress and other preferences retain their existing backup behavior.

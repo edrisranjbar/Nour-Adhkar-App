@@ -35,7 +35,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Email
-import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Person
@@ -86,7 +85,10 @@ private enum class LoginStep { Welcome, Email, Verify, ForgotPassword, ResetPass
  * Email opens a clean login/register form; unverified emails continue to the 5-digit code step.
  */
 @Composable
-fun LoginScreen(innerPadding: PaddingValues, onOpenAchievements: () -> Unit) {
+fun LoginScreen(
+    innerPadding: PaddingValues,
+    onContinueWithoutAccount: () -> Unit
+) {
     // Signing in flips AccountRepository.user, and AccountScreen then shows the account details.
     val auth = rememberAuthController(onSignedIn = {})
     var emailChosen by rememberSaveable { mutableStateOf(false) }
@@ -135,7 +137,7 @@ fun LoginScreen(innerPadding: PaddingValues, onOpenAchievements: () -> Unit) {
                         LoginStep.Welcome -> WelcomeStep(
                             auth = auth,
                             onChooseEmail = { auth.error = null; emailChosen = true },
-                            onOpenAchievements = onOpenAchievements
+                            onContinueWithoutAccount = onContinueWithoutAccount
                         )
                         LoginStep.Email -> {
                             BackRow(enabled = !auth.loading, onBack = ::back)
@@ -165,7 +167,7 @@ fun LoginScreen(innerPadding: PaddingValues, onOpenAchievements: () -> Unit) {
 private fun androidx.compose.foundation.layout.ColumnScope.WelcomeStep(
     auth: AuthController,
     onChooseEmail: () -> Unit,
-    onOpenAchievements: () -> Unit
+    onContinueWithoutAccount: () -> Unit
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         HeroIllustration()
@@ -179,7 +181,8 @@ private fun androidx.compose.foundation.layout.ColumnScope.WelcomeStep(
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "وارد حساب خود شوید یا در چند ثانیه حساب تازه‌ای بسازید. همه‌ی بخش‌های برنامه بدون حساب هم در دسترس‌اند.",
+            if (EmailSignInEnabled) "وارد حساب خود شوید یا در چند ثانیه حساب تازه‌ای بسازید. همه‌ی بخش‌های برنامه بدون حساب هم در دسترس‌اند."
+            else "با حساب گوگل وارد شوید یا بدون حساب ادامه دهید. همه‌ی بخش‌های برنامه بدون حساب هم در دسترس‌اند.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -196,24 +199,28 @@ private fun androidx.compose.foundation.layout.ColumnScope.WelcomeStep(
             enabled = !auth.loading,
             onClick = auth::signInWithGoogle
         )
-        Button(
-            onClick = onChooseEmail,
-            enabled = !auth.loading,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-            shape = RoundedCornerShape(26.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = ProfileGreen, contentColor = Color.White)
-        ) {
-            Icon(Icons.Rounded.Email, contentDescription = null, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.size(12.dp))
-            Text("ورود با ایمیل", fontWeight = FontWeight.Bold)
-        }
-        TextButton(
-            onClick = onOpenAchievements,
-            modifier = Modifier.align(Alignment.CenterHorizontally).heightIn(min = 48.dp)
-        ) {
-            Icon(Icons.Rounded.EmojiEvents, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.size(6.dp))
-            Text("فعلاً بدون حساب؛ دیدن نشان‌ها و دستاوردها")
+        if (EmailSignInEnabled) {
+            Button(
+                onClick = onChooseEmail,
+                enabled = !auth.loading,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                shape = RoundedCornerShape(26.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = ProfileGreen, contentColor = Color.White)
+            ) {
+                Icon(Icons.Rounded.Email, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.size(12.dp))
+                Text("ورود با ایمیل", fontWeight = FontWeight.Bold)
+            }
+        } else {
+            Button(
+                onClick = onContinueWithoutAccount,
+                enabled = !auth.loading,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                shape = RoundedCornerShape(26.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = ProfileGreen, contentColor = Color.White)
+            ) {
+                Text("ادامه بدون حساب", fontWeight = FontWeight.Bold)
+            }
         }
     }
 }

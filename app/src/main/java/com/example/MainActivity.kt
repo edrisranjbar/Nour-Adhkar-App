@@ -225,9 +225,11 @@ fun AppMainScaffold(
     onQuranPageConsumed: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    // Where the achievements screen returns to: Home (app bar icon) or Profile (banner).
+    var achievementsBackTab by remember { mutableStateOf("account") }
     val language = LocalAppLanguage.current
     val currentTab by viewModel.currentTab.collectAsState()
-    remember { com.example.data.repository.AccountRepository.init(context) }
+    LaunchedEffect(context) { com.example.data.repository.AccountRepository.init(context) }
     val accountUser by com.example.data.repository.AccountRepository.user.collectAsState()
     val selectedCategoryId by viewModel.selectedCategoryId.collectAsState()
     val fontScale by viewModel.fontScale.collectAsState()
@@ -413,6 +415,16 @@ fun AppMainScaffold(
                             val unread by com.example.data.repository.AppInboxApi.unreadCount.collectAsState()
                             LaunchedEffect(Unit) { com.example.data.repository.AppInboxApi.refreshUnreadCount(context) }
                             Spacer(Modifier.weight(1f))
+                            IconButton(onClick = {
+                                achievementsBackTab = "home"
+                                viewModel.selectTab("achievements")
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.EmojiEvents,
+                                    contentDescription = "نشان‌ها و دستاوردها",
+                                    tint = NightBlue
+                                )
+                            }
                             IconButton(onClick = { viewModel.selectTab("favorites") }) {
                                 Icon(
                                     imageVector = Icons.Default.FavoriteBorder,
@@ -614,13 +626,17 @@ fun AppMainScaffold(
                         "achievements" -> AchievementsScreen(
                             viewModel = viewModel,
                             innerPadding = innerPadding,
-                            onNavigateBack = { viewModel.selectTab("account") }
+                            onNavigateBack = { viewModel.selectTab(achievementsBackTab) }
                         )
                         "about" -> AboutScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "app_inbox" -> AppInboxScreen(innerPadding = innerPadding)
                         "account" -> com.example.ui.screens.AccountScreen(
                             innerPadding = innerPadding,
-                            onOpenAchievements = { viewModel.selectTab("achievements") }
+                            onOpenAchievements = {
+                                achievementsBackTab = "account"
+                                viewModel.selectTab("achievements")
+                            },
+                            onContinueWithoutAccount = { viewModel.selectTab("home") }
                         )
                         "scholars" -> ScholarsScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "articles" -> ArticlesScreen(viewModel = viewModel, innerPadding = innerPadding)

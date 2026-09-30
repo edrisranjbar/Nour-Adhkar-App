@@ -90,19 +90,33 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.listSaver
 
+/**
+ * Email sign-in (login, register, verification and password reset) is switched off for now:
+ * users can sign in with Google only, or continue without an account. Set to true to bring the
+ * email forms back on the login page and in onboarding; the code behind them is unchanged.
+ */
+internal const val EmailSignInEnabled = false
+
 internal val ProfileGreenDark = Color(0xFF0E4B38)
 internal val ProfileGreen = Color(0xFF2E6B4E)
 internal val ProfileGradient = Brush.linearGradient(listOf(ProfileGreenDark, ProfileGreen))
 
 /** Profile: signed-out users get the [LoginScreen]; signed-in users see account details and achievements. */
 @Composable
-fun AccountScreen(innerPadding: PaddingValues, onOpenAchievements: () -> Unit) {
+fun AccountScreen(
+    innerPadding: PaddingValues,
+    onOpenAchievements: () -> Unit,
+    onContinueWithoutAccount: () -> Unit
+) {
     val context = LocalContext.current
     LaunchedInit(context)
     val user by AccountRepository.user.collectAsState()
     val current = user
     if (current == null) {
-        LoginScreen(innerPadding = innerPadding, onOpenAchievements = onOpenAchievements)
+        LoginScreen(
+            innerPadding = innerPadding,
+            onContinueWithoutAccount = onContinueWithoutAccount
+        )
         return
     }
     Column(
@@ -524,6 +538,20 @@ fun AuthForm(onSignedIn: () -> Unit, modifier: Modifier = Modifier) {
 
     if (auth.pendingEmail != null) {
         VerificationStep(auth, modifier)
+        return
+    }
+
+    if (!EmailSignInEnabled) {
+        Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            auth.error?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+            GoogleSignInButton(
+                loading = auth.loading && auth.googlePending,
+                enabled = !auth.loading,
+                onClick = auth::signInWithGoogle
+            )
+        }
         return
     }
 
