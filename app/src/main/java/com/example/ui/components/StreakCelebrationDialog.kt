@@ -286,14 +286,18 @@ fun StreakCelebrationDialog(
                         Spacer(modifier = Modifier.height(18.dp))
 
                         // 7-Day Accurate Calendar Section
+                        // The week is drawn by Rive (StreakWeekSection); this Compose strip is the fallback
+                        // used with "remove animations" or when Rive cannot load.
+                        StreakWeekSection(
+                            days = resolvedDays,
+                            todayFilled = todayFilled,
+                            reduceMotion = reduceMotion,
+                            fontScale = fontScale
+                        ) {
                         Row(
                             horizontalArrangement = Arrangement.SpaceEvenly,
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color.White.copy(alpha = 0.06f), RoundedCornerShape(18.dp))
-                                .border(0.5.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(18.dp))
-                                .padding(vertical = 12.dp, horizontal = 6.dp)
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             resolvedDays.forEachIndexed { index, day ->
                                 val dayScale = remember { Animatable(if (reduceMotion) 1f else 0.4f) }
@@ -381,6 +385,7 @@ fun StreakCelebrationDialog(
                                     )
                                 }
                             }
+                        }
                         }
 
                         val freezeNote = when {
