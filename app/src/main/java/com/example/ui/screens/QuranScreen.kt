@@ -26,11 +26,11 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.collectAsState
 import androidx.compose.material.icons.filled.Check
@@ -53,6 +53,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
@@ -72,6 +73,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
@@ -101,9 +103,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.runtime.key
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.platform.LocalConfiguration
@@ -1183,19 +1182,68 @@ private fun VerseActionsSheet(
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ) {
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
-            Text(labels.noteFor(verse), style = MaterialTheme.typography.titleMedium)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Surface(
+                    modifier = Modifier.size(46.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            text = verse.verseNumber.toPersianDigits(),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+                Column {
+                    Text(
+                        text = "${labels.surah} ${verse.surahName}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = "${labels.verse} ${verse.verseNumber.toPersianDigits()}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
             // The sheet shows the verse's meaning; the Arabic text is already on the page behind it.
-            SingleChoiceSegmentedButtonRow(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 12.dp)
+                    .padding(top = 16.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                listOf(labels.translation, labels.tafsir).forEachIndexed { index, label ->
-                    SegmentedButton(
-                        selected = showTafsir == (index == 1),
-                        onClick = { onShowTafsirChange(index == 1) },
-                        shape = SegmentedButtonDefaults.itemShape(index, 2)
-                    ) { Text(label) }
+                listOf(labels.translation to false, labels.tafsir to true).forEach { (label, isTafsir) ->
+                    val selected = showTafsir == isTafsir
+                    Surface(
+                        onClick = { onShowTafsirChange(isTafsir) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                        contentColor = if (selected) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    ) {
+                        Text(
+                            text = label,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 10.dp),
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                        )
+                    }
                 }
             }
             if (showTafsir) {
@@ -1203,7 +1251,7 @@ private fun VerseActionsSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(rememberScrollState())
-                        .padding(top = 10.dp),
+                        .padding(top = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     tafsirOptions.forEach { option ->
@@ -1227,116 +1275,140 @@ private fun VerseActionsSheet(
                 }.getOrNull()?.let { TafsirState.Ready(it) } ?: TafsirState.Missing
             }
             val maxTextHeight = (LocalConfiguration.current.screenHeightDp * 0.45f).dp
+            val cardColor = MaterialTheme.colorScheme.surfaceContainerHigh
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 10.dp),
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                    .padding(top = 14.dp),
+                shape = RoundedCornerShape(18.dp),
+                color = cardColor
             ) {
                 // New scroll position whenever the shown text changes.
                 key(showTafsir, tafsir, verse.id) {
-                    Column(
-                        modifier = Modifier
-                            .heightIn(max = maxTextHeight)
-                            .verticalScroll(rememberScrollState())
-                            .padding(horizontal = 16.dp, vertical = 14.dp)
-                    ) {
-                        val loading = if (showTafsir) tafsirState is TafsirState.Loading else translationText == null
-                        val body: String? = if (showTafsir) {
-                            (tafsirState as? TafsirState.Ready)?.passage?.text
-                        } else {
-                            translationText?.takeIf { it.isNotBlank() }
-                        }
-                        when {
-                            loading -> CircularProgressIndicator(
-                                modifier = Modifier
-                                    .padding(8.dp)
-                                    .size(24.dp)
-                                    .align(Alignment.CenterHorizontally),
-                                strokeWidth = 2.dp
-                            )
-                            body == null -> Text(
-                                text = if (showTafsir) labels.tafsirUnavailable else labels.translationUnavailable,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            else -> {
-                                val passage = (tafsirState as? TafsirState.Ready)?.passage
-                                if (showTafsir && passage != null) {
-                                    val scope = when {
-                                        passage.previousOnly -> labels.tafsirOfPrevious(passage)
-                                        passage.fromAyah != passage.toAyah -> labels.tafsirOfRange(passage)
-                                        else -> null
+                    val textScroll = rememberScrollState()
+                    Box {
+                        Column(
+                            modifier = Modifier
+                                .heightIn(max = maxTextHeight)
+                                .verticalScroll(textScroll)
+                                .padding(horizontal = 18.dp, vertical = 16.dp)
+                        ) {
+                            val loading = if (showTafsir) tafsirState is TafsirState.Loading else translationText == null
+                            val body: String? = if (showTafsir) {
+                                (tafsirState as? TafsirState.Ready)?.passage?.text
+                            } else {
+                                translationText?.takeIf { it.isNotBlank() }
+                            }
+                            when {
+                                loading -> CircularProgressIndicator(
+                                    modifier = Modifier
+                                        .padding(8.dp)
+                                        .size(24.dp)
+                                        .align(Alignment.CenterHorizontally),
+                                    strokeWidth = 2.dp
+                                )
+                                body == null -> Text(
+                                    text = if (showTafsir) labels.tafsirUnavailable else labels.translationUnavailable,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                else -> {
+                                    val passage = (tafsirState as? TafsirState.Ready)?.passage
+                                    if (showTafsir && passage != null) {
+                                        val scope = when {
+                                            passage.previousOnly -> labels.tafsirOfPrevious(passage)
+                                            passage.fromAyah != passage.toAyah -> labels.tafsirOfRange(passage)
+                                            else -> null
+                                        }
+                                        scope?.let {
+                                            Text(
+                                                text = it,
+                                                modifier = Modifier.padding(bottom = 8.dp),
+                                                style = MaterialTheme.typography.labelLarge,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
                                     }
-                                    scope?.let {
+                                    SelectionContainer {
                                         Text(
-                                            text = it,
-                                            modifier = Modifier.padding(bottom = 8.dp),
-                                            style = MaterialTheme.typography.labelLarge,
-                                            color = MaterialTheme.colorScheme.primary
+                                            text = body,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            lineHeight = 30.sp,
+                                            color = MaterialTheme.colorScheme.onSurface
                                         )
                                     }
                                 }
-                                SelectionContainer {
-                                    Text(
-                                        text = body,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        lineHeight = 30.sp,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
                             }
+                        }
+                        if (textScroll.canScrollForward) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .fillMaxWidth()
+                                    .height(28.dp)
+                                    .background(Brush.verticalGradient(listOf(Color.Transparent, cardColor)))
+                            )
                         }
                     }
                 }
             }
             Text(
                 text = if (showTafsir) tafsir.credit else translationCredit,
-                modifier = Modifier.padding(top = 6.dp, start = 4.dp),
+                modifier = Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Text(
-                text = labels.highlight,
-                modifier = Modifier.padding(top = 20.dp, bottom = 8.dp),
-                style = MaterialTheme.typography.labelLarge
+            HorizontalDivider(
+                modifier = Modifier.padding(top = 18.dp, bottom = 14.dp),
+                color = MaterialTheme.colorScheme.outlineVariant
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                highlightChoices.forEach { choice ->
-                    Surface(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { onHighlightSelected(choice) },
-                        color = choice.color,
-                        shape = RoundedCornerShape(12.dp),
-                        border = if (choice.id == currentHighlight) {
-                            androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface)
-                        } else null
-                    ) {
-                        if (choice.id == currentHighlight) {
-                            Icon(
-                                imageVector = Icons.Default.Bookmark,
-                                contentDescription = null,
-                                modifier = Modifier.padding(10.dp),
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = labels.highlight,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleSmall
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    highlightChoices.forEach { choice ->
+                        Surface(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(CircleShape)
+                                .clickable { onHighlightSelected(choice) },
+                            color = choice.color,
+                            shape = CircleShape,
+                            border = if (choice.id == currentHighlight) {
+                                androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface)
+                            } else null
+                        ) {
+                            if (choice.id == currentHighlight) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.padding(7.dp),
+                                    tint = Color(0xFF29241F)
+                                )
+                            }
+                        }
+                    }
+                    if (currentHighlight != null) {
+                        IconButton(onClick = { onHighlightSelected(null) }, modifier = Modifier.size(34.dp)) {
+                            Icon(Icons.Default.DeleteOutline, contentDescription = labels.removeHighlight)
                         }
                     }
                 }
-                if (currentHighlight != null) {
-                    IconButton(onClick = { onHighlightSelected(null) }) {
-                        Icon(Icons.Default.DeleteOutline, contentDescription = labels.removeHighlight)
-                    }
-                }
             }
-            TextButton(
+            OutlinedButton(
                 onClick = onEditNote,
-                modifier = Modifier.padding(top = 12.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
             ) {
                 Icon(Icons.Default.EditNote, contentDescription = null)
-                Spacer(Modifier.width(6.dp))
+                Spacer(Modifier.width(8.dp))
                 Text(if (currentNote.isNullOrBlank()) labels.addNote else labels.editNote)
             }
             Spacer(Modifier.height(18.dp))
