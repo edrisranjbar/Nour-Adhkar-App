@@ -54,8 +54,10 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.FavoriteBorder
 import com.example.ui.util.toPersianDigits
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.EventRepeat
 import androidx.compose.material.icons.filled.Explore
 import com.example.ui.screens.QiblaScreen
+import com.example.ui.screens.QazaScreen
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Info
@@ -317,6 +319,7 @@ fun AppMainScaffold(
                             val drawerItems = listOf(
                                 Triple("adhkar", "اذکار و ادعیه", Icons.Default.Article),
                                 Triple("qibla", "قبله‌نما", Icons.Default.Explore),
+                                Triple("qaza", "قضای نماز و روزه", Icons.Default.EventRepeat),
                                 Triple("scholars", "علما و مشاهیر", Icons.Default.RecordVoiceOver),
                                 Triple("articles", "مقالات", Icons.Default.Article),
                                 Triple("donation", "حمایت مالی", Icons.Default.VolunteerActivism),
@@ -396,6 +399,7 @@ fun AppMainScaffold(
                                 "tasbih" -> "ذکرشمار"
                                 "achievements" -> "نشان‌ها و دستاوردها"
                                 "qibla" -> "قبله‌نما"
+                                "qaza" -> "قضای نماز و روزه"
                                 "settings" -> "تنظیمات"
                                 "about" -> "درباره برنامه"
                                 "app_inbox" -> "پیام‌ها"
@@ -649,6 +653,7 @@ fun AppMainScaffold(
                             onRequestedPageConsumed = onQuranPageConsumed
                         )
                         "qibla" -> QiblaScreen(viewModel = viewModel, innerPadding = innerPadding)
+                        "qaza" -> QazaScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "favorites" -> FavoritesScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "settings" -> SettingsScreen(viewModel = viewModel, innerPadding = innerPadding)
                         else -> HomeScreen(viewModel = viewModel, innerPadding = innerPadding)

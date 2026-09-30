@@ -21,7 +21,10 @@ import com.example.data.model.EmotionalAyah
 import com.example.data.model.UserFeeling
 import com.example.data.repository.AdhkarRepository
 import com.example.data.repository.PreferenceRepository
+import com.example.data.repository.QazaRepository
 import com.example.notifications.AdhkarNotificationManager
+import com.example.qaza.QazaPrayer
+import com.example.qaza.QazaState
 import com.example.widget.ChecklistWidgetProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -195,6 +198,70 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
                 }
             )
         }
+    }
+
+    // Missed prayers and fasts (qaza)
+    private val qazaRepository = QazaRepository(application)
+    private val _qaza = MutableStateFlow(qazaRepository.load())
+    val qaza: StateFlow<QazaState> = _qaza.asStateFlow()
+
+    private fun updateQaza(change: (QazaState) -> QazaState): QazaState {
+        val updated = qazaRepository.update(change)
+        _qaza.value = updated
+        return updated
+    }
+
+    fun qazaAddMissed(prayer: QazaPrayer) {
+        updateQaza { it.addMissed(prayer, 1, System.currentTimeMillis()) }
+    }
+
+    /** Making up a prayer is worship activity, so it counts for today's streak. */
+    fun qazaMadeUp(prayer: QazaPrayer) {
+        val before = _qaza.value.debt(prayer).madeUp
+        val after = updateQaza { it.madeUp(prayer, 1, System.currentTimeMillis()) }.debt(prayer).madeUp
+        if (after > before) _activityDayKeys.value = prefs.markActivityToday()
+    }
+
+    fun qazaSetRemaining(prayer: QazaPrayer, remaining: Int) {
+        updateQaza { it.setRemaining(prayer, remaining, System.currentTimeMillis()) }
+    }
+
+    fun qazaApplyEstimate(estimate: Map<QazaPrayer, Int>) {
+        updateQaza { it.applyEstimate(estimate, System.currentTimeMillis()) }
+    }
+
+    fun qazaUndo() {
+        updateQaza { it.undoLast() }
+    }
+
+    fun qazaSetWitrEnabled(enabled: Boolean) {
+        updateQaza { it.withWitrEnabled(enabled) }
+    }
+
+    fun qazaSetDailySets(sets: Int) {
+        updateQaza { it.withDailySets(sets) }
+    }
+
+    fun qazaAddFast(count: Int, label: String, reason: String) {
+        updateQaza { it.addFast(count, label, reason) }
+    }
+
+    fun qazaMarkFastDay(id: Long) {
+        val before = _qaza.value.fastsMadeUp
+        val after = updateQaza { it.markFastDay(id, System.currentTimeMillis()) }.fastsMadeUp
+        if (after > before) _activityDayKeys.value = prefs.markActivityToday()
+    }
+
+    fun qazaUnmarkFastDay(id: Long) {
+        updateQaza { it.unmarkFastDay(id) }
+    }
+
+    fun qazaEditFast(id: Long, count: Int, label: String, reason: String) {
+        updateQaza { it.editFast(id, count, label, reason) }
+    }
+
+    fun qazaDeleteFast(id: Long) {
+        updateQaza { it.deleteFast(id) }
     }
 
     // Virtual Tasbih State
