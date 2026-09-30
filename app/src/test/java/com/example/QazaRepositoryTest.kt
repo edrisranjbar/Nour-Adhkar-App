@@ -31,7 +31,7 @@ class QazaRepositoryTest {
 
     @Test fun countersAndDatesSurviveRecreation() {
         val repository = QazaRepository(context)
-        repository.update { it.addMissed(12) }
+        repository.update { it.setTotal(12) }
         repository.update { it.markMadeUp(100) }
         repository.update { it.markMadeUp(200) }
 
@@ -43,14 +43,14 @@ class QazaRepositoryTest {
     }
 
     @Test fun undoWorksAfterTheAppIsRestarted() {
-        QazaRepository(context).update { it.addMissed(5).markMadeUp(1).markMadeUp(2) }
+        QazaRepository(context).update { it.setTotal(5).markMadeUp(1).markMadeUp(2) }
         val undone = QazaRepository(context).update { it.undoMadeUp() }
         assertEquals(4, undone.remaining)
         assertEquals(4, QazaRepository(context).load().remaining)
     }
 
     @Test fun serializationRoundTripsTheWholeState() {
-        val state = FastingState().addMissed(9).markMadeUp(5).markMadeUp(6)
+        val state = FastingState().setTotal(9).markMadeUp(5).markMadeUp(6)
         assertEquals(state, QazaRepository.parse(QazaRepository.serialize(state)))
     }
 

@@ -43,7 +43,7 @@ class QazaRepository(context: Context) {
             if (json.isNullOrBlank()) return FastingState()
             return runCatching {
                 val root = JSONObject(json)
-                val owed = root.optInt("owed", 0).coerceIn(0, QazaLimits.MAX_FASTS * 2)
+                val owed = root.optInt("owed", 0).coerceIn(0, QazaLimits.MAX_FASTS)
                 val madeUp = root.optInt("madeUp", 0).coerceIn(0, owed)
                 val dates = buildList<Long> {
                     root.optJSONArray("dates")?.let { array ->

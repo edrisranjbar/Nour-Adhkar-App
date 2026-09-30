@@ -20,10 +20,6 @@ data class FastingState(
     val remaining: Int get() = (owed - madeUp).coerceAtLeast(0)
     val hasData: Boolean get() = owed > 0
 
-    /** Adds missed fasts to what is owed. */
-    fun addMissed(count: Int): FastingState =
-        if (count <= 0) this else setRemaining((remaining.toLong() + count).coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
-
     /** Marks one fast as made up on [now]; does nothing when none are owed. */
     fun markMadeUp(now: Long): FastingState {
         if (remaining == 0) return this
@@ -39,7 +35,18 @@ data class FastingState(
         return copy(madeUp = madeUp - 1, recentDates = recentDates.dropLast(1))
     }
 
-    /** Sets how many are still owed, keeping the progress already made. */
-    fun setRemaining(remaining: Int): FastingState =
-        copy(owed = madeUp + remaining.coerceIn(0, QazaLimits.MAX_FASTS))
+    /**
+     * Sets how many fasts are owed in total. The progress already made is kept, but it can never
+     * exceed the total: lowering the total below it takes the extra days (and their dates) back.
+     */
+    fun setTotal(total: Int): FastingState {
+        val newOwed = total.coerceIn(0, QazaLimits.MAX_FASTS)
+        if (newOwed >= madeUp) return copy(owed = newOwed)
+        val excess = madeUp - newOwed
+        return copy(
+            owed = newOwed,
+            madeUp = newOwed,
+            recentDates = recentDates.dropLast(excess.coerceAtMost(recentDates.size))
+        )
+    }
 }

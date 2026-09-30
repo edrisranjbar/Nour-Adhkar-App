@@ -96,28 +96,15 @@ fun QazaScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
                     Text("یک روز ادا شد", fontSize = (16 * fontScale).sp, fontWeight = FontWeight.Bold)
                 }
             }
-            item(key = "actions") {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedButton(
-                        onClick = { showAdd = true },
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .heightIn(min = 48.dp)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("افزودن روزه")
-                    }
-                    OutlinedButton(
-                        onClick = { viewModel.qazaUndoMadeUp() },
-                        enabled = state.madeUp > 0,
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .heightIn(min = 48.dp)
-                    ) { Text("واگرد آخرین روز") }
-                }
+            item(key = "undo") {
+                OutlinedButton(
+                    onClick = { viewModel.qazaUndoMadeUp() },
+                    enabled = state.madeUp > 0,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                ) { Text("واگرد آخرین روز") }
             }
             if (state.recentDates.isNotEmpty()) {
                 item(key = "recent") {
@@ -155,24 +142,24 @@ fun QazaScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
 
     if (showAdd) {
         CountDialog(
-            title = "افزودن روزه‌ی فوت‌شده",
+            title = "تعداد روزه‌های فوت‌شده",
             initial = "",
             allowZero = false,
             onDismiss = { showAdd = false },
             onConfirm = { count ->
-                viewModel.qazaAddMissed(count)
+                viewModel.qazaSetTotal(count)
                 showAdd = false
             }
         )
     }
     if (showEdit) {
         CountDialog(
-            title = "ویرایش تعداد باقی‌مانده",
-            initial = state.remaining.toString(),
+            title = "ویرایش تعداد",
+            initial = state.owed.toString(),
             allowZero = true,
             onDismiss = { showEdit = false },
             onConfirm = { count ->
-                viewModel.qazaSetRemaining(count)
+                viewModel.qazaSetTotal(count)
                 showEdit = false
             }
         )
@@ -223,7 +210,7 @@ private fun EmptyState(fontScale: Float, onAdd: () -> Unit) {
             ) {
                 Icon(Icons.Default.Add, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("افزودن روزه‌ی فوت‌شده")
+                Text("ثبت تعداد روزه‌های فوت‌شده")
             }
         }
     }
@@ -290,7 +277,7 @@ private fun SummaryCard(state: FastingState, fontScale: Float, onEdit: () -> Uni
             ) {
                 Icon(Icons.Default.Edit, contentDescription = null, tint = SunGold, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("ویرایش تعداد باقی‌مانده", color = SunGold)
+                Text("ویرایش تعداد", color = SunGold)
             }
         }
     }
@@ -364,7 +351,7 @@ private fun parseCount(text: String): Int? {
     return latin.trim().toIntOrNull()?.takeIf { it >= 0 }
 }
 
-/** Asks for one number: how many days. */
+/** Asks for one number: the total count of days. */
 @Composable
 private fun CountDialog(
     title: String,

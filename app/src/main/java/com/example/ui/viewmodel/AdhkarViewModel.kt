@@ -210,8 +210,8 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         return updated
     }
 
-    fun qazaAddMissed(count: Int) {
-        updateQaza { it.addMissed(count) }
+    fun qazaSetTotal(total: Int) {
+        updateQaza { it.setTotal(total) }
     }
 
     /** Making up a fast is worship activity, so it counts for today's streak. */
@@ -223,10 +223,6 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
 
     fun qazaUndoMadeUp() {
         updateQaza { it.undoMadeUp() }
-    }
-
-    fun qazaSetRemaining(remaining: Int) {
-        updateQaza { it.setRemaining(remaining) }
     }
 
     // Virtual Tasbih State

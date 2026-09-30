@@ -173,7 +173,7 @@ fun AchievementsScreen(
         Achievement(
             id = "tasks",
             filter = AchievementFilter.Tasks,
-            title = "یار اعمال روزانه",
+            title = "همراه عبادت روزانه",
             description = "کارهای چک‌لیست روزانه را کامل کن",
             progress = checklistDays.values.sum(),
             levels = listOf(10, 30, 100),
