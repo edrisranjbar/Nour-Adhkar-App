@@ -17,6 +17,8 @@ class QuranPrayersDataTest {
         assertEquals(prayers.size, prayers.map { it.arabicText }.distinct().size)
         assertTrue(prayers.all { it.arabicText.isNotBlank() && it.persianTranslation.isNotBlank() })
         assertTrue(prayers.all { it.source.startsWith("سوره ") && (it.source.contains("آیه") || it.source.contains("آیات")) })
+        // A citation spanning several verses uses the plural «آیات», e.g. «سوره طه، آیات ۲۵ و ۲۶».
+        assertTrue(prayers.filter { " و " in it.source || " تا " in it.source }.all { "آیات" in it.source })
     }
 
     @Test
