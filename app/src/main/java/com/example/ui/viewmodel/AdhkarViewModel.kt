@@ -297,13 +297,7 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun resetTasbih() {
-        val currentDhikr = _selectedTasbihDhikr.value
-        val updatedMap = _tasbihCounts.value.toMutableMap().apply {
-            remove(currentDhikr)
-        }
-        _tasbihCounts.value = updatedMap
-        _tasbihCount.value = 0
-        prefs.setTasbihCount(currentDhikr, 0)
+        setTasbihCount(_selectedTasbihDhikr.value, 0)
     }
 
     fun saveTasbihSession() {
@@ -313,9 +307,20 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
             viewModelScope.launch {
                 repository.saveTasbihSession(name, count)
                 _activityDayKeys.value = prefs.markActivityToday()
-                resetTasbih()
+                // Deduct the saved taps from the dhikr that was saved, not whichever dhikr is
+                // selected now: the user may have switched or kept tapping during the save.
+                setTasbihCount(name, (_tasbihCounts.value[name] ?: 0) - count)
             }
         }
+    }
+
+    private fun setTasbihCount(dhikr: String, count: Int) {
+        val remaining = count.coerceAtLeast(0)
+        _tasbihCounts.value = _tasbihCounts.value.toMutableMap().apply {
+            if (remaining > 0) put(dhikr, remaining) else remove(dhikr)
+        }
+        if (_selectedTasbihDhikr.value == dhikr) _tasbihCount.value = remaining
+        prefs.setTasbihCount(dhikr, remaining)
     }
 
     fun deleteTasbihSession(id: Int) {
@@ -339,11 +344,7 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
 
     fun removeCustomDhikr(text: String, fallbackDhikr: String) {
         _customDhikr.value = prefs.removeCustomDhikr(text)
-        val updatedMap = _tasbihCounts.value.toMutableMap().apply {
-            remove(text)
-        }
-        _tasbihCounts.value = updatedMap
-        prefs.setTasbihCount(text, 0)
+        setTasbihCount(text, 0)
         if (_selectedTasbihDhikr.value == text) {
             selectTasbihDhikr(fallbackDhikr)
         }
