@@ -18,11 +18,11 @@ import com.example.ui.language.text
 
 /**
  * Timing for the "adhkar after prayer" reminder. It fires well after the adhan so the prayer is
- * finished: a gentle reminder 10 minutes after each selected prayer.
+ * finished: 10 minutes after the configured prayer start (30 minutes after adhan, 5 for Maghrib).
  */
 object PostPrayerReminders {
-    const val DEFAULT_DELAY_MINUTES = 10
-    const val MAGHRIB_DELAY_MINUTES = 10
+    const val DEFAULT_DELAY_MINUTES = 40
+    const val MAGHRIB_DELAY_MINUTES = 15
     /** An alarm may be delivered late (Doze, vendor battery managers); later than this it is dropped. */
     const val MAX_LATE_MILLIS = 30 * 60_000L
 
@@ -37,8 +37,8 @@ object PostPrayerReminders {
 }
 
 /**
- * Schedules one inexact alarm per selected prayer. It needs no exact-alarm permission: a reminder
- * that arrives a minute late is fine. Nothing is scheduled until the user selects a prayer.
+ * Schedules one inexact alarm for each prayer when globally enabled. It needs no exact-alarm
+ * permission: a reminder that arrives a minute late is fine. Disabled by default.
  */
 class PostPrayerReminderScheduler(private val context: Context) {
     private val alarms = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager

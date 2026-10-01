@@ -58,10 +58,10 @@ Under the reminder switch (Settings → reminders), `ReminderHealthCard` replace
 
 ## Adhkar after prayer reminder
 
-Settings → prayer times → «یادآوری اذکار پس از نماز» lets the user pick Fajr, Dhuhr, Asr, Maghrib and Isha. After each picked prayer a notification «اذکار پس از نماز …» opens the `after_salah` collection («اذکار پس از نماز»).
+Settings → prayer times → «یادآوری اذکار پس از نماز» has one global switch for all five prayers. Each notification «اذکار پس از نماز …» opens the `after_salah` collection («اذکار پس از نماز»). An existing per-prayer selection keeps the feature enabled for all prayers after updating; an empty selection remains disabled.
 
-- **Timing:** 10 minutes after the adhan time for each selected prayer, so the prayer has finished (`PostPrayerReminders`). It follows the saved location, method, Asr madhab and time zone, exactly like the adhan alarms.
-- **Opt-in:** nothing is scheduled until a prayer is ticked. Ticking the first prayer offers the battery exemption, like adhan. The reminder does not need the adhan sound, the adhan checkboxes or the exact-alarm permission.
-- **Scheduling:** one inexact `setAndAllowWhileIdle` alarm per picked prayer (`PostPrayerReminderScheduler`), refreshed from the same triggers as adhan alarms (boot, app update, time or zone change, app start, settings changes, every adhan alarm). An alarm delivered more than 30 minutes late, or for an unticked prayer, is dropped; the next day's alarm is scheduled either way.
+- **Timing:** 10 minutes after the configured prayer start: prayer starts 30 minutes after adhan, except Maghrib starts 5 minutes after adhan. Thus reminders fire 40 minutes after adhan for Fajr, Dhuhr, Asr and Isha, and 15 minutes after adhan for Maghrib (`PostPrayerReminders`). These offsets implement the requested app behavior, not an inferred local congregation timetable. Calculation follows the saved location, method, Asr madhab and time zone, exactly like the adhan alarms.
+- **Opt-in:** nothing is scheduled until the global switch is enabled. Enabling offers the battery exemption, like adhan. The reminder does not need the adhan sound, the adhan checkboxes or the exact-alarm permission.
+- **Scheduling:** one inexact `setAndAllowWhileIdle` alarm per prayer (`PostPrayerReminderScheduler`), refreshed from the same triggers as adhan alarms (boot, app update, time or zone change, app start, settings changes, every adhan alarm). Disabling cancels all five alarms. An alarm delivered more than 30 minutes late, or while globally disabled, is dropped; the next day's alarm is scheduled when enabled.
 - **Needs:** a saved valid location and allowed notifications; the settings show what is missing. Channel: `post_prayer_reminders`, which the user can mute separately from adhkar reminders.
 - The existing morning/evening reminders, their days and the one-hour snooze are unchanged.
