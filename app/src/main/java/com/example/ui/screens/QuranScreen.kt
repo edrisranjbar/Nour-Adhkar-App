@@ -213,9 +213,7 @@ fun QuranScreen(
     val audioPrefs = remember(context) { context.getSharedPreferences("quran_audio", android.content.Context.MODE_PRIVATE) }
     var reciterId by remember { mutableStateOf(audioPrefs.getString("reciter", QuranReciters.first().id)!!) }
     var reciterMenuOpen by remember { mutableStateOf(false) }
-    var audioStorageOpen by remember { mutableStateOf(false) }
     val audioState by QuranAudioPlayer.state.collectAsState()
-    if (audioStorageOpen) QuranAudioStorageDialog { audioStorageOpen = false }
     audioState.mobileConfirmationBytes?.let { bytes ->
         AlertDialog(
             onDismissRequest = { QuranAudioPlayer.stop() },
@@ -335,10 +333,6 @@ fun QuranScreen(
                             )
                         }
                         DropdownMenu(expanded = reciterMenuOpen, onDismissRequest = { reciterMenuOpen = false }) {
-                            DropdownMenuItem(
-                                text = { Text(if (language == AppLanguage.ARABIC) "التلاوات المحفوظة" else "تلاوت‌های دانلودشده") },
-                                onClick = { reciterMenuOpen = false; audioStorageOpen = true }
-                            )
                             QuranReciters.forEach { item ->
                                 DropdownMenuItem(
                                     text = {
