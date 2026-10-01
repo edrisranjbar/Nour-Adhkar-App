@@ -40,6 +40,7 @@ object AccountRepository {
         if (loaded) return
         loaded = true
         val prefs = prefs(context)
+        ProgressSyncRepository.init(context)
         val email = prefs.getString("email", null)
         if (prefs.getString("token", null) != null && email != null) {
             _user.value = AccountUser(prefs.getString("name", "").orEmpty(), email)
@@ -202,4 +203,6 @@ object AccountRepository {
 
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    internal fun token(context: Context): String? = prefs(context).getString("token", null)
 }

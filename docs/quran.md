@@ -2,7 +2,7 @@
 
 تب «قرآن» متن عربی قرآن را کاملاً آفلاین و بر اساس صفحات مصحف مدینه، از صفحهٔ ۱ تا ۶۰۴، نمایش می‌دهد. کاربر با کشیدن صفحه به راست یا چپ جابه‌جا می‌شود و آخرین صفحهٔ خوانده‌شده ذخیره می‌گردد.
 
-نوار بالای خواننده جست‌وجوی متن یا نام سوره دارد. کاربر می‌تواند هم از منوی سه‌نقطه و هم با لمس نام سوره یا شماره صفحه در سربرگ مصحف، دو مسیر مستقل ناوبری را باز کند: فهرست جست‌وجوشوندهٔ ۱۱۴ سوره برای رفتن به آغاز یک سوره، و ورودی مستقیم صفحه برای رفتن به یکی از صفحه‌های ۱ تا ۶۰۴. انتخاب سوره، صفحهٔ آغاز آن را باز می‌کند و اگر سوره در میانهٔ صفحه شروع شود به عنوان همان سوره می‌رود. منوی سه‌نقطه همچنین انتخاب رنگ کاغذی، سپیا، سبز ملایم یا شب را ارائه می‌کند. لمس هر آیه، پنلی باز می‌کند که بالای آن ترجمهٔ همان آیه (به‌جای تکرار متن عربی) و زیر آن هایلایت چهاررنگ و افزودن یا ویرایش یادداشت قرار دارد. ترجمه بر اساس زبان برنامه انتخاب می‌شود (بخش «ترجمه» را ببینید). همهٔ هایلایت‌ها و یادداشت‌ها تنها روی دستگاه ذخیره می‌شوند.
+نوار بالای خواننده جست‌وجوی متن یا نام سوره دارد. کاربر می‌تواند هم از منوی سه‌نقطه و هم با لمس نام سوره یا شماره صفحه در سربرگ مصحف، دو مسیر مستقل ناوبری را باز کند: فهرست جست‌وجوشوندهٔ ۱۱۴ سوره برای رفتن به آغاز یک سوره، و ورودی مستقیم صفحه برای رفتن به یکی از صفحه‌های ۱ تا ۶۰۴. انتخاب سوره، صفحهٔ آغاز آن را باز می‌کند و اگر سوره در میانهٔ صفحه شروع شود به عنوان همان سوره می‌رود. منوی سه‌نقطه همچنین انتخاب رنگ کاغذی، سپیا، سبز ملایم یا شب را ارائه می‌کند. لمس هر آیه، پنلی باز می‌کند که سربرگ آن شمارهٔ آیه (در یک دایره) و نام سوره را نشان می‌دهد؛ زیر آن کلید «ترجمه / تفسیر»، سپس ترجمهٔ همان آیه (به‌جای تکرار متن عربی) و در پایین هایلایت چهاررنگ (دایره‌های کوچک) و دکمهٔ افزودن یا ویرایش یادداشت قرار دارد. ترجمه بر اساس زبان برنامه انتخاب می‌شود (بخش «ترجمه» را ببینید). همهٔ هایلایت‌ها و یادداشت‌ها تنها روی دستگاه ذخیره می‌شوند.
 
 آغاز هر سوره با نام سوره روی تصویر PNG تزئینی متقارن `quran_surah_ornament.png` نمایش داده می‌شود؛ متن نام سوره به‌صورت زنده و وسط‌چین روی تصویر قرار می‌گیرد و بسم‌الله در خطی مستقل زیر آن است. متن آیات در صفحه‌های ۱ و ۲ برای هماهنگی با صفحه‌آرایی آغاز مصحف وسط‌چین است. رنگ هایلایت هر آیه، متن آیه و شمارهٔ همان آیه را با هم در بر می‌گیرد.
 متن آیات با اندازهٔ جمع‌وجور و فاصلهٔ خطی باز نمایش داده می‌شود تا حرکات و اعراب روی صفحهٔ تلفن خواناتر باشند. هر صفحهٔ مصحف یک صفحهٔ ثابت است و اسکرول نمی‌شود: اگر متن صفحه (همراه با سربرگ سوره و بسم‌الله) در ارتفاع موجود جا نشود، اندازهٔ همهٔ آن‌ها با هم به‌اندازهٔ لازم کوچک می‌شود و هرگز از اندازهٔ پیش‌فرض بزرگ‌تر نمی‌شود.
@@ -33,7 +33,7 @@
 
 ## تفسیر
 
-پنل آیه دو زبانه دارد: «ترجمه» و «تفسیر» (در زبان عربی «المعنى» و «التفسير»). آخرین زبانهٔ انتخاب‌شده تا پایان خواندن حفظ می‌شود. در زبانهٔ تفسیر، ردیف تراشه‌ها منبع را انتخاب می‌کند و انتخاب برای هر زبان جداگانه ذخیره می‌شود (`quran_tafsir_fa` / `quran_tafsir_ar`). متن قابل انتخاب و کپی است و ناحیهٔ متن تا ۴۵٪ ارتفاع صفحه بزرگ می‌شود و درونش پیمایش می‌شود.
+پنل آیه دو زبانه دارد: «ترجمه» و «تفسیر» (در زبان عربی «المعنى» و «التفسير»). آخرین زبانهٔ انتخاب‌شده تا پایان خواندن حفظ می‌شود. در زبانهٔ تفسیر، ردیف تراشه‌ها منبع را انتخاب می‌کند و انتخاب برای هر زبان جداگانه ذخیره می‌شود (`quran_tafsir_fa` / `quran_tafsir_ar`). متن قابل انتخاب و کپی است و ناحیهٔ متن تا ۴۵٪ ارتفاع صفحه بزرگ می‌شود و درونش پیمایش می‌شود؛ تا زمانی که متن ادامه دارد، لبهٔ پایین کارت کم‌کم محو می‌شود تا خط آخر ناگهان بریده دیده نشود.
 
 تفاسیر اهل سنت، کاملاً آفلاین:
 
@@ -67,7 +67,11 @@
 
 ## Audio recitation
 
-The reader's top bar has a reciter picker (voice icon) and a play/stop button. Play streams the complete recitation of the surah currently shown (the active surah on the page) from mp3quran.net (`<server>/<NNN>.mp3`); an internet connection is required and nothing is downloaded or cached. Choosing another reciter while playing restarts the same surah with that voice; the choice is saved in the `quran_audio` preferences. Playback stops when leaving the Quran screen or when the surah ends. Reciters (10): Alafasy, Abdul Basit, Al-Sudais, Al-Shuraim, Al-Husary, Al-Minshawi, Al-Muaiqly, Al-Ghamdi, Al-Ajmi, Yasser Al-Dosari (each URL verified to serve surahs 1 and 114). A saved reciter that is no longer listed falls back to the first one.
+The reader's top bar has a reciter picker and play/stop button. First play downloads the active surah from mp3quran.net into `filesDir/quran_audio/<reciter>/<NNN>.mp3`, shows progress, validates content length and Android-readable audio, then atomically publishes it and plays locally. Later plays use the saved file without a network request. A missing download needs internet once; failures remain retryable. Partial files are ignored and cleaned up; downloads are restartable, not range-resumed. No broad storage permission is needed.
+
+Changing reciter cancels the old request and restarts the same surah with the chosen voice. Leaving the reader or tapping stop cancels downloading/playback, and stale callbacks cannot start another session. Reciter choice remains in the existing `quran_audio` preferences. On a connection without Wi-Fi, the app asks before downloading and shows the size when supplied by the server. Wi-Fi needs no confirmation.
+
+The reciter menu marks voices whose current surah is saved. Its «تلاوت‌های دانلودشده» entry lists downloads grouped by reciter, with sizes and total storage. Confirmed deletion supports one surah, one reciter, or everything, stops playback and waits for any cancelled store mutation. Audio is excluded from Android cloud backup/device transfer. All ten existing reciters and reader behavior are retained.
 
 ## Search
 

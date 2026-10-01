@@ -63,6 +63,18 @@ class PreferenceRepository(context: Context) {
         prefs.edit().putStringSet("adhan_prayers", selected.map { it.name }.toSet()).apply()
     }
 
+    /** Prayers after which the "adhkar after prayer" reminder fires; empty (the default) means off. */
+    fun getPostPrayerReminderPrayers(): Set<com.example.prayer.AdhanPrayer> =
+        prefs.getStringSet("post_prayer_reminder_prayers", emptySet()).orEmpty().mapNotNull { id ->
+            com.example.prayer.AdhanPrayer.entries.firstOrNull { it.name == id }
+        }.toSet()
+
+    fun setPostPrayerReminder(prayer: com.example.prayer.AdhanPrayer, enabled: Boolean) {
+        val selected = getPostPrayerReminderPrayers().toMutableSet()
+        if (enabled) selected.add(prayer) else selected.remove(prayer)
+        prefs.edit().putStringSet("post_prayer_reminder_prayers", selected.map { it.name }.toSet()).apply()
+    }
+
     fun isVibrationEnabled(): Boolean {
         return prefs.getBoolean("vibration_enabled", true)
     }

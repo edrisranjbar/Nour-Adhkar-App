@@ -136,6 +136,7 @@ fun AccountScreen(
                 android.widget.Toast.LENGTH_SHORT
             ).show()
         }
+        ProgressSyncCard()
         AchievementsEntryCard(onClick = onOpenAchievements)
     }
 }

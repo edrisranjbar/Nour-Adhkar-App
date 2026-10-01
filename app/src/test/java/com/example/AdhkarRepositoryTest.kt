@@ -139,6 +139,8 @@ private class FakeProgressDao : DhikrProgressDao {
 private class FakeSessionDao : TasbihSessionDao {
     val sessions = mutableListOf<TasbihSessionEntity>()
 
+    override suspend fun getAllSessions(): List<TasbihSessionEntity> = sessions.toList()
+
     override fun getRecentSessions(): Flow<List<TasbihSessionEntity>> = flowOf(sessions)
 
     override suspend fun insertSession(session: TasbihSessionEntity) {

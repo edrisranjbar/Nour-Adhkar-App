@@ -40,6 +40,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Share
@@ -81,6 +82,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.ui.screens.DayActivity
+import com.example.ui.screens.FreezeBlue
 import com.example.ui.screens.getPersianDayAbbreviation
 import com.example.ui.theme.SunGold
 import com.example.ui.util.toPersianDigits
@@ -284,14 +286,18 @@ fun StreakCelebrationDialog(
                         Spacer(modifier = Modifier.height(18.dp))
 
                         // 7-Day Accurate Calendar Section
+                        // The week is drawn by Rive (StreakWeekSection); this Compose strip is the fallback
+                        // used with "remove animations" or when Rive cannot load.
+                        StreakWeekSection(
+                            days = resolvedDays,
+                            todayFilled = todayFilled,
+                            reduceMotion = reduceMotion,
+                            fontScale = fontScale
+                        ) {
                         Row(
                             horizontalArrangement = Arrangement.SpaceEvenly,
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color.White.copy(alpha = 0.06f), RoundedCornerShape(18.dp))
-                                .border(0.5.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(18.dp))
-                                .padding(vertical = 12.dp, horizontal = 6.dp)
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             resolvedDays.forEachIndexed { index, day ->
                                 val dayScale = remember { Animatable(if (reduceMotion) 1f else 0.4f) }
@@ -307,6 +313,7 @@ fun StreakCelebrationDialog(
                                     targetValue = when {
                                         filled && day.isToday -> Color(0xFFFF9800)
                                         filled -> Color(0xFF2E7D32)
+                                        day.isFrozen -> Color(0xFF1565C0)
                                         day.isToday -> Color(0xFF37474F)
                                         else -> Color.White.copy(alpha = 0.12f)
                                     },
@@ -352,6 +359,13 @@ fun StreakCelebrationDialog(
                                                     .size(15.dp)
                                                     .scale(checkScale.value)
                                             )
+                                        } else if (day.isFrozen || day.isFreezePending) {
+                                            Icon(
+                                                imageVector = Icons.Default.AcUnit,
+                                                contentDescription = if (day.isFrozen) "روز حفظ‌شده با سپر هفتگی" else "روز در انتظار سپر هفتگی",
+                                                tint = if (day.isFrozen) Color.White else FreezeBlue,
+                                                modifier = Modifier.size(15.dp)
+                                            )
                                         } else {
                                             Box(
                                                 modifier = Modifier
@@ -371,6 +385,25 @@ fun StreakCelebrationDialog(
                                     )
                                 }
                             }
+                        }
+                        }
+
+                        val freezeNote = when {
+                            resolvedDays.any { it.isFreezePending } ->
+                                "دیروز را از دست دادید؛ امروز ذکری بخوانید تا سپر هفتگی زنجیره‌تان را حفظ کند."
+                            resolvedDays.any { it.isFrozen } ->
+                                "یک روز غیبت با سپر هفتگی جبران شد و زنجیره‌تان ادامه دارد. این روز به شمار روزها اضافه نمی‌شود."
+                            else -> null
+                        }
+                        if (freezeNote != null) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                text = freezeNote,
+                                fontSize = (12 * fontScale).sp,
+                                color = FreezeBlue,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(20.dp))

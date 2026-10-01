@@ -54,8 +54,10 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.FavoriteBorder
 import com.example.ui.util.toPersianDigits
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.EventRepeat
 import androidx.compose.material.icons.filled.Explore
 import com.example.ui.screens.QiblaScreen
+import com.example.ui.screens.QazaScreen
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Info
@@ -200,8 +202,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        com.example.data.repository.ProgressSyncRepository.onForeground(this, true)
         com.example.prayer.AdhanScheduler(this).reschedule()
         com.example.widget.PrayerTimesWidgetProvider.updateAll(this)
+    }
+
+    override fun onPause() {
+        com.example.data.repository.ProgressSyncRepository.onForeground(this, false)
+        super.onPause()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -238,8 +246,9 @@ fun AppMainScaffold(
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(notificationCategory) {
-        if (notificationCategory == "morning" || notificationCategory == "evening") {
-            viewModel.selectCategory(notificationCategory)
+        val category = notificationCategory
+        if (category != null && category in setOf("morning", "evening", "after_salah")) {
+            viewModel.selectCategory(category)
             onNotificationCategoryConsumed()
         }
     }
@@ -318,6 +327,7 @@ fun AppMainScaffold(
                                 Triple("qibla", "قبله‌نما", Icons.Default.Explore),
                                 Triple("scholars", "علما و مشاهیر", Icons.Default.RecordVoiceOver),
                                 Triple("articles", "مقالات", Icons.Default.Article),
+                                Triple("qaza", "قضای روزه", Icons.Default.EventRepeat),
                                 Triple("donation", "حمایت مالی", Icons.Default.VolunteerActivism),
                                 Triple("about", "درباره برنامه", Icons.Default.Info)
                             )
@@ -395,6 +405,7 @@ fun AppMainScaffold(
                                 "tasbih" -> "ذکرشمار"
                                 "achievements" -> "نشان‌ها و دستاوردها"
                                 "qibla" -> "قبله‌نما"
+                                "qaza" -> "قضای روزه"
                                 "settings" -> "تنظیمات"
                                 "about" -> "درباره برنامه"
                                 "app_inbox" -> "پیام‌ها"
@@ -648,6 +659,7 @@ fun AppMainScaffold(
                             onRequestedPageConsumed = onQuranPageConsumed
                         )
                         "qibla" -> QiblaScreen(viewModel = viewModel, innerPadding = innerPadding)
+                        "qaza" -> QazaScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "favorites" -> FavoritesScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "settings" -> SettingsScreen(viewModel = viewModel, innerPadding = innerPadding)
                         else -> HomeScreen(viewModel = viewModel, innerPadding = innerPadding)

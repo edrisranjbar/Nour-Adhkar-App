@@ -34,6 +34,9 @@ class AdhanScheduler(private val context: Context) {
                 }
             }
         }
+        // Every trigger that refreshes adhan alarms (boot, time or zone change, app start,
+        // settings) also refreshes the after-prayer reminders, which depend on the same times.
+        PostPrayerReminderScheduler(context).reschedule()
     }
 
     companion object { const val ACTION = "ir.adhkar.app.ADHAN_ALERT" }

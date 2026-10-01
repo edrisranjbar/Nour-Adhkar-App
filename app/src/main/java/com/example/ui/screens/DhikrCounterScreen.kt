@@ -69,7 +69,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import java.util.Calendar
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -171,29 +170,12 @@ fun DhikrCounterScreen(
         val recentSessions by viewModel.recentTasbihSessions.collectAsState()
         val activityDayKeys by viewModel.activityDayKeys.collectAsState()
 
-        val days = remember(allProgress, recentSessions, activityDayKeys) {
-            val list = mutableListOf<DayActivity>()
-            for (i in 6 downTo 0) {
-                val cal = Calendar.getInstance()
-                cal.add(Calendar.DAY_OF_YEAR, -i)
-                val isToday = i == 0
-                val isActive = isDayActive(cal, allProgress, recentSessions, activityDayKeys)
-                val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
-                val dayLabel = getPersianDayAbbreviation(dayOfWeek)
-                list.add(
-                    DayActivity(
-                        dayLabel = dayLabel,
-                        isActive = isActive,
-                        isToday = isToday,
-                        dateMillis = cal.timeInMillis
-                    )
-                )
-            }
-            list
+        // Same streak and week as Home, including days counted only through the activity log.
+        val streakState = rememberStreakState(viewModel)
+        val streak = streakState.count
+        val days = remember(allProgress, recentSessions, activityDayKeys, streakState) {
+            buildWeekActivity(allProgress, recentSessions, activityDayKeys, streakState)
         }
-
-        // Same streak as the Home screen, including days counted only through the activity log.
-        val streak = rememberCurrentStreak(viewModel)
 
         // Duolingo-style Streak Celebration Dialog when all dhikrs are completed
         if (showCongratsDialog) {

@@ -9,6 +9,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -44,6 +45,7 @@
         <service android:name=".prayer.AdhanAlertService" android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
         <receiver android:name=".prayer.AdhanAlarmReceiver" android:exported="false" />
+        <receiver android:name=".prayer.PostPrayerReminderReceiver" android:exported="false" />
         <receiver android:name=".prayer.AdhanRescheduleReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

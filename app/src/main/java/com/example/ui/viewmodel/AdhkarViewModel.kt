@@ -21,7 +21,9 @@ import com.example.data.model.EmotionalAyah
 import com.example.data.model.UserFeeling
 import com.example.data.repository.AdhkarRepository
 import com.example.data.repository.PreferenceRepository
+import com.example.data.repository.QazaRepository
 import com.example.notifications.AdhkarNotificationManager
+import com.example.qaza.FastingState
 import com.example.widget.ChecklistWidgetProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -73,6 +75,14 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         prefs.setAdhanPrayer(prayer, enabled)
         _adhanPrayers.value = prefs.getAdhanPrayers()
         com.example.prayer.AdhanScheduler(getApplication()).reschedule()
+    }
+
+    private val _postPrayerReminderPrayers = MutableStateFlow(prefs.getPostPrayerReminderPrayers())
+    val postPrayerReminderPrayers = _postPrayerReminderPrayers.asStateFlow()
+    fun setPostPrayerReminder(prayer: com.example.prayer.AdhanPrayer, enabled: Boolean) {
+        prefs.setPostPrayerReminder(prayer, enabled)
+        _postPrayerReminderPrayers.value = prefs.getPostPrayerReminderPrayers()
+        com.example.prayer.PostPrayerReminderScheduler(getApplication()).reschedule()
     }
 
     private val _prayerSettings = MutableStateFlow(prefs.getPrayerSettings())
@@ -189,6 +199,32 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    // Missed fasts (qaza)
+    private val qazaRepository = QazaRepository(application)
+    private val _qaza = MutableStateFlow(qazaRepository.load())
+    val qaza: StateFlow<FastingState> = _qaza.asStateFlow()
+
+    private fun updateQaza(change: (FastingState) -> FastingState): FastingState {
+        val updated = qazaRepository.update(change)
+        _qaza.value = updated
+        return updated
+    }
+
+    fun qazaSetTotal(total: Int) {
+        updateQaza { it.setTotal(total) }
+    }
+
+    /** Making up a fast is worship activity, so it counts for today's streak. */
+    fun qazaMarkMadeUp() {
+        val before = _qaza.value.madeUp
+        val after = updateQaza { it.markMadeUp(System.currentTimeMillis()) }.madeUp
+        if (after > before) _activityDayKeys.value = prefs.markActivityToday()
+    }
+
+    fun qazaUndoMadeUp() {
+        updateQaza { it.undoMadeUp() }
+    }
+
     // Virtual Tasbih State
     private val _selectedTasbihDhikr = MutableStateFlow(prefs.getSelectedTasbihDhikr())
     val selectedTasbihDhikr: StateFlow<String> = _selectedTasbihDhikr.asStateFlow()
@@ -209,6 +245,18 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     init {
+        viewModelScope.launch {
+            com.example.data.repository.ProgressSyncRepository.restored.collect {
+                _activityDayKeys.value = prefs.getActivityDayKeys()
+                _dailyChecklistCompletedIds.value = prefs.getDailyChecklistCompletedIds()
+                _checklistCompletionCounts.value = prefs.getChecklistCompletionCounts(30)
+                _favoriteDhikrKeys.value = prefs.getFavoriteDhikrKeys()
+                _customDhikr.value = prefs.getCustomDhikr()
+                _qaza.value = qazaRepository.load()
+                _tasbihCounts.value = prefs.getTasbihCounts()
+                _tasbihCount.value = _tasbihCounts.value[_selectedTasbihDhikr.value] ?: 0
+            }
+        }
         // Initial scheduling on app startup
         notificationManager.scheduleReminders()
         viewModelScope.launch {
