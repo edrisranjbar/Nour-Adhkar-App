@@ -6,7 +6,9 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="sharedpref" path="account.xml"/>
+        <exclude domain="file" path="quran_audio/"/>
         <exclude domain="sharedpref" path="app_inbox.xml"/>
+        <exclude domain="sharedpref" path="progress_sync.xml"/>
         <!-- TODO: Use <include> and <exclude> to control what is backed up.
         <include .../>
         <exclude .../>
@@ -14,6 +16,8 @@
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="account.xml"/>
+        <exclude domain="file" path="quran_audio/"/>
         <exclude domain="sharedpref" path="app_inbox.xml"/>
+        <exclude domain="sharedpref" path="progress_sync.xml"/>
     </device-transfer>
 </data-extraction-rules>

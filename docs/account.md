@@ -49,4 +49,6 @@ The login page (and the onboarding form) has a standard "Sign in with Google" bu
 
 ## Backup privacy
 
+Profile offers optional account progress backup/sync after sign-in. See [progress-sync.md](progress-sync.md) for stored data, merge behavior, retries and privacy boundaries.
+
 Account credentials and the per-installation inbox identity are excluded from Android cloud backup and device transfer. Restored installations require sign-in again and receive a new inbox installation ID; ordinary app updates preserve both. Progress and other preferences retain their existing backup behavior.

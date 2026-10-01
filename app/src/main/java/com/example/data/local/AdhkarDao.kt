@@ -38,6 +38,8 @@ interface DhikrProgressDao {
 
 @Dao
 interface TasbihSessionDao {
+    @Query("SELECT * FROM tasbih_sessions ORDER BY timestamp DESC")
+    suspend fun getAllSessions(): List<TasbihSessionEntity>
     @Query("SELECT * FROM tasbih_sessions ORDER BY timestamp DESC LIMIT 500")
     fun getRecentSessions(): Flow<List<TasbihSessionEntity>>
 

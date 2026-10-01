@@ -67,7 +67,11 @@
 
 ## Audio recitation
 
-The reader's top bar has a reciter picker (voice icon) and a play/stop button. Play streams the complete recitation of the surah currently shown (the active surah on the page) from mp3quran.net (`<server>/<NNN>.mp3`); an internet connection is required and nothing is downloaded or cached. Choosing another reciter while playing restarts the same surah with that voice; the choice is saved in the `quran_audio` preferences. Playback stops when leaving the Quran screen or when the surah ends. Reciters (10): Alafasy, Abdul Basit, Al-Sudais, Al-Shuraim, Al-Husary, Al-Minshawi, Al-Muaiqly, Al-Ghamdi, Al-Ajmi, Yasser Al-Dosari (each URL verified to serve surahs 1 and 114). A saved reciter that is no longer listed falls back to the first one.
+The reader's top bar has a reciter picker and play/stop button. First play downloads the active surah from mp3quran.net into `filesDir/quran_audio/<reciter>/<NNN>.mp3`, shows progress, validates content length and Android-readable audio, then atomically publishes it and plays locally. Later plays use the saved file without a network request. A missing download needs internet once; failures remain retryable. Partial files are ignored and cleaned up; downloads are restartable, not range-resumed. No broad storage permission is needed.
+
+Changing reciter cancels the old request and restarts the same surah with the chosen voice. Leaving the reader or tapping stop cancels downloading/playback, and stale callbacks cannot start another session. Reciter choice remains in the existing `quran_audio` preferences. On a connection without Wi-Fi, the app asks before downloading and shows the size when supplied by the server. Wi-Fi needs no confirmation.
+
+The reciter menu marks voices whose current surah is saved. Its «تلاوت‌های دانلودشده» entry lists downloads grouped by reciter, with sizes and total storage. Confirmed deletion supports one surah, one reciter, or everything, stops playback and waits for any cancelled store mutation. Audio is excluded from Android cloud backup/device transfer. All ten existing reciters and reader behavior are retained.
 
 ## Search
 

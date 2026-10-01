@@ -245,6 +245,18 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     init {
+        viewModelScope.launch {
+            com.example.data.repository.ProgressSyncRepository.restored.collect {
+                _activityDayKeys.value = prefs.getActivityDayKeys()
+                _dailyChecklistCompletedIds.value = prefs.getDailyChecklistCompletedIds()
+                _checklistCompletionCounts.value = prefs.getChecklistCompletionCounts(30)
+                _favoriteDhikrKeys.value = prefs.getFavoriteDhikrKeys()
+                _customDhikr.value = prefs.getCustomDhikr()
+                _qaza.value = qazaRepository.load()
+                _tasbihCounts.value = prefs.getTasbihCounts()
+                _tasbihCount.value = _tasbihCounts.value[_selectedTasbihDhikr.value] ?: 0
+            }
+        }
         // Initial scheduling on app startup
         notificationManager.scheduleReminders()
         viewModelScope.launch {

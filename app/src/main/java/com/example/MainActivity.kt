@@ -202,8 +202,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        com.example.data.repository.ProgressSyncRepository.onForeground(this, true)
         com.example.prayer.AdhanScheduler(this).reschedule()
         com.example.widget.PrayerTimesWidgetProvider.updateAll(this)
+    }
+
+    override fun onPause() {
+        com.example.data.repository.ProgressSyncRepository.onForeground(this, false)
+        super.onPause()
     }
 
     override fun onNewIntent(intent: Intent) {

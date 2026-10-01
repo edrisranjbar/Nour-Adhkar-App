@@ -199,6 +199,13 @@ fun QuranScreen(
     var activeSurahNumber by remember { mutableStateOf<Int?>(null) }
     var khatmGoal by remember { mutableStateOf(khatmRepository.getGoal()) }
     var khatmLogs by remember { mutableStateOf(khatmRepository.getDailyLogs()) }
+    val syncRestore by com.example.data.repository.ProgressSyncRepository.restored.collectAsState()
+    LaunchedEffect(syncRestore) {
+        highlights = prefs.getQuranHighlights()
+        notes = prefs.getQuranNotes()
+        khatmGoal = khatmRepository.getGoal()
+        khatmLogs = khatmRepository.getDailyLogs()
+    }
     var khatmSetupOpen by remember { mutableStateOf(false) }
     var khatmDetailsOpen by remember { mutableStateOf(false) }
     var cancelKhatmConfirmationOpen by remember { mutableStateOf(false) }
@@ -206,11 +213,25 @@ fun QuranScreen(
     val audioPrefs = remember(context) { context.getSharedPreferences("quran_audio", android.content.Context.MODE_PRIVATE) }
     var reciterId by remember { mutableStateOf(audioPrefs.getString("reciter", QuranReciters.first().id)!!) }
     var reciterMenuOpen by remember { mutableStateOf(false) }
+    var audioStorageOpen by remember { mutableStateOf(false) }
     val audioState by QuranAudioPlayer.state.collectAsState()
+    if (audioStorageOpen) QuranAudioStorageDialog { audioStorageOpen = false }
+    audioState.mobileConfirmationBytes?.let { bytes ->
+        AlertDialog(
+            onDismissRequest = { QuranAudioPlayer.stop() },
+            title = { Text(if (language == AppLanguage.ARABIC) "تنزيل عبر بيانات الهاتف؟" else "دانلود با اینترنت همراه؟") },
+            text = { Text((if (language == AppLanguage.ARABIC) "سيُحفظ الصوت للاستماع دون إنترنت. الحجم: " else "تلاوت برای پخش آفلاین ذخیره می‌شود. حجم: ") + audioSize(bytes)) },
+            confirmButton = { TextButton(onClick = {
+                val voice = QuranReciters.first { it.id == audioState.reciterId }
+                audioState.surah?.let { QuranAudioPlayer.play(context, voice, it, allowMobile = true) }
+            }) { Text(if (language == AppLanguage.ARABIC) "تنزيل" else "دانلود") } },
+            dismissButton = { TextButton(onClick = { QuranAudioPlayer.stop() }) { Text(if (language == AppLanguage.ARABIC) "إلغاء" else "لغو") } }
+        )
+    }
     androidx.compose.runtime.DisposableEffect(Unit) { onDispose { QuranAudioPlayer.stop() } }
     LaunchedEffect(audioState.error) {
         audioState.error?.let {
-            android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_LONG).show()
+            android.widget.Toast.makeText(context, com.example.ui.language.ArabicCatalog.translate(it).takeIf { language == AppLanguage.ARABIC } ?: it, android.widget.Toast.LENGTH_LONG).show()
             QuranAudioPlayer.clearError()
         }
     }
@@ -314,11 +335,17 @@ fun QuranScreen(
                             )
                         }
                         DropdownMenu(expanded = reciterMenuOpen, onDismissRequest = { reciterMenuOpen = false }) {
+                            DropdownMenuItem(
+                                text = { Text(if (language == AppLanguage.ARABIC) "التلاوات المحفوظة" else "تلاوت‌های دانلودشده") },
+                                onClick = { reciterMenuOpen = false; audioStorageOpen = true }
+                            )
                             QuranReciters.forEach { item ->
                                 DropdownMenuItem(
                                     text = {
                                         Text(
-                                            if (language == AppLanguage.ARABIC) item.arName else item.faName,
+                                            (if (language == AppLanguage.ARABIC) item.arName else item.faName) +
+                                                if (com.example.media.QuranAudioStore(context).stored(item.id, currentSurahNumber) != null)
+                                                    (if (language == AppLanguage.ARABIC) " · محفوظة" else " · دانلودشده") else "",
                                             fontWeight = if (item.id == reciterId) FontWeight.Bold else FontWeight.Normal
                                         )
                                     },
@@ -330,7 +357,7 @@ fun QuranScreen(
                                         reciterId = item.id
                                         audioPrefs.edit().putString("reciter", item.id).apply()
                                         // Switch voice immediately when something is already playing.
-                                        audioState.surah?.let { QuranAudioPlayer.play(item, it) }
+                                        audioState.surah?.let { QuranAudioPlayer.play(context, item, it) }
                                     }
                                 )
                             }
@@ -339,9 +366,11 @@ fun QuranScreen(
                     val audioActive = audioState.isPlaying || audioState.isLoading
                     IconButton(onClick = {
                         if (audioActive) QuranAudioPlayer.stop()
-                        else QuranAudioPlayer.play(reciter, currentSurahNumber)
+                        else QuranAudioPlayer.play(context, reciter, currentSurahNumber)
                     }) {
-                        if (audioState.isLoading) {
+                        if (audioState.isDownloading && audioState.downloadPercent != null) {
+                            Text(audioState.downloadPercent!!.toPersianDigits() + "%", color = Color(0xFFF5EDE2), style = MaterialTheme.typography.labelSmall)
+                        } else if (audioState.isLoading) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
                                 strokeWidth = 2.dp,

@@ -26,12 +26,12 @@ class PostPrayerReminderTest {
     private val minute = 60_000L
 
     @Test
-    fun reminderIsFortyMinutesAfterAdhanAndFifteenAfterMaghrib() {
-        assertEquals(40 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.FAJR))
-        assertEquals(40 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.DHUHR))
-        assertEquals(40 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.ASR))
-        assertEquals(15 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.MAGHRIB))
-        assertEquals(40 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.ISHA))
+    fun reminderIsTenMinutesAfterEveryAdhan() {
+        assertEquals(10 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.FAJR))
+        assertEquals(10 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.DHUHR))
+        assertEquals(10 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.ASR))
+        assertEquals(10 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.MAGHRIB))
+        assertEquals(10 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.ISHA))
 
         AdhanPrayer.entries.forEach { prayer ->
             val adhan = nextAdhanTime(tehran, prayer, now)!!
@@ -43,10 +43,10 @@ class PostPrayerReminderTest {
     @Test
     fun reminderStaysUpcomingAfterTheAdhanUntilItFires() {
         val adhan = nextAdhanTime(tehran, AdhanPrayer.ASR, now)!!
-        val during = PostPrayerReminders.nextReminderTime(tehran, AdhanPrayer.ASR, adhan + 10 * minute)!!
-        assertEquals(adhan + 40 * minute, during)
+        val during = PostPrayerReminders.nextReminderTime(tehran, AdhanPrayer.ASR, adhan + 5 * minute)!!
+        assertEquals(adhan + 10 * minute, during)
 
-        val after = PostPrayerReminders.nextReminderTime(tehran, AdhanPrayer.ASR, adhan + 41 * minute)!!
+        val after = PostPrayerReminders.nextReminderTime(tehran, AdhanPrayer.ASR, adhan + 11 * minute)!!
         assertTrue("next reminder is tomorrow's", after - adhan in (23 * 60 * minute)..(25 * 60 * minute))
     }
 

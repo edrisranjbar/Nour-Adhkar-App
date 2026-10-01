@@ -40,8 +40,7 @@ import com.example.ui.language.LocalizedText as Text
 import com.example.ui.viewmodel.AdhkarViewModel
 
 /**
- * Opt-in reminder to read the adhkar after prayer, 40 minutes after the adhan (15 minutes after
- * Maghrib) so the prayer has finished. Nothing is scheduled until a prayer is ticked.
+ * Opt-in reminder to read the adhkar after prayer, 10 minutes after the adhan. Nothing is scheduled until a prayer is ticked.
  */
 @Composable
 fun PostPrayerReminderSettings(viewModel: AdhkarViewModel) {
@@ -63,7 +62,7 @@ fun PostPrayerReminderSettings(viewModel: AdhkarViewModel) {
     }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            "اعلان اذکار پس از نماز ۴۰ دقیقه پس از اذان می‌آید تا نماز تمام شده باشد؛ برای مغرب ۱۵ دقیقه پس از اذان.",
+            "اعلان اذکار پس از نماز ۱۰ دقیقه پس از اذان هر نماز انتخاب‌شده می‌آید.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

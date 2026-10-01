@@ -18,11 +18,11 @@ import com.example.ui.language.text
 
 /**
  * Timing for the "adhkar after prayer" reminder. It fires well after the adhan so the prayer is
- * finished: 40 minutes for most prayers and 15 minutes for Maghrib, which is short.
+ * finished: a gentle reminder 10 minutes after each selected prayer.
  */
 object PostPrayerReminders {
-    const val DEFAULT_DELAY_MINUTES = 40
-    const val MAGHRIB_DELAY_MINUTES = 15
+    const val DEFAULT_DELAY_MINUTES = 10
+    const val MAGHRIB_DELAY_MINUTES = 10
     /** An alarm may be delivered late (Doze, vendor battery managers); later than this it is dropped. */
     const val MAX_LATE_MILLIS = 30 * 60_000L
 
