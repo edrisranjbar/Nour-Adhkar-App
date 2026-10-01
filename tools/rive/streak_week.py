@@ -33,17 +33,19 @@ sf.T.update({"Stroke": 24, "StraightVertex": 5})
 KEY_COLOR = 37  # SolidColor.colorValue
 
 COLUMN, WIDTH, HEIGHT, CY = 48, 7 * 48, 56, 28
+ENTER_DELAY_MS = 350
+ENTER_STEP_MS = 170
 DAYS = 7
 STATES = ["missed", "done", "frozen", "pending", "today_empty", "today_done"]
 
 WHITE = "#FFFFFF"
 #            background,             bg alpha, ring, dot, check, flake, flake colour
 POSES = {
-    "missed":      ("#FFFFFF", 0.12, 0, 1, 0, 0, "#FFFFFF"),
+    "missed":      ("#FFFFFF", 0.12, 0, 0, 0, 0, "#FFFFFF"),
     "done":        ("#2E7D32", 1.00, 0, 0, 1, 0, "#FFFFFF"),
     "frozen":      ("#1565C0", 1.00, 0, 0, 0, 1, "#FFFFFF"),
     "pending":     ("#FFFFFF", 0.12, 0, 0, 0, 1, "#42A5F5"),
-    "today_empty": ("#37474F", 1.00, 1, 1, 0, 0, "#FFFFFF"),
+    "today_empty": ("#37474F", 1.00, 1, 0, 0, 0, "#FFFFFF"),
     "today_done":  ("#FF9800", 1.00, 1, 0, 1, 0, "#FFFFFF"),
 }
 RING_COLOR = "#3A6931"  # SunGold, the dialog's "today" ring
@@ -117,31 +119,31 @@ def build():
         animations.append((name, 60, 1, 0, {d["node"]: {KEY_X: [(0, x_for(i, rtl), None)]}
                                             for i, d in enumerate(days)}))
 
-    # enter: staggered pop-in of the seven columns (about 180 ms delay, 55 ms apart).
+    # enter: staggered pop-in of the seven columns (350 ms delay, 170 ms apart; keep ENTER_DELAY_MS/ENTER_STEP_MS in sync with StreakWeekStrip.kt).
     enter = {}
     for i, d in enumerate(days):
-        start = round((180 + 55 * i) * 60 / 1000)
+        start = round((ENTER_DELAY_MS + ENTER_STEP_MS * i) * 60 / 1000)
         enter[d["node"]] = {
-            KEY_SX: [(0, 0.4, back), (start, 0.4, back), (start + 24, 1.0, back)],
-            KEY_SY: [(0, 0.4, back), (start, 0.4, back), (start + 24, 1.0, back)],
-            KEY_OPACITY: [(0, 0.0, ease), (start, 0.0, ease), (start + 8, 1.0, ease)],
+            KEY_SX: [(0, 0.4, back), (start, 0.4, back), (start + 36, 1.0, back)],
+            KEY_SY: [(0, 0.4, back), (start, 0.4, back), (start + 36, 1.0, back)],
+            KEY_OPACITY: [(0, 0.0, ease), (start, 0.0, ease), (start + 12, 1.0, ease)],
         }
     # Hold the first keys with interpolators that start flat.
-    animations.append(("enter", 60, round((180 + 55 * 6) * 60 / 1000) + 26, 0, enter))
+    animations.append(("enter", 60, round((ENTER_DELAY_MS + ENTER_STEP_MS * 6) * 60 / 1000) + 40, 0, enter))
 
     # fillToday: today's disc turns orange and the check pops in with a spring-like overshoot.
     today = days[DAYS - 1]
     fill = {
-        today["disc_color"]: {KEY_COLOR: [(0, argb("#37474F"), "color"), (6, argb("#37474F"), "color"),
-                                          (18, argb("#FF9800"), "color")]},
+        today["disc_color"]: {KEY_COLOR: [(0, argb("#37474F"), "color"), (8, argb("#37474F"), "color"),
+                                          (28, argb("#FF9800"), "color")]},
         today["check"]: {
-            KEY_OPACITY: [(0, 0.0, ease), (6, 0.0, ease), (8, 1.0, ease)],
-            KEY_SX: [(0, 0.0, back), (6, 0.0, back), (26, 1.0, back)],
-            KEY_SY: [(0, 0.0, back), (6, 0.0, back), (26, 1.0, back)],
+            KEY_OPACITY: [(0, 0.0, ease), (8, 0.0, ease), (12, 1.0, ease)],
+            KEY_SX: [(0, 0.0, back), (8, 0.0, back), (40, 1.0, back)],
+            KEY_SY: [(0, 0.0, back), (8, 0.0, back), (40, 1.0, back)],
         },
-        today["dot"]: {KEY_OPACITY: [(0, 1.0, ease), (6, 0.0, ease)]},
+        today["dot"]: {KEY_OPACITY: [(0, 0.0, ease)]},
     }
-    animations.append(("fillToday", 60, 30, 0, fill))
+    animations.append(("fillToday", 60, 46, 0, fill))
     animations.append(("rest", 60, 1, 0, {}))
     return ab, animations
 
