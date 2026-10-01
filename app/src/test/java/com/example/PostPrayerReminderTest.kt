@@ -26,12 +26,12 @@ class PostPrayerReminderTest {
     private val minute = 60_000L
 
     @Test
-    fun reminderIsTenMinutesAfterEveryAdhan() {
-        assertEquals(10 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.FAJR))
-        assertEquals(10 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.DHUHR))
-        assertEquals(10 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.ASR))
-        assertEquals(10 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.MAGHRIB))
-        assertEquals(10 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.ISHA))
+    fun reminderIsTenMinutesAfterPrayerStarts() {
+        assertEquals(40 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.FAJR))
+        assertEquals(40 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.DHUHR))
+        assertEquals(40 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.ASR))
+        assertEquals(15 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.MAGHRIB))
+        assertEquals(40 * minute, PostPrayerReminders.delayMillis(AdhanPrayer.ISHA))
 
         AdhanPrayer.entries.forEach { prayer ->
             val adhan = nextAdhanTime(tehran, prayer, now)!!
@@ -43,15 +43,15 @@ class PostPrayerReminderTest {
     @Test
     fun reminderStaysUpcomingAfterTheAdhanUntilItFires() {
         val adhan = nextAdhanTime(tehran, AdhanPrayer.ASR, now)!!
-        val during = PostPrayerReminders.nextReminderTime(tehran, AdhanPrayer.ASR, adhan + 5 * minute)!!
-        assertEquals(adhan + 10 * minute, during)
+        val during = PostPrayerReminders.nextReminderTime(tehran, AdhanPrayer.ASR, adhan + 35 * minute)!!
+        assertEquals(adhan + 40 * minute, during)
 
-        val after = PostPrayerReminders.nextReminderTime(tehran, AdhanPrayer.ASR, adhan + 11 * minute)!!
+        val after = PostPrayerReminders.nextReminderTime(tehran, AdhanPrayer.ASR, adhan + 41 * minute)!!
         assertTrue("next reminder is tomorrow's", after - adhan in (23 * 60 * minute)..(25 * 60 * minute))
     }
 
     @Test
-    fun nothingIsScheduledUntilAPrayerIsSelected() {
+    fun nothingIsScheduledUntilGloballyEnabled() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         context.getSharedPreferences("nour_adhkar_prefs", 0).edit().clear().commit()
         PreferenceRepository(context).setPrayerSettings(tehran)
@@ -63,7 +63,7 @@ class PostPrayerReminderTest {
     }
 
     @Test
-    fun schedulesOnlySelectedPrayersAndCancelsUncheckedOnes() {
+    fun globalSwitchSchedulesAllPrayersAndCancelsAllWhenDisabled() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         context.getSharedPreferences("nour_adhkar_prefs", 0).edit().clear().commit()
         val prefs = PreferenceRepository(context)
@@ -71,18 +71,25 @@ class PostPrayerReminderTest {
         val alarms = shadowOf(context.getSystemService(Context.ALARM_SERVICE) as AlarmManager)
         val scheduler = PostPrayerReminderScheduler(context)
 
-        prefs.setPostPrayerReminder(AdhanPrayer.MAGHRIB, true)
-        prefs.setPostPrayerReminder(AdhanPrayer.FAJR, true)
+        prefs.setPostPrayerReminderEnabled(true)
         scheduler.reschedule()
-        assertEquals(2, alarms.scheduledAlarms.size)
+        assertEquals(5, alarms.scheduledAlarms.size)
         scheduler.reschedule()
-        assertEquals(2, alarms.scheduledAlarms.size)
+        assertEquals(5, alarms.scheduledAlarms.size)
 
-        prefs.setPostPrayerReminder(AdhanPrayer.FAJR, false)
-        scheduler.reschedule()
-        assertEquals(1, alarms.scheduledAlarms.size)
-        prefs.setPostPrayerReminder(AdhanPrayer.MAGHRIB, false)
+        prefs.setPostPrayerReminderEnabled(false)
         scheduler.reschedule()
         assertTrue(alarms.scheduledAlarms.isEmpty())
+    }
+
+    @Test
+    fun existingPerPrayerOptInBecomesGlobalAndCanBeDisabled() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        context.getSharedPreferences("nour_adhkar_prefs", 0).edit().clear()
+            .putStringSet("post_prayer_reminder_prayers", setOf(AdhanPrayer.MAGHRIB.name)).commit()
+        val prefs = PreferenceRepository(context)
+        assertEquals(AdhanPrayer.entries.toSet(), prefs.getPostPrayerReminderPrayers())
+        prefs.setPostPrayerReminderEnabled(false)
+        assertTrue(prefs.getPostPrayerReminderPrayers().isEmpty())
     }
 }

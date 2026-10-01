@@ -5,16 +5,15 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.UUID
 
-data class ProgressSyncState(val enabled: Boolean = false, val busy: Boolean = false, val lastSynced: Long = 0, val error: Boolean = false)
+data class ProgressSyncState(val busy: Boolean = false, val lastSynced: Long = 0, val error: Boolean = false)
 
-/** Optional account backup. Offline edits are journalled before requests and retried on next use. */
+/** Automatic signed-in account backup. Offline edits are journalled and retried on next use. */
 object ProgressSyncRepository {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutex = Mutex()
@@ -34,24 +33,17 @@ object ProgressSyncRepository {
         scope.launch {
             AccountRepository.user.collect { user ->
                 _state.value = if (user == null) ProgressSyncState() else journal(app, user.email).let {
-                    ProgressSyncState(it.getBoolean("enabled", false), lastSynced = it.getLong("last_synced", 0))
+                    ProgressSyncState(lastSynced = it.getLong("last_synced", 0))
                 }
-                if (_state.value.enabled) sync(app)
+                if (user != null) sync(app)
             }
         }
-        scope.launch { while (isActive) { delay(30_000); if (foreground && _state.value.enabled) sync(app) } }
+        scope.launch { while (isActive) { delay(30_000); if (foreground && AccountRepository.user.value != null) sync(app) } }
     }
 
     fun onForeground(context: Context, active: Boolean) {
         foreground = active
-        if (_state.value.enabled) sync(context)
-    }
-
-    fun setEnabled(context: Context, enabled: Boolean) {
-        val email = AccountRepository.user.value?.email ?: return
-        journal(context, email).edit().putBoolean("enabled", enabled).commit()
-        _state.value = _state.value.copy(enabled = enabled)
-        if (enabled) sync(context)
+        if (AccountRepository.user.value != null) sync(context)
     }
 
     fun sync(context: Context) {
@@ -62,7 +54,6 @@ object ProgressSyncRepository {
                 val email = AccountRepository.user.value?.email ?: return@launch
                 val token = AccountRepository.token(app) ?: return@launch
                 val prefs = journal(app, email)
-                if (!prefs.getBoolean("enabled", false)) return@launch
                 _state.value = _state.value.copy(busy = true, error = false)
                 val snapshot = ProgressSnapshot(app)
                 var baseline = JSONObject(prefs.getString("baseline", "{}").orEmpty())
@@ -74,7 +65,7 @@ object ProgressSyncRepository {
                 // Persist pending changes even if the phone goes offline or the process is killed.
                 prefs.edit().putString("records", records.toString()).putString("baseline", baseline.toString()).commit()
                 val response = withContext(Dispatchers.IO) { request(token, ProgressRecords.array(records)) }
-                if (AccountRepository.token(app) != token || !prefs.getBoolean("enabled", false)) return@launch
+                if (AccountRepository.token(app) != token || AccountRepository.user.value?.email != email) return@launch
                 val latest = snapshot.read()
                 records = ProgressRecords.capture(baseline, records, latest, device, System.currentTimeMillis())
                 records = ProgressRecords.merge(records, response)
@@ -84,7 +75,7 @@ object ProgressSyncRepository {
                 records = ProgressRecords.capture(merged, records, actual, device, System.currentTimeMillis())
                 val now = System.currentTimeMillis()
                 prefs.edit().putString("records", records.toString()).putString("baseline", actual.toString()).putLong("last_synced", now).commit()
-                _state.value = ProgressSyncState(enabled = true, lastSynced = now)
+                _state.value = ProgressSyncState(lastSynced = now)
                 if (latest.toString() != actual.toString()) {
                     _restored.value++
                     com.example.widget.ChecklistWidgetProvider.updateAll(app)
@@ -132,12 +123,10 @@ private class ProgressJournal(context: Context, email: String) {
     private val prefix = java.security.MessageDigest.getInstance("SHA-256").digest(email.toByteArray())
         .joinToString("") { "%02x".format(it) } + ":"
     fun getString(key: String, default: String?) = prefs.getString(prefix + key, default)
-    fun getBoolean(key: String, default: Boolean) = prefs.getBoolean(prefix + key, default)
     fun getLong(key: String, default: Long) = prefs.getLong(prefix + key, default)
     fun edit() = Editor(prefs.edit())
     inner class Editor(private val editor: android.content.SharedPreferences.Editor) {
         fun putString(key: String, value: String) = apply { editor.putString(prefix + key, value) }
-        fun putBoolean(key: String, value: Boolean) = apply { editor.putBoolean(prefix + key, value) }
         fun putLong(key: String, value: Long) = apply { editor.putLong(prefix + key, value) }
         fun commit() = editor.commit()
     }

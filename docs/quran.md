@@ -71,7 +71,7 @@ The reader's top bar has a reciter picker and play/stop button. First play downl
 
 Changing reciter cancels the old request and restarts the same surah with the chosen voice. Leaving the reader or tapping stop cancels downloading/playback, and stale callbacks cannot start another session. Reciter choice remains in the existing `quran_audio` preferences. On a connection without Wi-Fi, the app asks before downloading and shows the size when supplied by the server. Wi-Fi needs no confirmation.
 
-The reciter menu marks voices whose current surah is saved. Its «تلاوت‌های دانلودشده» entry lists downloads grouped by reciter, with sizes and total storage. Confirmed deletion supports one surah, one reciter, or everything, stops playback and waits for any cancelled store mutation. Audio is excluded from Android cloud backup/device transfer. All ten existing reciters and reader behavior are retained.
+The reciter menu marks voices whose current surah is saved. Downloads are managed automatically; there is no downloaded-audio management entry or dialog. Audio is excluded from Android cloud backup/device transfer. All ten existing reciters and reader behavior are retained.
 
 ## Search
 

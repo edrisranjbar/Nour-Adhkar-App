@@ -63,16 +63,16 @@ class PreferenceRepository(context: Context) {
         prefs.edit().putStringSet("adhan_prayers", selected.map { it.name }.toSet()).apply()
     }
 
-    /** Prayers after which the "adhkar after prayer" reminder fires; empty (the default) means off. */
-    fun getPostPrayerReminderPrayers(): Set<com.example.prayer.AdhanPrayer> =
-        prefs.getStringSet("post_prayer_reminder_prayers", emptySet()).orEmpty().mapNotNull { id ->
-            com.example.prayer.AdhanPrayer.entries.firstOrNull { it.name == id }
-        }.toSet()
+    /** One global opt-in. An existing selection keeps the feature enabled for all five prayers. */
+    fun getPostPrayerReminderPrayers(): Set<com.example.prayer.AdhanPrayer> {
+        val saved = prefs.getStringSet("post_prayer_reminder_prayers", emptySet()).orEmpty()
+        return if (com.example.prayer.AdhanPrayer.entries.any { it.name in saved })
+            com.example.prayer.AdhanPrayer.entries.toSet() else emptySet()
+    }
 
-    fun setPostPrayerReminder(prayer: com.example.prayer.AdhanPrayer, enabled: Boolean) {
-        val selected = getPostPrayerReminderPrayers().toMutableSet()
-        if (enabled) selected.add(prayer) else selected.remove(prayer)
-        prefs.edit().putStringSet("post_prayer_reminder_prayers", selected.map { it.name }.toSet()).apply()
+    fun setPostPrayerReminderEnabled(enabled: Boolean) {
+        val selected = if (enabled) com.example.prayer.AdhanPrayer.entries.map { it.name }.toSet() else emptySet()
+        prefs.edit().putStringSet("post_prayer_reminder_prayers", selected).apply()
     }
 
     fun isVibrationEnabled(): Boolean {

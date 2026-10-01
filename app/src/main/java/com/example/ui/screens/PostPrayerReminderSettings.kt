@@ -7,13 +7,11 @@ import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.Switch
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -33,14 +31,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.notifications.BatteryOptimization
-import com.example.prayer.AdhanPrayer
 import com.example.prayer.PostPrayerReminderScheduler
 import com.example.ui.components.BatteryOptimizationNotice
 import com.example.ui.language.LocalizedText as Text
 import com.example.ui.viewmodel.AdhkarViewModel
 
 /**
- * Opt-in reminder to read the adhkar after prayer, 10 minutes after the adhan. Nothing is scheduled until a prayer is ticked.
+ * One opt-in for all prayers, 10 minutes after the configured prayer start.
  */
 @Composable
 fun PostPrayerReminderSettings(viewModel: AdhkarViewModel) {
@@ -62,37 +59,23 @@ fun PostPrayerReminderSettings(viewModel: AdhkarViewModel) {
     }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            "اعلان اذکار پس از نماز ۱۰ دقیقه پس از اذان هر نماز انتخاب‌شده می‌آید.",
+            "یادآوری ۱۰ دقیقه پس از نماز می‌آید؛ یعنی ۴۰ دقیقه پس از اذان و برای مغرب ۱۵ دقیقه پس از اذان.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        AdhanPrayer.entries.chunked(3).forEach { row ->
-            Row(Modifier.fillMaxWidth()) {
-                row.forEach { prayer ->
-                    Row(
-                        Modifier.weight(1f).heightIn(min = 48.dp).toggleable(
-                            value = prayer in selected,
-                            role = Role.Checkbox,
-                            onValueChange = {
-                                // Turning the reminder on is the moment to ask for unrestricted background work.
-                                if (it && selected.isEmpty()) BatteryOptimization.request(context)
-                                viewModel.setPostPrayerReminder(prayer, it)
-                            }
-                        ),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Checkbox(
-                            checked = prayer in selected, onCheckedChange = null,
-                            colors = CheckboxDefaults.colors(
-                                checkedColor = MaterialTheme.colorScheme.tertiary,
-                                checkmarkColor = MaterialTheme.colorScheme.onTertiary
-                            )
-                        )
-                        Text(prayer.label, modifier = Modifier.padding(start = 4.dp))
-                    }
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(
+                value = selected.isNotEmpty(),
+                role = Role.Switch,
+                onValueChange = {
+                    if (it && selected.isEmpty()) BatteryOptimization.request(context)
+                    viewModel.setPostPrayerReminderEnabled(it)
                 }
-                repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
-            }
+            ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("فعال‌سازی یادآوری اذکار پس از نماز", modifier = Modifier.weight(1f).padding(end = 8.dp))
+            Switch(checked = selected.isNotEmpty(), onCheckedChange = null)
         }
         if (selected.isNotEmpty()) {
             if (!location.isValid()) {

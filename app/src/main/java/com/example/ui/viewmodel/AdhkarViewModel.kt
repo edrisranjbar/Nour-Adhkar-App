@@ -79,8 +79,8 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _postPrayerReminderPrayers = MutableStateFlow(prefs.getPostPrayerReminderPrayers())
     val postPrayerReminderPrayers = _postPrayerReminderPrayers.asStateFlow()
-    fun setPostPrayerReminder(prayer: com.example.prayer.AdhanPrayer, enabled: Boolean) {
-        prefs.setPostPrayerReminder(prayer, enabled)
+    fun setPostPrayerReminderEnabled(enabled: Boolean) {
+        prefs.setPostPrayerReminderEnabled(enabled)
         _postPrayerReminderPrayers.value = prefs.getPostPrayerReminderPrayers()
         com.example.prayer.PostPrayerReminderScheduler(getApplication()).reschedule()
     }
