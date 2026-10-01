@@ -9,6 +9,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.heightIn
+import android.os.SystemClock
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.platform.LocalView
 import kotlinx.coroutines.delay
@@ -37,12 +38,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.rememberCoroutineScope
@@ -54,7 +57,6 @@ import com.example.ui.language.text
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import com.example.ui.language.LocalizedIcon as Icon
-import androidx.compose.material3.IconButton
 import com.example.ui.language.LocalizedText as Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -113,6 +115,7 @@ fun StreakCelebrationDialog(
     val language = LocalAppLanguage.current
     val scope = rememberCoroutineScope()
     val view = LocalView.current
+    val sounds = rememberStreakSounds()
     // Honour the system "remove animations" setting: show the final state at once.
     val reduceMotion = remember {
         android.provider.Settings.Global.getFloat(
@@ -131,16 +134,23 @@ fun StreakCelebrationDialog(
 
     LaunchedEffect(Unit) {
         if (reduceMotion) return@LaunchedEffect
+        val startedAt = SystemClock.elapsedRealtime()
+        sounds.play(StreakSounds.Sfx.IGNITE)
         launch { cardAlpha.animateTo(1f, tween(180)) }
         cardScale.animateTo(1f, spring(dampingRatio = 0.62f, stiffness = Spring.StiffnessMediumLow))
         // The Rive flame's squash-and-stretch lands ~450 ms after it starts.
         delay(260)
         shownCount = streakCount
         view.confirmHaptic()
+        sounds.play(StreakSounds.Sfx.LAND)
         numberScale.animateTo(1.28f, spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessHigh))
         numberScale.animateTo(1f, spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMedium))
-        delay(120)
+        // Today's circle fills only after the other six have popped in and settled.
+        val circlesDone = WEEK_ENTER_DELAY_MS + 6 * WEEK_ENTER_STEP_MS + 450
+        val waited = SystemClock.elapsedRealtime() - startedAt
+        if (waited < circlesDone) delay(circlesDone - waited)
         todayFilled = true
+        sounds.play(StreakSounds.Sfx.CHIME)
         footerAlpha.animateTo(1f, tween(260))
     }
 
@@ -167,81 +177,62 @@ fun StreakCelebrationDialog(
         }
     }
 
+    // One blip per checked circle, in step with the week strip's staggered pop-in. Pitch climbs a pentatonic ladder so the run ends on its highest note.
+    LaunchedEffect(Unit) {
+        if (reduceMotion) return@LaunchedEffect
+        val checked = resolvedDays.withIndex().filter { (_, day) -> day.isActive && !day.isToday }.map { it.index }
+        val ladder = floatArrayOf(1f, 1.125f, 1.25f, 1.5f, 1.667f, 2f)
+        delay(WEEK_ENTER_DELAY_MS + 30)
+        var elapsed = 0L
+        checked.forEachIndexed { step, index ->
+            val at = index * WEEK_ENTER_STEP_MS
+            delay(at - elapsed)
+            elapsed = at
+            sounds.play(StreakSounds.Sfx.TICK, ladder[(ladder.size - checked.size + step).coerceAtLeast(0)])
+        }
+    }
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
             dismissOnBackPress = true,
-            dismissOnClickOutside = true
+            dismissOnClickOutside = false
         )
     ) {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.82f))
-                    .clickable(onClick = onDismiss),
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color(0xFF1E1E26), Color(0xFF111116), Color(0xFF0B0B0F))
+                        )
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 // Background Ambient Glowing Sparks
                 BackgroundEmbersCanvas()
 
-                // Main Dialog Card Container
+                // Full-screen content (not a floating card)
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(0.90f)
+                        .fillMaxSize()
                         .scale(cardScale.value)
                         .alpha(cardAlpha.value)
-                        .clip(RoundedCornerShape(32.dp))
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    Color(0xFF1E1E26),
-                                    Color(0xFF111116)
-                                )
-                            )
-                        )
-                        .border(
-                            width = 1.5.dp,
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    SunGold.copy(alpha = 0.7f),
-                                    Color(0xFFFF9800).copy(alpha = 0.25f)
-                                )
-                            ),
-                            shape = RoundedCornerShape(32.dp)
-                        )
-                        .clickable(enabled = false) {}
-                        .padding(horizontal = 22.dp, vertical = 20.dp),
+                        .systemBarsPadding()
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                     ) {
-                        // Top Bar Close Button
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.TopStart
-                        ) {
-                            IconButton(
-                                onClick = onDismiss,
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .background(Color.White.copy(alpha = 0.1f), CircleShape)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "بستن",
-                                    tint = Color.White
-                                )
-                            }
-                        }
-
                         // Rive flame (pop-in, flicker; tap to replay), Canvas fallback.
                         StreakFlame(
                             streak = streakCount,
-                            modifier = Modifier.size(width = 180.dp, height = 204.dp)
+                            modifier = Modifier.size(width = 230.dp, height = 260.dp)
                         )
 
                         Spacer(modifier = Modifier.height(4.dp))
@@ -259,16 +250,23 @@ fun StreakCelebrationDialog(
                         ) { count ->
                             Text(
                                 text = count.toPersianDigits(),
-                                fontSize = (54 * fontScale).sp,
+                                fontSize = (112 * fontScale).sp,
+                                lineHeight = (120 * fontScale).sp,
                                 fontWeight = FontWeight.Black,
-                                color = Color(0xFFFFB74D)
+                                color = Color(0xFFFFB74D),
+                                style = androidx.compose.ui.text.TextStyle(
+                                    shadow = androidx.compose.ui.graphics.Shadow(
+                                        color = Color(0xFFFF9800).copy(alpha = 0.55f),
+                                        blurRadius = 36f
+                                    )
+                                )
                             )
                         }
 
                         Text(
                             text = "روز متوالی!",
-                            fontSize = (21 * fontScale).sp,
-                            fontWeight = FontWeight.Bold,
+                            fontSize = (26 * fontScale).sp,
+                            fontWeight = FontWeight.ExtraBold,
                             color = Color.White
                         )
 
@@ -303,7 +301,7 @@ fun StreakCelebrationDialog(
                                 val dayScale = remember { Animatable(if (reduceMotion) 1f else 0.4f) }
                                 LaunchedEffect(Unit) {
                                     if (!reduceMotion) {
-                                        delay(180L + index * 55L)
+                                        delay(WEEK_ENTER_DELAY_MS + index * WEEK_ENTER_STEP_MS)
                                         dayScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessMedium))
                                     }
                                 }
@@ -365,12 +363,6 @@ fun StreakCelebrationDialog(
                                                 contentDescription = if (day.isFrozen) "روز حفظ‌شده با سپر هفتگی" else "روز در انتظار سپر هفتگی",
                                                 tint = if (day.isFrozen) Color.White else FreezeBlue,
                                                 modifier = Modifier.size(15.dp)
-                                            )
-                                        } else {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(6.dp)
-                                                    .background(Color.White.copy(alpha = 0.35f), CircleShape)
                                             )
                                         }
                                     }

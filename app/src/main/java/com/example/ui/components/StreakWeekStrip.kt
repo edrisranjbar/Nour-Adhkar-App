@@ -45,6 +45,9 @@ private const val WEEK_STATE_MACHINE = "StreakWeek"
 private const val INPUT_RTL = "rtl"
 private const val INPUT_FILL_TODAY = "fillToday"
 private const val WEEK_DAYS = 7
+/** The artboard's "enter" pop-in: first column after this delay, then one every step (tools/rive/streak_week.py). */
+internal const val WEEK_ENTER_DELAY_MS = 350L
+internal const val WEEK_ENTER_STEP_MS = 170L
 /** The artboard is 7 columns of 48 x 56, so it is always drawn at this aspect ratio. */
 private const val WEEK_ASPECT = (WEEK_DAYS * 48f) / 56f
 
