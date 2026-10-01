@@ -17,6 +17,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.prayer.MAX_OFFSET_MINUTES
 import com.example.prayer.PrayerSettings
 import com.example.prayer.prayerMethods
 import com.example.ui.theme.SunGold
@@ -39,6 +40,7 @@ fun PrayerSettingsEditor(viewModel: AdhkarViewModel) {
     var zone by rememberSaveable { mutableStateOf(saved.zone) }
     var method by rememberSaveable { mutableStateOf(saved.method) }
     var hanafi by rememberSaveable { mutableStateOf(saved.hanafi) }
+    var offsets by rememberSaveable { mutableStateOf(saved.offsets) }
     var automatic by rememberSaveable { mutableStateOf(saved.automaticLocation) }
     var hasDetectedLocation by rememberSaveable { mutableStateOf(saved.automaticLocation && saved.location.isNotBlank()) }
     var message by rememberSaveable { mutableStateOf("") }
@@ -149,8 +151,30 @@ fun PrayerSettingsEditor(viewModel: AdhkarViewModel) {
             }
         }
         }
+        PrayerSettingsGroup("تنظیم دستی دقیقه") {
+            Text("در صورت اختلاف با تقویم محلی، هر وقت را چند دقیقه جلو یا عقب ببرید.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            listOf("صبح", "طلوع", "ظهر", "عصر", "مغرب", "عشاء").forEachIndexed { index, label ->
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(label, Modifier.weight(1f))
+                    IconButton(onClick = {
+                        offsets = offsets.toMutableList().also { it[index] = (it[index] - 1).coerceAtLeast(-MAX_OFFSET_MINUTES) }
+                        message = ""
+                    }, enabled = offsets[index] > -MAX_OFFSET_MINUTES) { Text("−") }
+                    Text(
+                        (if (offsets[index] > 0) "+" else "") + offsets[index].toPersianDigits() + " دقیقه",
+                        Modifier.widthIn(min = 80.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                    IconButton(onClick = {
+                        offsets = offsets.toMutableList().also { it[index] = (it[index] + 1).coerceAtMost(MAX_OFFSET_MINUTES) }
+                        message = ""
+                    }, enabled = offsets[index] < MAX_OFFSET_MINUTES) { Text("+") }
+                }
+            }
+            if (offsets.any { it != 0 }) TextButton(onClick = { offsets = List(6) { 0 }; message = "" }) { Text("بازنشانی همه") }
+        }
         Button(modifier = Modifier.fillMaxWidth(), onClick = {
-            val value = PrayerSettings(location.trim(), coordinateNumber(lat), coordinateNumber(lon), zone.trim(), method, hanafi, automatic)
+            val value = PrayerSettings(location.trim(), coordinateNumber(lat), coordinateNumber(lon), zone.trim(), method, hanafi, automatic, offsets)
             if (value.isValid()) { viewModel.updatePrayerSettings(value); message = "تنظیمات اوقات شرعی ذخیره شد" }
             else message = "نام محل، مختصات معتبر و منطقه زمانی صحیح را وارد کنید."
         }, enabled = if (automatic) hasDetectedLocation else citySelected,

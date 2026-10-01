@@ -31,13 +31,17 @@ class PreferenceRepository(context: Context) {
             prefs.getString("prayer_lat", "0")!!.toDouble(), prefs.getString("prayer_lon", "0")!!.toDouble(),
             prefs.getString("prayer_zone", "Asia/Tehran")!!, prefs.getString("prayer_method", "MUSLIM_WORLD_LEAGUE")!!,
             prefs.getBoolean("prayer_hanafi", false),
-            prefs.getBoolean("prayer_automatic_location", prefs.getString("prayer_location", "").orEmpty() in listOf("", "موقعیت فعلی")))
+            prefs.getBoolean("prayer_automatic_location", prefs.getString("prayer_location", "").orEmpty() in listOf("", "موقعیت فعلی")),
+            prefs.getString("prayer_offsets", null)?.split(',')?.map { it.toInt() }
+                ?.takeIf { it.size == 6 && it.all { m -> m in -com.example.prayer.MAX_OFFSET_MINUTES..com.example.prayer.MAX_OFFSET_MINUTES } }
+                ?: List(6) { 0 })
     }.getOrDefault(com.example.prayer.PrayerSettings())
     fun setPrayerSettings(value: com.example.prayer.PrayerSettings) {
         prefs.edit().putString("prayer_location", value.location).putString("prayer_lat", value.latitude.toString())
             .putString("prayer_lon", value.longitude.toString()).putString("prayer_zone", value.zone)
             .putString("prayer_method", value.method).putBoolean("prayer_hanafi", value.hanafi)
-            .putBoolean("prayer_automatic_location", value.automaticLocation).apply()
+            .putBoolean("prayer_automatic_location", value.automaticLocation)
+            .putString("prayer_offsets", value.offsets.joinToString(",")).apply()
         com.example.widget.PrayerTimesWidgetProvider.updateAll(appContext)
     }
 

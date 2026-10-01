@@ -26,6 +26,8 @@ The home card now uses matching ivory/emerald and charcoal/mint palettes followi
 
 The compact revision places the prayer card immediately after the streak section. It removes the large decorative horizon, reduces spacing and banner typography, and arranges all six times in three two-column rows to target roughly half the previous height without fixing or clipping the card height.
 
+Users may add a manual correction of up to ±30 minutes to each of the six times (`PrayerSettings.offsets`, stored as `prayer_offsets`, default all zero). It is applied in `times()`, so the card, widget and adhan/reminder scheduling all agree; method and Asr settings are unchanged.
+
 Unit coverage includes invalid settings, chronological ordering, calculation method changes, Hanafi Asr, and location-date selection across UTC midnight.
 
 ## Adhan sound selection

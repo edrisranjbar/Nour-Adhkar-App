@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -262,6 +263,25 @@ fun AppMainScaffold(
 
     LaunchedEffect(openQuranPage) {
         if (openQuranPage != null) viewModel.selectTab("quran")
+    }
+
+    // Back steps out of nested tabs to Home; on Home a second press within 2s exits.
+    var lastHomeBackAt by remember { mutableStateOf(0L) }
+    BackHandler {
+        when {
+            drawerState.isOpen -> coroutineScope.launch { drawerState.close() }
+            currentTab == "achievements" -> viewModel.selectTab(achievementsBackTab)
+            currentTab != "home" -> viewModel.selectTab("home")
+            else -> {
+                val now = android.os.SystemClock.elapsedRealtime()
+                if (now - lastHomeBackAt < 2000L) {
+                    (context as? android.app.Activity)?.finish()
+                } else {
+                    lastHomeBackAt = now
+                    android.widget.Toast.makeText(context, "برای خروج دوباره بزنید", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     LaunchedEffect(Unit) {
