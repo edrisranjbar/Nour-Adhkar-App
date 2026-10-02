@@ -12,7 +12,7 @@ From top to bottom:
    - The header shows the Jalali month and year, with the Hijri and Gregorian months it spans underneath.
    - Previous/next buttons and horizontal swipes change the month. «بازگشت به امروز» appears only when today is not already shown and selected.
    - The grid is Saturday-first and always six rows tall, so its height never jumps between months. Each cell shows the Jalali day and, below it, a small Hijri day number. Fridays are in the theme's error colour.
-   - Markers: today has a solid accent background; days with recorded activity have a soft green background; an occasion adds a small amber dot. A three-item legend under the grid explains these markers.
+   - Markers: today has a solid accent background, and an occasion adds a small amber dot. There is no legend.
 2. **Selected-day card.** This replaces a pop-up sheet, so tapping a day updates it immediately. It opens on today.
    - It shows the weekday with the full Jalali, Hijri and Gregorian dates, plus a relative chip («امروز», «فردا», «۳ روز دیگر», …).
    - Each occasion appears with its short description and source.
