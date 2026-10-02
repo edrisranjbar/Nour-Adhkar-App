@@ -8,4 +8,6 @@
 
 ## Entry point
 
+تاریخ پیام‌ها از بخش تاریخ میلادی `created_at` به جلالی تبدیل می‌شود و با نام فارسی ماه و اعداد فارسی، مانند `۲۶ شهریور ۱۴۰۴`، بدون ساعت یا روز هفته نمایش داده می‌شود. روز ثبت‌شدهٔ سرور حفظ می‌شود و با منطقهٔ زمانی دستگاه جابه‌جا نمی‌شود. تاریخ خالی یا نامعتبر با «تاریخ نامشخص» نمایش داده می‌شود.
+
 Messages are opened from the notifications icon at the left end of the home app bar (not the drawer). A badge shows the unread count (Persian digits, 99+ cap); it refreshes when Home is shown and updates as notices are loaded or marked read. The screen title is «پیام‌ها» in the app bar only.

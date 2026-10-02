@@ -276,6 +276,7 @@ fun DhikrCounterScreen(
                         item = item,
                         fontScale = fontScale,
                         showSource = categoryId == "quran_prayers" || categoryId == "sunnah_prayers",
+                        showCounter = !((categoryId == "quran_prayers" || categoryId == "sunnah_prayers") && item.targetCount == 1),
                         isFavorite = "$categoryId:${item.id}" in favoriteDhikrKeys,
                         onFavoriteClick = { viewModel.toggleFavoriteDhikr(categoryId, item.id) },
                         onUndo = {
@@ -427,6 +428,7 @@ fun DhikrItemCard(
     item: DhikrItem,
     fontScale: Float,
     showSource: Boolean = false,
+    showCounter: Boolean = true,
     isFavorite: Boolean = false,
     onFavoriteClick: () -> Unit = {},
     onUndo: () -> Unit,
@@ -563,7 +565,7 @@ fun DhikrItemCard(
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.RotateLeft,
-                                contentDescription = "یک شماره کم کن",
+                                contentDescription = if (showCounter) "یک شماره کم کن" else "علامت خوانده‌شدن را بردار",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -622,80 +624,82 @@ fun DhikrItemCard(
 
 
 
-            Spacer(modifier = Modifier.height(18.dp))
+            if (showCounter) {
+                Spacer(modifier = Modifier.height(18.dp))
 
-            // Interactive Bottom Panel (Digital Tasbih Ring)
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
+                // Interactive Bottom Panel (Digital Tasbih Ring)
                 Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(68.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    val progress = if (item.targetCount > 0) {
-                        item.currentCount.toFloat() / item.targetCount.toFloat()
-                    } else {
-                        0f
-                    }
-
-                    if (isCompleted) {
-                        CircularProgressIndicator(
-                            progress = { 1.0f },
-                            modifier = Modifier.fillMaxSize(),
-                            color = Color(0xFF4CAF50),
-                            trackColor = SoftBorder,
-                            strokeWidth = 4.5.dp
-                        )
-                        Box(
-                            modifier = Modifier
-                                .size(50.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.secondaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = "تکمیل شده",
-                                tint = Color(0xFF4CAF50),
-                                modifier = Modifier.size(26.dp)
-                            )
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.size(68.dp)
+                    ) {
+                        val progress = if (item.targetCount > 0) {
+                            item.currentCount.toFloat() / item.targetCount.toFloat()
+                        } else {
+                            0f
                         }
-                    } else {
-                        CircularProgressIndicator(
-                            progress = { progress.coerceIn(0f, 1f) },
-                            modifier = Modifier.fillMaxSize(),
-                            color = SunGold,
-                            trackColor = SoftBorder,
-                            strokeWidth = 4.5.dp
-                        )
 
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
+                        if (isCompleted) {
+                            CircularProgressIndicator(
+                                progress = { 1.0f },
+                                modifier = Modifier.fillMaxSize(),
+                                color = Color(0xFF4CAF50),
+                                trackColor = SoftBorder,
+                                strokeWidth = 4.5.dp
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.secondaryContainer),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = item.currentCount.toPersianDigits(),
-                                    fontSize = 17.sp,
-                                    fontWeight = FontWeight.Black,
-                                    color = SandDark
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "تکمیل شده",
+                                    tint = Color(0xFF4CAF50),
+                                    modifier = Modifier.size(26.dp)
                                 )
-                                Text(
-                                    text = "/",
-                                    fontSize = 12.sp,
-                                    color = SandDark.copy(alpha = 0.4f),
-                                    modifier = Modifier.padding(horizontal = 2.dp)
-                                )
-                                Text(
-                                    text = item.targetCount.toPersianDigits(),
-                                    fontSize = 12.sp,
-                                    color = NightBlue,
-                                    fontWeight = FontWeight.Bold
-                                )
+                            }
+                        } else {
+                            CircularProgressIndicator(
+                                progress = { progress.coerceIn(0f, 1f) },
+                                modifier = Modifier.fillMaxSize(),
+                                color = SunGold,
+                                trackColor = SoftBorder,
+                                strokeWidth = 4.5.dp
+                            )
+
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = item.currentCount.toPersianDigits(),
+                                        fontSize = 17.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = SandDark
+                                    )
+                                    Text(
+                                        text = "/",
+                                        fontSize = 12.sp,
+                                        color = SandDark.copy(alpha = 0.4f),
+                                        modifier = Modifier.padding(horizontal = 2.dp)
+                                    )
+                                    Text(
+                                        text = item.targetCount.toPersianDigits(),
+                                        fontSize = 12.sp,
+                                        color = NightBlue,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
                         }
                     }

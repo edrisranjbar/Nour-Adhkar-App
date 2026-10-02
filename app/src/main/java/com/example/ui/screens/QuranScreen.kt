@@ -1439,20 +1439,36 @@ private fun VerseActionsSheet(
     }
 }
 
+private class NormalizedVerses(val corpus: QuranCorpus) {
+    val text = Array(corpus.verses.size) { corpus.verses[it].text.normalizeArabic() }
+    val surahName = Array(corpus.verses.size) { corpus.verses[it].surahName.normalizeArabic() }
+}
+
+@Volatile
+private var normalizedVerses: NormalizedVerses? = null
+
+private fun QuranCorpus.normalizedIndex(): NormalizedVerses =
+    normalizedVerses?.takeIf { it.corpus === this }
+        ?: NormalizedVerses(this).also { normalizedVerses = it }
+
 private fun QuranCorpus.search(query: String): List<QuranVerse> {
     val normalized = query.normalizeArabic()
     if (normalized.isBlank()) return emptyList()
-    return verses.asSequence()
-        .filter { verse ->
-            verse.text.normalizeArabic().contains(normalized) ||
-                verse.surahName.normalizeArabic().contains(normalized)
+    val index = normalizedIndex()
+    val result = ArrayList<QuranVerse>(40)
+    for (i in verses.indices) {
+        if (index.text[i].contains(normalized) || index.surahName[i].contains(normalized)) {
+            result += verses[i]
+            if (result.size == 40) break
         }
-        .take(40)
-        .toList()
+    }
+    return result
 }
 
+private val ArabicMarks = Regex("[ؐ-ًؚ-ٰٟۖ-ۭ]")
+
 private fun String.normalizeArabic(): String =
-    replace(Regex("[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]"), "")
+    replace(ArabicMarks, "")
         .replace('ٱ', 'ا')
         .replace('أ', 'ا')
         .replace('إ', 'ا')

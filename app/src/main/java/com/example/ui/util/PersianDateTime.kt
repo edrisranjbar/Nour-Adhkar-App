@@ -1,6 +1,7 @@
 package com.example.ui.util
 
 import java.util.Calendar
+import java.util.GregorianCalendar
 import java.util.TimeZone
 
 private val persianMonthNames = listOf(
@@ -54,6 +55,25 @@ fun formatPersianDate(
         else -> "جمعه"
     }
     return "$weekDay $day ${persianMonthNames[month - 1]} $year".toPersianDigits()
+}
+
+/** Formats the server's Gregorian calendar date without shifting it across timezones. */
+fun formatInboxDate(serverDate: String): String {
+    val date = serverDate.take(10)
+    if (!date.matches(Regex("[0-9]{4}-[0-9]{2}-[0-9]{2}"))) return "تاریخ نامشخص"
+    val year = date.substring(0, 4).toInt()
+    val month = date.substring(5, 7).toInt()
+    val day = date.substring(8, 10).toInt()
+    val valid = runCatching {
+        GregorianCalendar(TimeZone.getTimeZone("UTC")).apply {
+            isLenient = false
+            clear()
+            set(year, month - 1, day)
+        }.timeInMillis
+    }.isSuccess
+    if (!valid) return "تاریخ نامشخص"
+    val (persianYear, persianMonth, persianDay) = gregorianToPersian(year, month, day)
+    return "$persianDay ${persianMonthNames[persianMonth - 1]} $persianYear".toPersianDigits()
 }
 
 private fun gregorianToPersian(year: Int, month: Int, day: Int): Triple<Int, Int, Int> {

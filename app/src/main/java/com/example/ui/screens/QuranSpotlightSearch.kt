@@ -57,6 +57,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.produceState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.quran.QuranCorpus
@@ -92,7 +96,14 @@ internal fun QuranSpotlightSearch(
             corpus.surahs.filter { normalize(it.name).contains(n) || it.number == number }.take(6)
         }
     }
-    val verseMatches = remember(trimmed) { if (trimmed.length < 2) emptyList() else searchVerses(trimmed) }
+    val verseMatches by produceState(emptyList<QuranVerse>(), trimmed) {
+        if (trimmed.length < 2) {
+            value = emptyList()
+        } else {
+            delay(200)
+            value = withContext(Dispatchers.Default) { searchVerses(trimmed) }
+        }
+    }
 
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 

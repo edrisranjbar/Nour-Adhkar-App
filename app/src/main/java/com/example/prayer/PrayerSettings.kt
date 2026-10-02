@@ -22,6 +22,8 @@ val prayerMethods = linkedMapOf(
     "MOON_SIGHTING_COMMITTEE" to "کمیته رؤیت هلال"
 )
 
+const val MAX_OFFSET_MINUTES = 30
+
 data class PrayerSettings(
     val location: String = "",
     val latitude: Double = 0.0,
@@ -29,11 +31,14 @@ data class PrayerSettings(
     val zone: String = "Asia/Tehran",
     val method: String = "MUSLIM_WORLD_LEAGUE",
     val hanafi: Boolean = false,
-    val automaticLocation: Boolean = true
+    val automaticLocation: Boolean = true,
+    /** Manual minute adjustments in [times] order: fajr, sunrise, dhuhr, asr, maghrib, isha. */
+    val offsets: List<Int> = List(6) { 0 }
 ) {
     fun isValid() = location.isNotBlank() && latitude.isFinite() && longitude.isFinite() &&
         latitude in -90.0..90.0 && longitude in -180.0..180.0 &&
-        zone in TimeZone.getAvailableIDs() && method in prayerMethods
+        zone in TimeZone.getAvailableIDs() && method in prayerMethods &&
+        offsets.size == 6 && offsets.all { it in -MAX_OFFSET_MINUTES..MAX_OFFSET_MINUTES }
 
     fun times(now: Date): List<Pair<String, Date?>> {
         require(isValid())
@@ -46,5 +51,8 @@ data class PrayerSettings(
             calendar.get(Calendar.DAY_OF_MONTH)), parameters)
         return listOf("صبح" to times.fajr, "طلوع" to times.sunrise, "ظهر" to times.dhuhr,
             "عصر" to times.asr, "مغرب" to times.maghrib, "عشاء" to times.isha)
+            .mapIndexed { index, (name, time) ->
+                name to time?.let { Date(it.time + offsets[index] * 60_000L) }
+            }
     }
 }

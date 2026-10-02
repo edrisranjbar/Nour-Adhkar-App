@@ -1,5 +1,7 @@
 # Adhkar collection navigation
 
+Quran prayers (`quran_prayers`) and Sunnah prayers (`sunnah_prayers`) with a target count of one omit the circular repetition counter and any reading-action/status footer. Tapping the card retains its existing completion color/border feedback. Undo, saved progress, next-incomplete navigation and collection completion retain their existing behavior. Other collections and any multi-repeat items retain the circular counter.
+
 The Home section «اذکار و دعاها» has a «بیشتر» action that opens the separate اذکار و ادعیه (`adhkar`) collection page, which uses the existing category tiles and selection behavior. Morning, evening, sleep, daily, Quran prayers, and Sunnah prayers remain on Home and are excluded from this grid. Sleep and daily adhkar appear side by side in equal-width illustrated cards beneath morning and evening. Sleep uses a night illustration and daily adhkar uses a daytime landscape. All other categories and the existing counter shortcut move from Home to this page. Streak, prayer times, emotional verse, checklist and activity sections are unchanged. Opening a collection does not change the active tab, so leaving it returns to the collections page.
 
 The app-sharing action is available in «درباره برنامه» rather than the navigation drawer.
