@@ -98,8 +98,59 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         require(value.isValid())
         prefs.setPrayerSettings(value)
         _prayerSettings.value = value
+        _prayerPlaces.value = prefs.getPrayerPlaces()
         com.example.prayer.AdhanScheduler(getApplication()).reschedule()
     }
+
+    // Saved prayer places; the active one drives prayer times everywhere (see PrayerPlaces).
+    private val _prayerPlaces = MutableStateFlow(prefs.getPrayerPlaces())
+    val prayerPlaces: StateFlow<com.example.prayer.PrayerPlaces> = _prayerPlaces.asStateFlow()
+
+    /** True while Settings shows the editor for a new place instead of the active one. */
+    private val _addingPlace = MutableStateFlow(false)
+    val addingPlace: StateFlow<Boolean> = _addingPlace.asStateFlow()
+
+    private fun applyPlaces(places: com.example.prayer.PrayerPlaces) {
+        prefs.setPrayerPlaces(places)
+        _prayerPlaces.value = places
+        _prayerSettings.value = prefs.getPrayerSettings()
+        com.example.prayer.AdhanScheduler(getApplication()).reschedule()
+    }
+
+    fun switchPlace(id: String) = applyPlaces(_prayerPlaces.value.activate(id))
+
+    fun startAddingPlace() {
+        _addingPlace.value = true
+        openPrayerSettings()
+    }
+
+    fun cancelAddingPlace() { _addingPlace.value = false }
+
+    /** Saves a new place and makes it active. */
+    fun addPlace(name: String, settings: com.example.prayer.PrayerSettings) {
+        require(settings.isValid())
+        applyPlaces(_prayerPlaces.value.add(
+            com.example.prayer.PrayerPlace(java.util.UUID.randomUUID().toString(), name.trim().ifBlank { settings.location }, settings)
+        ))
+        _addingPlace.value = false
+    }
+
+    fun renamePlace(id: String, name: String) {
+        val place = _prayerPlaces.value.places.firstOrNull { it.id == id } ?: return
+        if (name.isBlank()) return
+        applyPlaces(_prayerPlaces.value.update(place.copy(name = name.trim())))
+    }
+
+    fun movePlace(id: String, delta: Int) = applyPlaces(_prayerPlaces.value.move(id, delta))
+
+    /** Removes a place and returns the previous state so the caller can offer undo. */
+    fun removePlace(id: String): com.example.prayer.PrayerPlaces {
+        val before = _prayerPlaces.value
+        applyPlaces(before.remove(id))
+        return before
+    }
+
+    fun restorePlaces(places: com.example.prayer.PrayerPlaces) = applyPlaces(places)
 
     // Navigation and Search State
     private val _currentTab = MutableStateFlow("home")

@@ -69,3 +69,18 @@ Settings → prayer times → «یادآوری اذکار پس از نماز» h
 - **Scheduling:** one inexact `setAndAllowWhileIdle` alarm per prayer (`PostPrayerReminderScheduler`), refreshed from the same triggers as adhan alarms (boot, app update, time or zone change, app start, settings changes, every adhan alarm). Disabling cancels all five alarms. An alarm delivered more than 30 minutes late, or while globally disabled, is dropped; the next day's alarm is scheduled when enabled.
 - **Needs:** a saved valid location and allowed notifications; the settings show what is missing. Channel: `post_prayer_reminders`, which the user can mute separately from adhkar reminders.
 - The existing morning/evening reminders, their days and the one-hour snooze are unchanged.
+
+## Saved places
+
+Users can keep up to 10 named places (for example «خانه», «مشهد», «سفر») and switch between them. The active place drives everything that uses a location: the home prayer card, adhan alarms, post-prayer reminders, the widget and Qibla.
+
+- **What belongs to a place:** city, coordinates, timezone, calculation method, Asr madhab and minute corrections. The muezzin voice, the prayers that play the adhan, and reminder settings stay global.
+- **Switching:** the prayer card shows the active place as a chip. Tapping it opens «مکان اوقات شرعی»: radio rows with name, city, UTC offset and the next prayer there. One tap switches, the sheet closes, and a short message confirms. Alarms are rescheduled immediately.
+- **Managing (Settings → اوقات شرعی → «مکان‌ها»):**
+  - Tap a place to make it active.
+  - The ⋮ menu offers activate, rename, move up or down, and delete. Delete asks first. The last place can't be deleted, and deleting the active place activates the first remaining one.
+  - The editor cards below always edit the active place. Their titles name it, for example «روش محاسبه · مشهد».
+- **Adding:** «افزودن مکان» opens the same editor for a fresh draft. It starts with a name field and quick names. Location comes from city search or GPS detection; GPS is only a way to add a place, not a live entry. The timezone is still an explicit choice. The method, madhab and corrections are copied from the active place. Saving adds the place and makes it active. Leaving Settings abandons the draft.
+- **Storage:** `prayer_places` (JSON) and `prayer_active_place`. The original `prayer_*` keys always mirror the active place, so the widget and schedulers read prayer settings unchanged.
+- **Migration:** on first launch after the update, an existing saved location becomes place #1, named after its city, with every value preserved. Places are not part of progress sync.
+

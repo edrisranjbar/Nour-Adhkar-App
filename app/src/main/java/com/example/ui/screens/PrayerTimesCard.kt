@@ -40,6 +40,9 @@ fun PrayerTimesCard(viewModel: AdhkarViewModel) {
     val muted = if (dark) colors.onSurfaceVariant else Color(0xFF596568)
     val line = if (dark) colors.outlineVariant else Color(0xFFDEDCD5)
     val settings by viewModel.prayerSettings.collectAsState()
+    val places by viewModel.prayerPlaces.collectAsState()
+    var showPlaces by remember { mutableStateOf(false) }
+    if (showPlaces) PrayerPlacesSheet(viewModel, places, onDismiss = { showPlaces = false })
     var now by remember { mutableStateOf(Date()) }
     LaunchedEffect(Unit) { while (true) { now = Date(); delay(15_000) } }
     val zone = remember(settings.zone) { TimeZone.getTimeZone(settings.zone) }
@@ -64,12 +67,17 @@ fun PrayerTimesCard(viewModel: AdhkarViewModel) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("اوقات شرعی", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.LocationOn, null, Modifier.size(16.dp), tint = accent)
-                    Spacer(Modifier.width(4.dp))
-                    Text(if (settings.isValid()) settings.location else "موقعیت شما",
-                        style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    val activePlace = places.active
+                    if (activePlace != null && settings.isValid()) {
+                        Spacer(Modifier.height(4.dp))
+                        ActivePlaceChip(activePlace.name, accent, onClick = { showPlaces = true })
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.LocationOn, null, Modifier.size(16.dp), tint = accent)
+                            Spacer(Modifier.width(4.dp))
+                            Text("موقعیت شما", style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
                     }
                 }
                 IconButton(onClick = { viewModel.openPrayerSettings() }) {
