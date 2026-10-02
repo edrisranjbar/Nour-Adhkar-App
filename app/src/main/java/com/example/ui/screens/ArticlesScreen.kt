@@ -47,7 +47,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Modifier
@@ -77,14 +76,15 @@ fun ArticlesScreen(
     val fontScale by viewModel.fontScale.collectAsState()
     val language = LocalAppLanguage.current
     val context = LocalContext.current
+    // Cached articles show immediately; the refresh runs quietly behind them.
     var loaded by remember { mutableStateOf(ArticlesRepository.cached(context)) }
-    var loading by remember { mutableStateOf(true) }
+    var loading by remember { mutableStateOf(loaded.isEmpty()) }
     var error by remember { mutableStateOf<String?>(null) }
     var reloadKey by remember { mutableStateOf(0) }
     LaunchedEffect(reloadKey) {
-        loading = true
+        if (loaded.isEmpty()) loading = true
         try {
-            loaded = ArticlesRepository.refresh(context)
+            loaded = ArticlesRepository.refresh(context, force = reloadKey > 0)
             error = null
         } catch (e: ArticlesException) {
             error = e.message
@@ -135,7 +135,6 @@ fun ArticlesScreen(
                 .padding(top = innerPadding.calculateTopPadding())
                 .padding(horizontal = 16.dp)
         ) {
-            if (loading) LinearProgressIndicator(Modifier.fillMaxWidth().padding(bottom = 8.dp))
 
             LazyColumn(
                 state = listState,

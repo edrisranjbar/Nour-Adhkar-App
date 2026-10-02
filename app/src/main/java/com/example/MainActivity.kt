@@ -285,6 +285,9 @@ fun AppMainScaffold(
         }
     }
 
+    // Warm the articles cache so «مقالات» opens instantly, even the first time.
+    LaunchedEffect(Unit) { com.example.data.repository.ArticlesRepository.prefetch(context) }
+
     LaunchedEffect(Unit) {
         availableUpdate = if (BuildConfig.FORCE_UPDATE_PROMPT) {
             AppUpdate(versionName = "۲.۱.۰ (پیش‌نمایش)", versionCode = BuildConfig.VERSION_CODE + 1)
