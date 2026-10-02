@@ -28,6 +28,8 @@ The compact revision places the prayer card immediately after the streak section
 
 Users may add a manual correction of up to ±30 minutes to each of the six times (`PrayerSettings.offsets`, stored as `prayer_offsets`, default all zero). It is applied in `times()`, so the card, widget and adhan/reminder scheduling all agree; method and Asr settings are unchanged.
 
+The correction section is titled «اصلاح زمان‌های محاسبه‌شده». Each time has labeled one-minute earlier/later controls, a plain-language correction status, and today's calculated/corrected preview using the draft location, method, madhab and saved/draft timezone. The preview rolls over with the location's date and is unavailable until a valid location is selected; unavailable calculated times are shown honestly. Individual and all-time reset actions clear only the draft corrections. Corrections remain limited to ±30 minutes and take effect only after Save; the section explains their effect on displayed times, adhan and reminders.
+
 Unit coverage includes invalid settings, chronological ordering, calculation method changes, Hanafi Asr, and location-date selection across UTC midnight.
 
 ## Adhan sound selection
