@@ -192,7 +192,6 @@ fun CalendarScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
                         todayJdn = todayJdn,
                         selectedJdn = selectedJdn,
                         fontScale = fontScale,
-                        isActive = { progressOf(it)?.active == true },
                         onSelect = { selectedJdn = it }
                     )
                 }
@@ -305,8 +304,6 @@ private fun MonthCard(
         WeekdayHeader(fontScale)
         Spacer(Modifier.height(6.dp))
         grid()
-        Spacer(Modifier.height(14.dp))
-        Legend(fontScale)
     }
 }
 
@@ -333,7 +330,6 @@ private fun MonthGrid(
     todayJdn: Int,
     selectedJdn: Int,
     fontScale: Float,
-    isActive: (Int) -> Boolean,
     onSelect: (Int) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -352,7 +348,6 @@ private fun MonthGrid(
                             day = day,
                             isToday = day.jdn == todayJdn,
                             isSelected = day.jdn == selectedJdn,
-                            isActive = isActive(day.jdn),
                             fontScale = fontScale,
                             onClick = { onSelect(day.jdn) },
                             modifier = Modifier.weight(1f).fillMaxHeight()
@@ -369,7 +364,6 @@ private fun DayCell(
     day: CalendarDay,
     isToday: Boolean,
     isSelected: Boolean,
-    isActive: Boolean,
     fontScale: Float,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -380,7 +374,6 @@ private fun DayCell(
     val background by animateColorAsState(
         targetValue = when {
             isToday -> colors.tertiary
-            isActive -> colors.primaryContainer
             else -> Color.Transparent
         },
         animationSpec = tween(220),
@@ -389,7 +382,6 @@ private fun DayCell(
     val numberColor = when {
         isToday -> colors.surface
         day.isFriday -> colors.error
-        isActive -> colors.onPrimaryContainer
         else -> colors.onSurface
     }
     val hijriColor = when {
@@ -401,7 +393,6 @@ private fun DayCell(
         append(day.jalali.day).append(' ').append(language.text(Jalali.monthNames[day.jalali.month - 1])).append("، ")
         append(day.hijri.day).append(' ').append(language.text(Hijri.monthNames[day.hijri.month - 1]))
         if (isToday) append("، ").append(language.text("امروز"))
-        if (isActive) append("، ").append(language.text("فعالیت ثبت شده"))
         day.occasions.forEach { append("، ").append(language.text(it.title)) }
     }
 
@@ -457,39 +448,6 @@ private fun DayCell(
                     )
             )
         }
-    }
-}
-
-@Composable
-private fun Legend(fontScale: Float) {
-    val colors = MaterialTheme.colorScheme
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        LegendItem(fontScale, "امروز") {
-            Box(Modifier.size(12.dp).clip(RoundedCornerShape(4.dp)).background(colors.tertiary))
-        }
-        LegendItem(fontScale, "روز فعال") {
-            Box(Modifier.size(12.dp).clip(RoundedCornerShape(4.dp)).background(colors.primaryContainer))
-        }
-        LegendItem(fontScale, "مناسبت") {
-            Box(Modifier.size(6.dp).clip(CircleShape).background(occasionColor()))
-        }
-    }
-}
-
-@Composable
-private fun LegendItem(fontScale: Float, label: String, swatch: @Composable () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(12.dp), contentAlignment = Alignment.Center) { swatch() }
-        Spacer(Modifier.width(6.dp))
-        Text(
-            text = label,
-            fontSize = (11.5 * fontScale).sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }
 
