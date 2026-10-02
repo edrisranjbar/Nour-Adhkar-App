@@ -3,6 +3,11 @@ package com.example.ui.language
 /** Presentation-only translations. Never translate database keys, IDs, or user input. */
 object ArabicCatalog {
     private val entries = """
+اشتراک‌گذاری سخنرانی|مشاركة المحاضرة
+عنوان سخنرانی:|عنوان المحاضرة:
+سخنران:|المحاضر:
+خلاصهٔ سخنرانی:|ملخص المحاضرة:
+خلاصه‌ای برای این سخنرانی ثبت نشده است.|لا يتوفر ملخص لهذه المحاضرة.
 تقویم|التقويم
 ماه قبل|الشهر السابق
 ماه بعد|الشهر التالي

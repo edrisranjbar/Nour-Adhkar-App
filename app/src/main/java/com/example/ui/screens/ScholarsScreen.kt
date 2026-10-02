@@ -50,6 +50,7 @@ import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -92,6 +93,10 @@ import com.example.data.model.Lecture
 import com.example.data.model.Scholar
 import com.example.data.repository.ScholarsRepository
 import com.example.media.LecturePlayer
+import com.example.share.lectureShareText
+import com.example.share.shareAppText
+import com.example.ui.language.LocalAppLanguage
+import com.example.ui.language.text
 import com.example.ui.util.toPersianDigits
 import com.example.ui.viewmodel.AdhkarViewModel
 import kotlinx.coroutines.delay
@@ -405,6 +410,8 @@ private fun LecturePlayerPage(
     innerPadding: PaddingValues,
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
+    val language = LocalAppLanguage.current
     val hue = scholar.hue
     val state by LecturePlayer.state.collectAsState()
     val current = state.lectureId == lecture.id
@@ -431,8 +438,14 @@ private fun LecturePlayerPage(
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+        Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "بازگشت", tint = Color.White) }
+            IconButton(onClick = {
+                shareAppText(context, lectureShareText(scholar, lecture, language),
+                    chooserTitle = language.text("اشتراک‌گذاری سخنرانی"), subject = lecture.title)
+            }) {
+                Icon(Icons.Default.Share, contentDescription = language.text("اشتراک‌گذاری سخنرانی"), tint = Color.White)
+            }
         }
         Spacer(Modifier.height(6.dp))
         Box(
