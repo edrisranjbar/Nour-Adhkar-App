@@ -127,6 +127,14 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     private val _activityDayKeys = MutableStateFlow(prefs.getActivityDayKeys())
     val activityDayKeys: StateFlow<Set<Long>> = _activityDayKeys.asStateFlow()
 
+    private val _hijriOffset = MutableStateFlow(prefs.getHijriOffset())
+    val hijriOffset: StateFlow<Int> = _hijriOffset.asStateFlow()
+
+    fun setHijriOffset(days: Int) {
+        prefs.setHijriOffset(days)
+        _hijriOffset.value = prefs.getHijriOffset()
+    }
+
     private val _vibrationEnabled = MutableStateFlow(prefs.isVibrationEnabled())
     val vibrationEnabled: StateFlow<Boolean> = _vibrationEnabled.asStateFlow()
 

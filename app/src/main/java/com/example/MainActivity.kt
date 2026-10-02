@@ -65,6 +65,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Article
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Favorite
@@ -344,6 +345,7 @@ fun AppMainScaffold(
                         ) {
                             val drawerItems = listOf(
                                 Triple("adhkar", "اذکار و ادعیه", Icons.Default.Article),
+                                Triple("calendar", "تقویم", Icons.Default.CalendarMonth),
                                 Triple("qibla", "قبله‌نما", Icons.Default.Explore),
                                 Triple("scholars", "علما و مشاهیر", Icons.Default.RecordVoiceOver),
                                 Triple("articles", "مقالات", Icons.Default.Article),
@@ -426,6 +428,7 @@ fun AppMainScaffold(
                                 "achievements" -> "نشان‌ها و دستاوردها"
                                 "qibla" -> "قبله‌نما"
                                 "qaza" -> "قضای روزه"
+                                "calendar" -> "تقویم"
                                 "settings" -> "تنظیمات"
                                 "about" -> "درباره برنامه"
                                 "app_inbox" -> "پیام‌ها"
@@ -680,6 +683,7 @@ fun AppMainScaffold(
                         )
                         "qibla" -> QiblaScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "qaza" -> QazaScreen(viewModel = viewModel, innerPadding = innerPadding)
+                        "calendar" -> com.example.ui.screens.CalendarScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "favorites" -> FavoritesScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "settings" -> SettingsScreen(viewModel = viewModel, innerPadding = innerPadding)
                         else -> HomeScreen(viewModel = viewModel, innerPadding = innerPadding)
