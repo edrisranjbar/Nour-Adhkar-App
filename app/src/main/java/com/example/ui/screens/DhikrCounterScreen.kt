@@ -54,7 +54,6 @@ import com.example.ui.language.LocalizedIcon as Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.Scaffold
 import com.example.ui.components.StreakCelebrationDialog
 import com.example.ui.components.AdhkarAudioPlayer
@@ -625,23 +624,7 @@ fun DhikrItemCard(
 
 
 
-            if (!showCounter) {
-                Spacer(modifier = Modifier.height(8.dp))
-                if (isCompleted) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Check, contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("خوانده شد", color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.labelLarge)
-                    }
-                } else {
-                    TextButton(onClick = onTap, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                        Text("خواندم")
-                    }
-                }
-            } else {
+            if (showCounter) {
                 Spacer(modifier = Modifier.height(18.dp))
 
                 // Interactive Bottom Panel (Digital Tasbih Ring)
