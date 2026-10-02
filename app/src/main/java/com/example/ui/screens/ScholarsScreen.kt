@@ -9,6 +9,8 @@ import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.animation.core.animateDpAsState
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.animation.animateContentSize
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
@@ -539,11 +541,81 @@ private fun LecturePlayerPage(
                 }
             }
         }
+        if (lecture.summary.isNotBlank() || lecture.transcriptId != null) {
+            Spacer(Modifier.height(16.dp))
+            LectureTextCard(lecture, fontScale)
+        }
         Spacer(Modifier.height(24.dp))
     }
 
     if (showSpeedSheet) {
         SpeedSheet(current = state.speed, onSelect = { LecturePlayer.setSpeed(it); showSpeedSheet = false }, onDismiss = { showSpeedSheet = false })
+    }
+}
+
+/**
+ * The admin-reviewed summary, and the full transcript loaded on demand (it can be long). Both were
+ * generated from the audio, so a short note says so.
+ */
+@Composable
+private fun LectureTextCard(lecture: Lecture, fontScale: Float) {
+    val scope = rememberCoroutineScope()
+    var transcript by remember(lecture.id) { mutableStateOf<String?>(null) }
+    var expanded by remember(lecture.id) { mutableStateOf(false) }
+    var loading by remember(lecture.id) { mutableStateOf(false) }
+    var failed by remember(lecture.id) { mutableStateOf(false) }
+    val colors = MaterialTheme.colorScheme
+
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = colors.surface,
+        border = BorderStroke(1.dp, colors.outlineVariant),
+        modifier = Modifier.fillMaxWidth().animateContentSize()
+    ) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (lecture.summary.isNotBlank()) {
+                Text("خلاصه سخنرانی", fontWeight = FontWeight.Bold, fontSize = (14 * fontScale).sp, color = colors.primary)
+                Text(lecture.summary, fontSize = (14 * fontScale).sp, lineHeight = (25 * fontScale).sp, color = colors.onSurface)
+            }
+            val id = lecture.transcriptId
+            if (id != null) {
+                if (expanded && transcript != null) {
+                    Text("متن کامل", fontWeight = FontWeight.Bold, fontSize = (14 * fontScale).sp, color = colors.primary,
+                        modifier = Modifier.padding(top = 6.dp))
+                    androidx.compose.foundation.text.selection.SelectionContainer {
+                        Text(transcript!!, fontSize = (14 * fontScale).sp, lineHeight = (26 * fontScale).sp, color = colors.onSurface)
+                    }
+                }
+                if (failed) {
+                    Text("دریافت متن ممکن نشد. اینترنت را بررسی کنید و دوباره تلاش کنید.",
+                        fontSize = (12.5 * fontScale).sp, color = colors.error)
+                }
+                androidx.compose.material3.OutlinedButton(
+                    onClick = {
+                        when {
+                            expanded -> expanded = false
+                            transcript != null -> expanded = true
+                            else -> scope.launch {
+                                loading = true
+                                failed = false
+                                transcript = ScholarsRepository.transcript(id)
+                                loading = false
+                                failed = transcript == null
+                                expanded = transcript != null
+                            }
+                        }
+                    },
+                    enabled = !loading,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    if (loading) CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    else Text(if (expanded) "بستن متن کامل" else "نمایش متن کامل سخنرانی", fontSize = (13.5 * fontScale).sp)
+                }
+            }
+            Text("این متن به‌صورت خودکار از صوت سخنرانی ساخته و سپس بازبینی شده است؛ ممکن است با گفتار دقیق تفاوت جزئی داشته باشد.",
+                fontSize = (11.5 * fontScale).sp, lineHeight = (19 * fontScale).sp, color = colors.onSurfaceVariant)
+        }
     }
 }
 

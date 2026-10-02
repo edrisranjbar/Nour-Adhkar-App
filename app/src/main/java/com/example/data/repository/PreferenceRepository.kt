@@ -222,6 +222,14 @@ class PreferenceRepository(context: Context) {
         return updated.toSet()
     }
 
+    /** Days added to the calculated Umm al-Qura Hijri date to match local moon sighting. */
+    fun getHijriOffset(): Int = prefs.getInt("hijri_offset", 0)
+        .coerceIn(-com.example.calendar.Hijri.MAX_OFFSET, com.example.calendar.Hijri.MAX_OFFSET)
+
+    fun setHijriOffset(days: Int) {
+        prefs.edit().putInt("hijri_offset", days.coerceIn(-com.example.calendar.Hijri.MAX_OFFSET, com.example.calendar.Hijri.MAX_OFFSET)).apply()
+    }
+
     fun getActivityDayKeys(): Set<Long> =
         prefs.getStringSet("activity_day_keys", emptySet()).orEmpty().mapNotNull(String::toLongOrNull).toSet()
 

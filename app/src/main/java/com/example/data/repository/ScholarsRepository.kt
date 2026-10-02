@@ -46,6 +46,24 @@ object ScholarsRepository {
         }
     }
 
+    /** The reviewed transcript of lecture [serverId], or null when it cannot be loaded. */
+    suspend fun transcript(serverId: String): String? = withContext(Dispatchers.IO) {
+        val connection = (URL("https://api.adhkar.ir/api/lectures/$serverId/transcript").openConnection() as HttpURLConnection).apply {
+            connectTimeout = 15000
+            readTimeout = 30000
+            setRequestProperty("Accept", "application/json")
+        }
+        try {
+            if (connection.responseCode !in 200..299) return@withContext null
+            val body = connection.inputStream.bufferedReader().use { it.readText() }
+            JSONObject(body).getJSONObject("data").optString("transcript").takeIf { it.isNotBlank() }
+        } catch (e: Exception) {
+            null
+        } finally {
+            connection.disconnect()
+        }
+    }
+
     private fun bundled(context: Context): List<Scholar> = runCatching {
         val root = context.assets.open("scholars.json").bufferedReader().use { JSONObject(it.readText()) }
         parse(root.getJSONArray("scholars"))
@@ -69,7 +87,9 @@ object ScholarsRepository {
                     title = l.getString("title"),
                     description = l.optString("description").takeIf { it != "null" }.orEmpty(),
                     audioUrl = l.getString("audioUrl"),
-                    durationSec = l.optInt("durationSec", -1).takeIf { it > 0 }
+                    durationSec = l.optInt("durationSec", -1).takeIf { it > 0 },
+                    summary = l.optString("summary").takeIf { it != "null" }.orEmpty(),
+                    transcriptId = l.opt("id")?.toString()?.takeIf { l.optBoolean("hasTranscript") }
                 )
             }
         )
