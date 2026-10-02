@@ -3,6 +3,8 @@ package com.example.ui.language
 /** Presentation-only translations. Never translate database keys, IDs, or user input. */
 object ArabicCatalog {
     private val entries = """
+تاریخ قمری: تقویم ام‌القری|التاريخ الهجري: تقويم أم القرى
+تاریخ قمری: ام‌القری، {0}|التاريخ الهجري: أم القرى، {0}
 مکان‌ها|الأماكن
 مکان تازه|مكان جديد
 نام مکان|اسم المكان
