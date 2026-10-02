@@ -30,10 +30,32 @@ import java.util.TimeZone
 import kotlinx.coroutines.delay
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
 fun PrayerSettingsEditor(viewModel: AdhkarViewModel) {
+    val places by viewModel.prayerPlaces.collectAsState()
+    val adding by viewModel.addingPlace.collectAsState()
+    // Leaving prayer settings abandons an unfinished new place.
+    DisposableEffect(Unit) { onDispose { viewModel.cancelAddingPlace() } }
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        PrayerSettingsGroup("صدای اذان") { AdhanSoundSettings(viewModel) }
+        PrayerSettingsGroup("پخش اذان در") { AdhanPrayerSettings(viewModel) }
+        PrayerSettingsGroup("یادآوری اذکار پس از نماز") { PostPrayerReminderSettings(viewModel) }
+        PrayerSettingsGroup("مکان‌ها") { PrayerPlacesManager(viewModel, places, adding) }
+        // A fresh draft for each place: switching or starting a new place resets the editor.
+        key(places.activeId, adding) {
+            PlaceEditor(viewModel, adding = adding || places.places.isEmpty(), activeName = places.active?.name)
+        }
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+private fun PlaceEditor(viewModel: AdhkarViewModel, adding: Boolean, activeName: String?) {
     val language = LocalAppLanguage.current
-    val saved by viewModel.prayerSettings.collectAsState()
+    val active by viewModel.prayerSettings.collectAsState()
+    // A new place starts empty but copies the active place's method, madhab and corrections.
+    val saved = if (adding) active.copy(location = "", automaticLocation = false, zone = TimeZone.getDefault().id) else active
+    val hasPlaces = viewModel.prayerPlaces.collectAsState().value.places.isNotEmpty()
+    var placeName by rememberSaveable { mutableStateOf("") }
     var location by rememberSaveable { mutableStateOf(saved.location) }
     var lat by rememberSaveable { mutableStateOf(if (saved.location.isEmpty()) "" else saved.latitude.toString()) }
     var lon by rememberSaveable { mutableStateOf(if (saved.location.isEmpty()) "" else saved.longitude.toString()) }
@@ -47,19 +69,26 @@ fun PrayerSettingsEditor(viewModel: AdhkarViewModel) {
     var expanded by remember { mutableStateOf(false) }
     var zoneExpanded by remember { mutableStateOf(false) }
     var asrExpanded by remember { mutableStateOf(false) }
-    var citySelected by rememberSaveable { mutableStateOf(saved.isValid()) }
+    var citySelected by rememberSaveable { mutableStateOf(!adding && saved.isValid()) }
+    val forPlace = if (!adding && activeName != null) " · $activeName" else ""
     val timeZones = remember(zone) {
         (listOf(zone, TimeZone.getDefault().id, "Asia/Tehran", "UTC") +
             TimeZone.getAvailableIDs().sorted()).distinct()
     }
     val zoneLabels = remember(timeZones, language) { timeZones.associateWith { persianTimeZoneLabel(it, language.code) } }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(24.dp)) {
-        PrayerSettingsGroup("صدای اذان") { AdhanSoundSettings(viewModel) }
-        PrayerSettingsGroup("پخش اذان در") { AdhanPrayerSettings(viewModel) }
-        PrayerSettingsGroup("یادآوری اذکار پس از نماز") { PostPrayerReminderSettings(viewModel) }
-        PrayerSettingsGroup("موقعیت و منطقه زمانی") {
-        Text("اوقات به‌صورت آفلاین و بر اساس موقعیت ذخیره‌شده محاسبه می‌شوند. هنگام سفر موقعیت را تغییر دهید.",
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        PrayerSettingsGroup(if (adding && hasPlaces) "مکان تازه" else "موقعیت و منطقه زمانی$forPlace") {
+        if (adding && hasPlaces) {
+            OutlinedTextField(
+                value = placeName, onValueChange = { placeName = it.take(40) },
+                label = { Text("نام مکان") }, singleLine = true, modifier = Modifier.fillMaxWidth()
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("خانه", "محل کار", "خانه والدین", "سفر").forEach { suggestion ->
+                    SuggestionChip(onClick = { placeName = suggestion }, label = { Text(suggestion) })
+                }
+            }
+        }
         Column(Modifier.selectableGroup()) {
             listOf(true to "تشخیص خودکار موقعیت", false to "ورود دستی موقعیت").forEach { (isAutomatic, label) ->
                 Row(Modifier.fillMaxWidth().selectable(
@@ -75,6 +104,7 @@ fun PrayerSettingsEditor(viewModel: AdhkarViewModel) {
         if (automatic) {
             DetectPrayerLocationButton(onLocation = { detected ->
             location = "موقعیت فعلی"
+            if (placeName.isBlank()) placeName = "مکان من"
             lat = detected.latitude.toString()
             lon = detected.longitude.toString()
             zone = TimeZone.getDefault().id
@@ -92,6 +122,7 @@ fun PrayerSettingsEditor(viewModel: AdhkarViewModel) {
                 lat = ""; lon = ""; message = ""
             }, onSelected = { name, latitude, longitude ->
                 location = name
+                if (placeName.isBlank()) placeName = name.substringBefore("،").substringBefore(",").trim()
                 lat = latitude.toString(); lon = longitude.toString()
                 citySelected = true
                 message = "شهر انتخاب شد؛ منطقه زمانی را بررسی و ذخیره کنید."
@@ -118,7 +149,7 @@ fun PrayerSettingsEditor(viewModel: AdhkarViewModel) {
             }
         }
         }
-        PrayerSettingsGroup("روش محاسبه") {
+        PrayerSettingsGroup("روش محاسبه$forPlace") {
         ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
             OutlinedTextField(
                 value = language.text(prayerMethods[method].orEmpty()), onValueChange = {}, readOnly = true,
@@ -218,11 +249,19 @@ fun PrayerSettingsEditor(viewModel: AdhkarViewModel) {
         }
         Button(modifier = Modifier.fillMaxWidth(), onClick = {
             val value = PrayerSettings(location.trim(), coordinateNumber(lat), coordinateNumber(lon), zone.trim(), method, hanafi, automatic, offsets)
-            if (value.isValid()) { viewModel.updatePrayerSettings(value); message = "تنظیمات اوقات شرعی ذخیره شد" }
-            else message = "نام محل، مختصات معتبر و منطقه زمانی صحیح را وارد کنید."
+            when {
+                !value.isValid() -> message = "نام محل، مختصات معتبر و منطقه زمانی صحیح را وارد کنید."
+                adding && hasPlaces -> viewModel.addPlace(placeName, value)
+                else -> { viewModel.updatePrayerSettings(value); message = "تنظیمات اوقات شرعی ذخیره شد" }
+            }
         }, enabled = if (automatic) hasDetectedLocation else citySelected,
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary)) { Text("ذخیره تنظیمات") }
+                contentColor = MaterialTheme.colorScheme.onPrimary)) {
+            Text(if (adding && hasPlaces) "افزودن و فعال کردن این مکان" else "ذخیره تنظیمات")
+        }
+        if (adding && hasPlaces) {
+            TextButton(onClick = { viewModel.cancelAddingPlace() }, modifier = Modifier.fillMaxWidth()) { Text("انصراف") }
+        }
         if (message.isNotEmpty()) Text(message)
     }
 }

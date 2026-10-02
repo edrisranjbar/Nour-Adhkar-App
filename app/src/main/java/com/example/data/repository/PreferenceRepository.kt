@@ -36,13 +36,48 @@ class PreferenceRepository(context: Context) {
                 ?.takeIf { it.size == 6 && it.all { m -> m in -com.example.prayer.MAX_OFFSET_MINUTES..com.example.prayer.MAX_OFFSET_MINUTES } }
                 ?: List(6) { 0 })
     }.getOrDefault(com.example.prayer.PrayerSettings())
+    /**
+     * Saved prayer places. The legacy prayer_* keys above always mirror the active place, so the
+     * widget, adhan scheduler, reminders and Qibla keep reading [getPrayerSettings] unchanged.
+     */
+    fun getPrayerPlaces(): com.example.prayer.PrayerPlaces {
+        com.example.prayer.PrayerPlaces.fromJson(prefs.getString("prayer_places", null), prefs.getString("prayer_active_place", null))
+            ?.let { return it }
+        val migrated = com.example.prayer.PrayerPlaces.migrate(getPrayerSettings()) { java.util.UUID.randomUUID().toString() }
+        storePrayerPlaces(migrated)
+        return migrated
+    }
+
+    /** Persists [places] and mirrors the active place into the legacy keys. */
+    fun setPrayerPlaces(places: com.example.prayer.PrayerPlaces) {
+        storePrayerPlaces(places)
+        places.active?.let { writePrayerSettings(it.settings) }
+        com.example.widget.PrayerTimesWidgetProvider.updateAll(appContext)
+    }
+
+    private fun storePrayerPlaces(places: com.example.prayer.PrayerPlaces) {
+        prefs.edit().putString("prayer_places", places.toJson()).putString("prayer_active_place", places.activeId).apply()
+    }
+
+    /** Saves edits to the active place (or creates the first place when there is none). */
     fun setPrayerSettings(value: com.example.prayer.PrayerSettings) {
+        val places = getPrayerPlaces()
+        val active = places.active
+        storePrayerPlaces(
+            if (active == null) places.add(com.example.prayer.PrayerPlace(java.util.UUID.randomUUID().toString(),
+                value.location.takeUnless { it == "موقعیت فعلی" } ?: "مکان من", value))
+            else places.update(active.copy(settings = value))
+        )
+        writePrayerSettings(value)
+        com.example.widget.PrayerTimesWidgetProvider.updateAll(appContext)
+    }
+
+    private fun writePrayerSettings(value: com.example.prayer.PrayerSettings) {
         prefs.edit().putString("prayer_location", value.location).putString("prayer_lat", value.latitude.toString())
             .putString("prayer_lon", value.longitude.toString()).putString("prayer_zone", value.zone)
             .putString("prayer_method", value.method).putBoolean("prayer_hanafi", value.hanafi)
             .putBoolean("prayer_automatic_location", value.automaticLocation)
             .putString("prayer_offsets", value.offsets.joinToString(",")).apply()
-        com.example.widget.PrayerTimesWidgetProvider.updateAll(appContext)
     }
 
     fun getAdhanSound(): com.example.prayer.AdhanSound {
@@ -334,6 +369,16 @@ class PreferenceRepository(context: Context) {
     fun getDailyChecklistCompletedIds(dayKey: Long = currentDayKey()): Set<String> {
         migrateLegacyDailyChecklistIfNeeded()
         return prefs.getStringSet(checklistKey(dayKey), emptySet())?.toSet().orEmpty()
+    }
+
+    /** Completed checklist items for every stored day, keyed by local-midnight millis. */
+    fun getAllChecklistCompletionCounts(): Map<Long, Int> {
+        migrateLegacyDailyChecklistIfNeeded()
+        return prefs.all.mapNotNull { (key, value) ->
+            val day = key.removePrefix("daily_checklist_").takeIf { it != key }?.toLongOrNull() ?: return@mapNotNull null
+            val count = (value as? Set<*>)?.size ?: 0
+            if (count > 0) day to count else null
+        }.toMap()
     }
 
     fun getChecklistCompletionCounts(days: Int): Map<Long, Int> {

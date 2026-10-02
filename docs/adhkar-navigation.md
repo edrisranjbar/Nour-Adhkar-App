@@ -34,3 +34,5 @@ Release bundles include all language resources (language splitting is disabled),
 ## اذکار پس از نماز (`after_salah`)
 
 Six items in order: استغفار ×۳ and «اللهم أنت السلام» (Muslim 591), then تسبیح ×۳۳، تحمید ×۳۳، تکبیر ×۳۳ (Muslim 595, Bukhari 843) and the completion line «لا إله إلا الله وحده…» ×۱ (Muslim 597). This is the Sunni narration only; the Fatimah tasbih (34/33/33) and extras (Ayat al-Kursi, al-Mu'awwidhat) are not included yet. Wording, counts and hadith numbers still need review by a knowledgeable reviewer before release.
+
+The Home card «فعالیت ۳۰ روز گذشته» has an «آمار» button that opens «آمار من», with daily, monthly and lifetime charts (see [docs/stats.md](stats.md)). Back returns to Home. The bottom navigation and drawer are unchanged.

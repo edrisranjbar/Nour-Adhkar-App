@@ -285,6 +285,9 @@ fun AppMainScaffold(
         }
     }
 
+    // Warm the articles cache so «مقالات» opens instantly, even the first time.
+    LaunchedEffect(Unit) { com.example.data.repository.ArticlesRepository.prefetch(context) }
+
     LaunchedEffect(Unit) {
         availableUpdate = if (BuildConfig.FORCE_UPDATE_PROMPT) {
             AppUpdate(versionName = "۲.۱.۰ (پیش‌نمایش)", versionCode = BuildConfig.VERSION_CODE + 1)
@@ -429,6 +432,7 @@ fun AppMainScaffold(
                                 "qibla" -> "قبله‌نما"
                                 "qaza" -> "قضای روزه"
                                 "calendar" -> "تقویم"
+                                "stats" -> "آمار من"
                                 "settings" -> "تنظیمات"
                                 "about" -> "درباره برنامه"
                                 "app_inbox" -> "پیام‌ها"
@@ -684,6 +688,7 @@ fun AppMainScaffold(
                         "qibla" -> QiblaScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "qaza" -> QazaScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "calendar" -> com.example.ui.screens.CalendarScreen(viewModel = viewModel, innerPadding = innerPadding)
+                        "stats" -> com.example.ui.screens.StatsScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "favorites" -> FavoritesScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "settings" -> SettingsScreen(viewModel = viewModel, innerPadding = innerPadding)
                         else -> HomeScreen(viewModel = viewModel, innerPadding = innerPadding)

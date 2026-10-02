@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -46,6 +47,7 @@ import androidx.compose.material.icons.rounded.Today
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -75,6 +77,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.calendar.CalendarDay
@@ -98,7 +101,8 @@ import com.example.ui.language.LocalizedText as Text
 
 /** Pages either side of the current month in the swipeable grid (≈100 years each way). */
 private const val PAGE_ORIGIN = 1200
-private const val GRID_ROWS = 6
+/** Cell height: compact, but with the cell width (~48dp on a phone) still a comfortable touch target. */
+private val CELL_MIN_HEIGHT = 46.dp
 
 /** What the user did on a day, read from existing activity, tasbih and checklist data. */
 private data class DayProgress(val active: Boolean, val tasbihCount: Int, val checklistItems: Int)
@@ -164,7 +168,7 @@ fun CalendarScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
             start = 16.dp, end = 16.dp, top = 8.dp,
             bottom = innerPadding.calculateBottomPadding() + 24.dp
         ),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item(key = "month") {
             MonthCard(
@@ -180,7 +184,8 @@ fun CalendarScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
             ) {
                 HorizontalPager(
                     state = pagerState,
-                    modifier = Modifier.fillMaxWidth(),
+                    // Months need 5 or 6 rows; animate the difference instead of jumping.
+                    modifier = Modifier.fillMaxWidth().animateContentSize(),
                     beyondViewportPageCount = 1,
                     key = { it }
                 ) { page ->
@@ -207,7 +212,7 @@ fun CalendarScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
             )
         }
 
-        item(key = "occasions") {
+        if (visibleMonth.occasions.isNotEmpty()) item(key = "occasions") {
             MonthOccasionsCard(
                 month = visibleMonth,
                 selectedJdn = selectedDay.jdn,
@@ -251,58 +256,48 @@ private fun MonthCard(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            FilledTonalIconButton(onClick = onPrevious) {
-                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = "ماه قبل")
-            }
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 8.dp)
-                    .semantics(mergeDescendants = true) { heading() },
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .semantics(mergeDescendants = true) { heading() }
             ) {
                 Text(
                     text = "${language.text(Jalali.monthNames[month.month - 1])} ${month.year}".toPersianDigits(),
-                    fontSize = (21 * fontScale).sp,
+                    fontSize = (19 * fontScale).sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center
+                    maxLines = 1
                 )
                 Text(
                     text = localizedSpan(month.hijriSpan, language).toPersianDigits(),
-                    fontSize = (12.5 * fontScale).sp,
-                    fontWeight = FontWeight.Medium,
+                    fontSize = (12 * fontScale).sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    text = localizedSpan(month.gregorianSpan, language).toPersianDigits(),
-                    fontSize = (11.5 * fontScale).sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
-                    textAlign = TextAlign.Center
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
-            FilledTonalIconButton(onClick = onNext) {
+            AnimatedVisibility(
+                visible = showTodayButton,
+                enter = fadeIn() + scaleIn(initialScale = 0.85f),
+                exit = fadeOut() + scaleOut(targetScale = 0.85f)
+            ) {
+                TextButton(onClick = onToday, contentPadding = PaddingValues(horizontal = 10.dp)) {
+                    Icon(Icons.Rounded.Today, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("امروز", fontSize = (13 * fontScale).sp, fontWeight = FontWeight.SemiBold)
+                }
+            }
+            IconButton(onClick = onPrevious) {
+                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = "ماه قبل")
+            }
+            IconButton(onClick = onNext) {
                 Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "ماه بعد")
             }
         }
 
-        AnimatedVisibility(
-            visible = showTodayButton,
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-            enter = fadeIn() + scaleIn(initialScale = 0.9f),
-            exit = fadeOut() + scaleOut(targetScale = 0.9f)
-        ) {
-            TextButton(onClick = onToday, modifier = Modifier.padding(top = 4.dp)) {
-                Icon(Icons.Rounded.Today, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("بازگشت به امروز", fontSize = (13 * fontScale).sp, fontWeight = FontWeight.SemiBold)
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(8.dp))
         WeekdayHeader(fontScale)
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(4.dp))
         grid()
     }
 }
@@ -332,17 +327,17 @@ private fun MonthGrid(
     fontScale: Float,
     onSelect: (Int) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        repeat(GRID_ROWS) { row ->
+    val rows = (month.leadingBlanks + month.days.size + 6) / 7
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        repeat(rows) { row ->
             Row(
                 modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 repeat(7) { column ->
                     val day = month.days.getOrNull(row * 7 + column - month.leadingBlanks)
                     if (day == null) {
-                        // Empty cells keep a minimum height so every month uses the same six rows.
-                        Spacer(Modifier.weight(1f).heightIn(min = 54.dp))
+                        Spacer(Modifier.weight(1f).heightIn(min = CELL_MIN_HEIGHT))
                     } else {
                         DayCell(
                             day = day,
@@ -370,7 +365,7 @@ private fun DayCell(
 ) {
     val colors = MaterialTheme.colorScheme
     val language = LocalAppLanguage.current
-    val shape = RoundedCornerShape(14.dp)
+    val shape = RoundedCornerShape(12.dp)
     val background by animateColorAsState(
         targetValue = when {
             isToday -> colors.tertiary
@@ -398,7 +393,7 @@ private fun DayCell(
 
     Box(
         modifier = modifier
-            .heightIn(min = 54.dp)
+            .heightIn(min = CELL_MIN_HEIGHT)
             .clip(shape)
             .background(background)
             .then(
@@ -412,7 +407,7 @@ private fun DayCell(
                 role = Role.Button
                 selected = isSelected
             }
-            .padding(vertical = 6.dp),
+            .padding(vertical = 4.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -421,23 +416,23 @@ private fun DayCell(
         ) {
             Text(
                 text = day.jalali.day.toPersianDigits(),
-                fontSize = (16 * fontScale).sp,
+                fontSize = (15 * fontScale).sp,
                 fontWeight = if (isToday || isSelected) FontWeight.ExtraBold else FontWeight.SemiBold,
                 color = numberColor,
-                lineHeight = (18 * fontScale).sp
+                lineHeight = (17 * fontScale).sp
             )
             Text(
                 text = day.hijri.day.toPersianDigits(),
-                fontSize = (10 * fontScale).sp,
+                fontSize = (9.5 * fontScale).sp,
                 fontWeight = FontWeight.Medium,
                 color = hijriColor,
-                lineHeight = (12 * fontScale).sp
+                lineHeight = (11 * fontScale).sp
             )
-            Spacer(Modifier.height(3.dp))
+            Spacer(Modifier.height(2.dp))
             // Reserve the dot's space on every day so numbers line up across the row.
             Box(
                 modifier = Modifier
-                    .size(5.dp)
+                    .size(4.dp)
                     .clip(CircleShape)
                     .background(
                         when {
@@ -462,51 +457,46 @@ private fun SelectedDayCard(day: CalendarDay, todayJdn: Int, progress: DayProgre
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
-                    .size(56.dp)
-                    .clip(RoundedCornerShape(18.dp))
+                    .size(46.dp)
+                    .clip(RoundedCornerShape(14.dp))
                     .background(if (day.jdn == todayJdn) colors.tertiary else colors.secondaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = day.jalali.day.toPersianDigits(),
-                    fontSize = (24 * fontScale).sp,
+                    fontSize = (20 * fontScale).sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = if (day.jdn == todayJdn) colors.surface else colors.onSecondaryContainer
                 )
             }
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "${language.text(Weekday.names[day.weekday])} ${day.jalali.day} " +
                         "${language.text(Jalali.monthNames[day.jalali.month - 1])} ${day.jalali.year}".toPersianDigits(),
-                    fontSize = (16 * fontScale).sp,
+                    fontSize = (15 * fontScale).sp,
                     fontWeight = FontWeight.Bold,
                     color = colors.onSurface
                 )
-                Spacer(Modifier.height(2.dp))
                 Text(
-                    text = hijriLabel(day.hijri, language).toPersianDigits(),
-                    fontSize = (13 * fontScale).sp,
-                    color = colors.onSurfaceVariant
-                )
-                Text(
-                    text = "${day.gregorian.day} ${language.text(Gregorian.monthNames[day.gregorian.month - 1])} ${day.gregorian.year}".toPersianDigits(),
+                    text = ("${hijriLabel(day.hijri, language)} · " +
+                        "${day.gregorian.day} ${language.text(Gregorian.monthNames[day.gregorian.month - 1])} ${day.gregorian.year}").toPersianDigits(),
                     fontSize = (12 * fontScale).sp,
-                    color = colors.onSurfaceVariant.copy(alpha = 0.75f)
+                    color = colors.onSurfaceVariant
                 )
             }
             RelativeDayChip(day.jdn - todayJdn, fontScale)
         }
 
         if (day.occasions.isNotEmpty()) {
-            Spacer(Modifier.height(16.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Spacer(Modifier.height(12.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 day.occasions.forEach { OccasionDetail(it, fontScale) }
             }
         }
 
         if (progress != null) {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
             ProgressRow(progress, isToday = day.jdn == todayJdn, fontScale = fontScale)
         }
     }
@@ -541,9 +531,9 @@ private fun OccasionDetail(occasion: Occasion, fontScale: Float) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(colors.tertiaryContainer.copy(alpha = 0.6f))
-            .padding(14.dp)
+            .padding(12.dp)
     ) {
         Icon(
             imageVector = Icons.Rounded.AutoAwesome,
@@ -590,7 +580,7 @@ private fun ProgressRow(progress: DayProgress, isToday: Boolean, fontScale: Floa
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(if (progress.active) colors.primaryContainer else colors.surfaceVariant.copy(alpha = 0.6f))
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .padding(horizontal = 12.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -633,7 +623,7 @@ private fun MonthOccasionsCard(
     onSelect: (Int) -> Unit
 ) {
     val language = LocalAppLanguage.current
-    CalendarCard(contentPadding = PaddingValues(vertical = 16.dp)) {
+    CalendarCard(contentPadding = PaddingValues(vertical = 12.dp)) {
         Text(
             text = "مناسبت‌های ${language.text(Jalali.monthNames[month.month - 1])}",
             fontSize = (15 * fontScale).sp,
@@ -736,7 +726,7 @@ private fun HijriNote(fontScale: Float, offset: Int, onAdjust: () -> Unit) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
             .background(colors.surfaceVariant.copy(alpha = 0.55f))
-            .padding(start = 14.dp, end = 6.dp, top = 10.dp, bottom = 10.dp),
+            .padding(start = 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -747,8 +737,7 @@ private fun HijriNote(fontScale: Float, offset: Int, onAdjust: () -> Unit) {
         )
         Spacer(Modifier.width(10.dp))
         Text(
-            text = if (offset == 0) "تاریخ قمری بر پایه تقویم ام‌القری محاسبه می‌شود و ممکن است با رؤیت هلال در منطقه شما فرق داشته باشد."
-            else "تاریخ قمری بر پایه تقویم ام‌القری و با ${offsetLabel(offset)} اصلاح نمایش داده می‌شود.".toPersianDigits(),
+            text = (if (offset == 0) "تاریخ قمری: تقویم ام‌القری" else "تاریخ قمری: ام‌القری، ${offsetLabel(offset)}").toPersianDigits(),
             fontSize = (12 * fontScale).sp,
             lineHeight = (19 * fontScale).sp,
             color = colors.onSurfaceVariant,
@@ -857,12 +846,12 @@ private fun StepButton(icon: ImageVector, description: String, enabled: Boolean,
 
 @Composable
 private fun CalendarCard(
-    contentPadding: PaddingValues = PaddingValues(18.dp),
+    contentPadding: PaddingValues = PaddingValues(14.dp),
     content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(22.dp),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, SoftBorder.copy(alpha = 0.85f))
     ) {

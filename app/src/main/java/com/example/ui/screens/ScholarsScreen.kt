@@ -14,6 +14,10 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import android.widget.Toast
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.os.Build
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -50,6 +54,8 @@ import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -92,6 +98,11 @@ import com.example.data.model.Lecture
 import com.example.data.model.Scholar
 import com.example.data.repository.ScholarsRepository
 import com.example.media.LecturePlayer
+import com.example.share.lectureShareText
+import com.example.share.lectureSummary
+import com.example.share.shareAppText
+import com.example.ui.language.LocalAppLanguage
+import com.example.ui.language.text
 import com.example.ui.util.toPersianDigits
 import com.example.ui.viewmodel.AdhkarViewModel
 import kotlinx.coroutines.delay
@@ -405,6 +416,9 @@ private fun LecturePlayerPage(
     innerPadding: PaddingValues,
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
+    val language = LocalAppLanguage.current
+    val summary = remember(lecture.description) { lectureSummary(lecture) }
     val hue = scholar.hue
     val state by LecturePlayer.state.collectAsState()
     val current = state.lectureId == lecture.id
@@ -412,7 +426,7 @@ private fun LecturePlayerPage(
     val loading = current && state.isLoading
 
     // Start when the page opens (or resume if it is already the loaded lecture).
-    LaunchedEffect(lecture.id) { LecturePlayer.play(lecture.id, lecture.audioUrl) }
+    LaunchedEffect(lecture.id, lecture.audioUrl) { LecturePlayer.play(context, lecture.id, lecture.audioUrl) }
     LaunchedEffect(playing) {
         while (playing) { LecturePlayer.refreshPosition(); delay(500) }
     }
@@ -431,8 +445,14 @@ private fun LecturePlayerPage(
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+        Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "بازگشت", tint = Color.White) }
+            IconButton(onClick = {
+                shareAppText(context, lectureShareText(scholar, lecture, language),
+                    chooserTitle = language.text("اشتراک‌گذاری سخنرانی"), subject = lecture.title)
+            }) {
+                Icon(Icons.Default.Share, contentDescription = language.text("اشتراک‌گذاری سخنرانی"), tint = Color.White)
+            }
         }
         Spacer(Modifier.height(6.dp))
         Box(
@@ -500,7 +520,7 @@ private fun LecturePlayerPage(
                             .background(Brush.linearGradient(listOf(scholarMid(hue), scholarDark(hue))))
                             .clickable {
                                 if (current && state.error == null) LecturePlayer.togglePlayPause()
-                                else LecturePlayer.play(lecture.id, lecture.audioUrl)
+                                else LecturePlayer.play(context, lecture.id, lecture.audioUrl)
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -518,6 +538,13 @@ private fun LecturePlayerPage(
                 }
             }
         }
+        if (current && state.isDownloading) {
+            Text(
+                language.text("در حال دانلود سخنرانی") + (state.downloadPercent?.let { " · ${it.toPersianDigits()}٪" } ?: ""),
+                color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = (13 * fontScale).sp,
+                textAlign = TextAlign.Center, modifier = Modifier.padding(top = 12.dp)
+            )
+        }
         if (current && state.error != null) {
             Text(state.error!!, color = MaterialTheme.colorScheme.error, fontSize = (13 * fontScale).sp, textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 12.dp))
@@ -532,8 +559,23 @@ private fun LecturePlayerPage(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("درباره این سخنرانی", fontWeight = FontWeight.Bold, fontSize = (14 * fontScale).sp,
-                        color = MaterialTheme.colorScheme.primary)
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text("درباره این سخنرانی", fontWeight = FontWeight.Bold, fontSize = (14 * fontScale).sp,
+                            color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
+                        if (summary.isNotBlank()) {
+                            IconButton(onClick = {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                clipboard.setPrimaryClip(ClipData.newPlainText(language.text("خلاصهٔ سخنرانی:"), summary))
+                                // Android 13+ shows its own clipboard confirmation.
+                                if (Build.VERSION.SDK_INT < 33) {
+                                    Toast.makeText(context, language.text("خلاصهٔ سخنرانی کپی شد"), Toast.LENGTH_SHORT).show()
+                                }
+                            }) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = language.text("کپی خلاصهٔ سخنرانی"),
+                                    tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
                     Text(lecture.description, fontSize = (14 * fontScale).sp, lineHeight = (24 * fontScale).sp,
                         color = MaterialTheme.colorScheme.onSurface)
                 }

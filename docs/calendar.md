@@ -51,3 +51,14 @@ Disputed dates (for example Mawlid, Isra and Mi'raj, or 15 Sha'ban) are intentio
 ## Out of scope
 
 Device calendar sync, reminders for occasions, a home-screen widget, user-created events, and a Ramadan timetable view.
+
+## Compact layout
+
+The screen was tightened so the month and the selected day fit on one phone screen:
+
+- **Header:** the month and year with one Hijri line. «امروز», shown only when today isn't on screen, and the previous/next arrows sit in the header row, so the grid never shifts down. The Gregorian dates are shown in the day card.
+- **Grid:** only the rows a month needs (5 or 6), with height changes animated. Cells have a 46dp minimum height (about 48dp wide on a phone), with 2dp gaps.
+- **Day card:** a 46dp day badge and two lines: the Jalali date, then «Hijri · Gregorian».
+- **Occasions card:** shown only when the month has occasions.
+- **Hijri note:** reduced to one line («تاریخ قمری: تقویم ام‌القری») with «تنظیم». The longer explanation is in the adjustment sheet.
+

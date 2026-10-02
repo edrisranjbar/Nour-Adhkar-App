@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -50,6 +51,7 @@ import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material.icons.filled.Wc
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
@@ -499,6 +501,20 @@ private fun MonthlyActivityCard(
                         fontWeight = FontWeight.Bold,
                         color = SandDark
                     )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                androidx.compose.material3.FilledTonalButton(
+                    onClick = { viewModel.selectTab("stats") },
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                    modifier = Modifier.heightIn(min = 36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Insights,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Text("آمار", fontSize = (12.5 * fontScale).sp, fontWeight = FontWeight.SemiBold)
                 }
             }
 

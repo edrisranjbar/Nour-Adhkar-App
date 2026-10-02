@@ -1,37 +1,77 @@
 package com.example.media
 
+import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.PlaybackParams
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 data class LectureState(
     val lectureId: String? = null,
     val isLoading: Boolean = false,
     val isPlaying: Boolean = false,
+    val isDownloading: Boolean = false,
+    val downloadPercent: Int? = null,
+    val isAvailableOffline: Boolean = false,
     val positionMs: Int = 0,
     val durationMs: Int = 0,
     val speed: Float = 1f,
     val error: String? = null
 )
 
-/** Streams one lecture at a time; separate from the adhkar and Quran players. */
+/** Downloads once and plays locally; separate from the adhkar and Quran players. */
 object LecturePlayer {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var downloadJob: Job? = null
+    @Volatile private var generation = 0L
+    private var loadedUrl: String? = null
     private var player: MediaPlayer? = null
     private var prepared = false
     private val _state = MutableStateFlow(LectureState())
     val state: StateFlow<LectureState> = _state.asStateFlow()
     private const val NET_ERROR = "پخش انجام نشد. اتصال اینترنت را بررسی کنید."
 
-    fun play(lectureId: String, url: String) {
-        if (_state.value.lectureId == lectureId && player != null && _state.value.error == null) {
+    fun play(context: Context, lectureId: String, url: String) {
+        if (_state.value.lectureId == lectureId && loadedUrl == url && _state.value.error == null &&
+            (player != null || downloadJob?.isActive == true)) {
             resume(); return
         }
+        generation++
+        downloadJob?.cancel()
         release()
+        loadedUrl = url
+        val request = generation
         val speed = _state.value.speed
         _state.value = LectureState(lectureId = lectureId, isLoading = true, speed = speed)
+        val app = context.applicationContext
+        downloadJob = scope.launch {
+            try {
+                val local = withContext(Dispatchers.IO) {
+                    LectureAudioStore(app).getOrDownload(lectureId, url) { percent ->
+                        _state.update { current ->
+                            if (request == generation) current.copy(isDownloading = true, downloadPercent = percent)
+                            else current
+                        }
+                    }
+                }
+                ensureActive()
+                if (request == generation) {
+                    _state.value = _state.value.copy(isDownloading = false, isAvailableOffline = true)
+                    playLocal(local.absolutePath)
+                }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) {
+                if (request == generation) _state.value = LectureState(lectureId = lectureId, speed = _state.value.speed,
+                    error = if (error is AudioStorageFullException) "فضای کافی برای دانلود وجود ندارد. کمی فضا آزاد کنید و دوباره تلاش کنید." else NET_ERROR)
+            }
+        }
+    }
+
+    private fun playLocal(path: String) {
         val mp = MediaPlayer()
         player = mp
         try {
@@ -41,11 +81,11 @@ object LecturePlayer {
                     .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                     .build()
             )
-            mp.setDataSource(url)
+            mp.setDataSource(path)
             mp.setOnPreparedListener {
                 if (player === it) {
                     prepared = true
-                    applySpeed(it, speed)
+                    applySpeed(it, _state.value.speed)
                     it.start()
                     _state.value = _state.value.copy(isLoading = false, isPlaying = true, durationMs = it.duration)
                 }
@@ -56,14 +96,14 @@ object LecturePlayer {
             mp.setOnErrorListener { it, _, _ ->
                 if (player === it) {
                     release()
-                    _state.value = LectureState(lectureId = lectureId, speed = speed, error = NET_ERROR)
+                    _state.value = _state.value.copy(isLoading = false, isPlaying = false, error = NET_ERROR)
                 }
                 true
             }
             mp.prepareAsync()
         } catch (e: Exception) {
             release()
-            _state.value = LectureState(lectureId = lectureId, speed = speed, error = NET_ERROR)
+            _state.value = _state.value.copy(isLoading = false, isPlaying = false, error = NET_ERROR)
         }
     }
 
@@ -105,6 +145,10 @@ object LecturePlayer {
     }
 
     fun stop() {
+        generation++
+        downloadJob?.cancel()
+        downloadJob = null
+        loadedUrl = null
         release()
         _state.value = LectureState(speed = _state.value.speed)
     }
