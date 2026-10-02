@@ -336,6 +336,16 @@ class PreferenceRepository(context: Context) {
         return prefs.getStringSet(checklistKey(dayKey), emptySet())?.toSet().orEmpty()
     }
 
+    /** Completed checklist items for every stored day, keyed by local-midnight millis. */
+    fun getAllChecklistCompletionCounts(): Map<Long, Int> {
+        migrateLegacyDailyChecklistIfNeeded()
+        return prefs.all.mapNotNull { (key, value) ->
+            val day = key.removePrefix("daily_checklist_").takeIf { it != key }?.toLongOrNull() ?: return@mapNotNull null
+            val count = (value as? Set<*>)?.size ?: 0
+            if (count > 0) day to count else null
+        }.toMap()
+    }
+
     fun getChecklistCompletionCounts(days: Int): Map<Long, Int> {
         val calendar = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0)

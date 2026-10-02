@@ -429,6 +429,7 @@ fun AppMainScaffold(
                                 "qibla" -> "قبله‌نما"
                                 "qaza" -> "قضای روزه"
                                 "calendar" -> "تقویم"
+                                "stats" -> "آمار من"
                                 "settings" -> "تنظیمات"
                                 "about" -> "درباره برنامه"
                                 "app_inbox" -> "پیام‌ها"
@@ -684,6 +685,7 @@ fun AppMainScaffold(
                         "qibla" -> QiblaScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "qaza" -> QazaScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "calendar" -> com.example.ui.screens.CalendarScreen(viewModel = viewModel, innerPadding = innerPadding)
+                        "stats" -> com.example.ui.screens.StatsScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "favorites" -> FavoritesScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "settings" -> SettingsScreen(viewModel = viewModel, innerPadding = innerPadding)
                         else -> HomeScreen(viewModel = viewModel, innerPadding = innerPadding)

@@ -139,6 +139,9 @@ class AdhkarRepository(
         dhikrProgressDao.deleteAllProgress()
     }
 
+    /** Every saved tasbih session (the live flow is capped at 500); for the statistics page. */
+    suspend fun getAllTasbihSessions(): List<TasbihSessionEntity> = tasbihSessionDao.getAllSessions()
+
     fun getRecentTasbihSessions(): Flow<List<TasbihSessionEntity>> {
         return tasbihSessionDao.getRecentSessions()
     }

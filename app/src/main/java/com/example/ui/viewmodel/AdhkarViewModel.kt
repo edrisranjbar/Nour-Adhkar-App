@@ -127,6 +127,32 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     private val _activityDayKeys = MutableStateFlow(prefs.getActivityDayKeys())
     val activityDayKeys: StateFlow<Set<Long>> = _activityDayKeys.asStateFlow()
 
+    // Statistics page (آمار من): loaded on demand, aggregated off the main thread.
+    private val _statsInput = MutableStateFlow<com.example.stats.StatsInput?>(null)
+    val statsInput: StateFlow<com.example.stats.StatsInput?> = _statsInput.asStateFlow()
+
+    fun refreshStats() {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.Default) {
+            val zone = java.util.TimeZone.getDefault()
+            fun jdn(millis: Long) = com.example.calendar.Gregorian.jdnOf(millis, zone)
+            val sessions = repository.getAllTasbihSessions()
+            val tasbih = HashMap<Int, Int>()
+            sessions.forEach { tasbih.merge(jdn(it.timestamp), it.count.coerceAtLeast(0), Int::plus) }
+            val checklist = prefs.getAllChecklistCompletionCounts().mapKeys { (day, _) -> jdn(day) }
+            // Same notion of an active day as the streak: activity keys, any tasbih session, or dhikr progress.
+            val active = HashSet<Int>()
+            _activityDayKeys.value.forEach { active += jdn(it) }
+            sessions.forEach { active += jdn(it.timestamp) }
+            allProgress.value.filter { it.currentCount > 0 }.forEach { active += jdn(it.lastUpdated) }
+            _statsInput.value = com.example.stats.StatsInput(
+                todayJdn = jdn(System.currentTimeMillis()),
+                tasbihByDay = tasbih,
+                checklistByDay = checklist,
+                activeDays = active
+            )
+        }
+    }
+
     private val _hijriOffset = MutableStateFlow(prefs.getHijriOffset())
     val hijriOffset: StateFlow<Int> = _hijriOffset.asStateFlow()
 
