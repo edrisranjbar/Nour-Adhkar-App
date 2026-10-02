@@ -426,7 +426,7 @@ private fun LecturePlayerPage(
     val loading = current && state.isLoading
 
     // Start when the page opens (or resume if it is already the loaded lecture).
-    LaunchedEffect(lecture.id) { LecturePlayer.play(lecture.id, lecture.audioUrl) }
+    LaunchedEffect(lecture.id, lecture.audioUrl) { LecturePlayer.play(context, lecture.id, lecture.audioUrl) }
     LaunchedEffect(playing) {
         while (playing) { LecturePlayer.refreshPosition(); delay(500) }
     }
@@ -520,7 +520,7 @@ private fun LecturePlayerPage(
                             .background(Brush.linearGradient(listOf(scholarMid(hue), scholarDark(hue))))
                             .clickable {
                                 if (current && state.error == null) LecturePlayer.togglePlayPause()
-                                else LecturePlayer.play(lecture.id, lecture.audioUrl)
+                                else LecturePlayer.play(context, lecture.id, lecture.audioUrl)
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -537,6 +537,16 @@ private fun LecturePlayerPage(
                     Spacer(Modifier.width(52.dp)) // balances the speed pill so play stays centred
                 }
             }
+        }
+        if (current && state.isDownloading) {
+            Text(
+                language.text("در حال دانلود سخنرانی") + (state.downloadPercent?.let { " · ${it.toPersianDigits()}٪" } ?: ""),
+                color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = (13 * fontScale).sp,
+                textAlign = TextAlign.Center, modifier = Modifier.padding(top = 12.dp)
+            )
+        } else if (current && state.isAvailableOffline) {
+            Text(language.text("آمادهٔ پخش آفلاین"), color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = (13 * fontScale).sp, modifier = Modifier.padding(top = 12.dp))
         }
         if (current && state.error != null) {
             Text(state.error!!, color = MaterialTheme.colorScheme.error, fontSize = (13 * fontScale).sp, textAlign = TextAlign.Center,

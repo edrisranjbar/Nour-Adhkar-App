@@ -8,6 +8,7 @@
 <full-backup-content>
     <exclude domain="sharedpref" path="account.xml"/>
         <exclude domain="file" path="quran_audio/"/>
+    <exclude domain="file" path="lecture_audio/"/>
     <exclude domain="sharedpref" path="app_inbox.xml"/>
     <exclude domain="sharedpref" path="progress_sync.xml"/>
     <!--
