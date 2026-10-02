@@ -6,11 +6,7 @@ data class Lecture(
     val title: String,
     val description: String,
     val audioUrl: String,
-    val durationSec: Int? = null,
-    /** Admin-reviewed summary of the lecture, generated from its transcript; empty when there is none. */
-    val summary: String = "",
-    /** Server id for loading the reviewed transcript; null when no transcript is published. */
-    val transcriptId: String? = null
+    val durationSec: Int? = null
 )
 
 /**
