@@ -3,6 +3,8 @@ package com.example.ui.language
 /** Presentation-only translations. Never translate database keys, IDs, or user input. */
 object ArabicCatalog {
     private val entries = """
+کپی خلاصهٔ سخنرانی|نسخ ملخص المحاضرة
+خلاصهٔ سخنرانی کپی شد|تم نسخ ملخص المحاضرة
 اشتراک‌گذاری سخنرانی|مشاركة المحاضرة
 عنوان سخنرانی:|عنوان المحاضرة:
 سخنران:|المحاضر:

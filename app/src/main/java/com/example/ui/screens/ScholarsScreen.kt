@@ -14,6 +14,10 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import android.widget.Toast
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.os.Build
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -51,6 +55,7 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -94,6 +99,7 @@ import com.example.data.model.Scholar
 import com.example.data.repository.ScholarsRepository
 import com.example.media.LecturePlayer
 import com.example.share.lectureShareText
+import com.example.share.lectureSummary
 import com.example.share.shareAppText
 import com.example.ui.language.LocalAppLanguage
 import com.example.ui.language.text
@@ -412,6 +418,7 @@ private fun LecturePlayerPage(
 ) {
     val context = LocalContext.current
     val language = LocalAppLanguage.current
+    val summary = remember(lecture.description) { lectureSummary(lecture) }
     val hue = scholar.hue
     val state by LecturePlayer.state.collectAsState()
     val current = state.lectureId == lecture.id
@@ -545,8 +552,23 @@ private fun LecturePlayerPage(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("درباره این سخنرانی", fontWeight = FontWeight.Bold, fontSize = (14 * fontScale).sp,
-                        color = MaterialTheme.colorScheme.primary)
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text("درباره این سخنرانی", fontWeight = FontWeight.Bold, fontSize = (14 * fontScale).sp,
+                            color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
+                        if (summary.isNotBlank()) {
+                            IconButton(onClick = {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                clipboard.setPrimaryClip(ClipData.newPlainText(language.text("خلاصهٔ سخنرانی:"), summary))
+                                // Android 13+ shows its own clipboard confirmation.
+                                if (Build.VERSION.SDK_INT < 33) {
+                                    Toast.makeText(context, language.text("خلاصهٔ سخنرانی کپی شد"), Toast.LENGTH_SHORT).show()
+                                }
+                            }) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = language.text("کپی خلاصهٔ سخنرانی"),
+                                    tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
                     Text(lecture.description, fontSize = (14 * fontScale).sp, lineHeight = (24 * fontScale).sp,
                         color = MaterialTheme.colorScheme.onSurface)
                 }

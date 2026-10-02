@@ -5,12 +5,17 @@ import com.example.data.model.Scholar
 import com.example.ui.language.AppLanguage
 import com.example.ui.language.text
 
-/** Share the supplied summary, excluding the backend's appended transcript section. */
-fun lectureShareText(scholar: Scholar, lecture: Lecture, language: AppLanguage): String {
+/** The supplied summary without the backend's appended transcript section or heading. */
+fun lectureSummary(lecture: Lecture): String {
     val description = lecture.description.replace("\r\n", "\n").trim()
     val transcriptHeader = Regex("(?m)^متن کامل سخنرانی[ \\t]*$").find(description)
-    val summary = (transcriptHeader?.let { description.substring(0, it.range.first) } ?: description)
+    return (transcriptHeader?.let { description.substring(0, it.range.first) } ?: description)
         .replace(Regex("^خلاصه[ \\t]*\\n"), "").trim()
+}
+
+/** Share the supplied summary, excluding the backend's appended transcript section. */
+fun lectureShareText(scholar: Scholar, lecture: Lecture, language: AppLanguage): String {
+    val summary = lectureSummary(lecture)
     // Keep text sharing compact, including old descriptions that contain only a transcript.
     val excerpt = if (summary.length > 2_000) {
         summary.take(2_000).substringBeforeLast(' ').trimEnd() + "…"
