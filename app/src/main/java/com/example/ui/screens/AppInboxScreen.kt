@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.data.repository.AppInboxApi
 import com.example.data.repository.AppNotice
+import com.example.ui.util.formatInboxDate
 import kotlinx.coroutines.launch
 
 @Composable
@@ -50,7 +51,7 @@ fun AppInboxScreen(innerPadding: PaddingValues) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text((if (notice.read) "" else "●  ") + notice.title, style = MaterialTheme.typography.titleMedium)
                     Text(notice.message, style = MaterialTheme.typography.bodyMedium)
-                    Text(notice.date.take(10), style = MaterialTheme.typography.labelSmall)
+                    Text(remember(notice.date) { formatInboxDate(notice.date) }, style = MaterialTheme.typography.labelSmall)
                     if (!notice.read) TextButton(onClick = {
                         scope.launch {
                             try {
