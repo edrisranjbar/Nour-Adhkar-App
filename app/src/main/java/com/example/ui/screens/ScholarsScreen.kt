@@ -544,9 +544,6 @@ private fun LecturePlayerPage(
                 color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = (13 * fontScale).sp,
                 textAlign = TextAlign.Center, modifier = Modifier.padding(top = 12.dp)
             )
-        } else if (current && state.isAvailableOffline) {
-            Text(language.text("آمادهٔ پخش آفلاین"), color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = (13 * fontScale).sp, modifier = Modifier.padding(top = 12.dp))
         }
         if (current && state.error != null) {
             Text(state.error!!, color = MaterialTheme.colorScheme.error, fontSize = (13 * fontScale).sp, textAlign = TextAlign.Center,
