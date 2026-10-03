@@ -5,13 +5,12 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
-import org.json.JSONArray
 import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.UUID
 
-data class ProgressSyncState(val busy: Boolean = false, val lastSynced: Long = 0, val error: Boolean = false)
+enum class ProgressSyncError { CONNECTION, SIGN_IN_REQUIRED, SERVER, RATE_LIMITED, INVALID_DATA, TOO_LARGE, UNKNOWN }
+
+data class ProgressSyncState(val busy: Boolean = false, val lastSynced: Long = 0, val error: Boolean = false, val errorReason: ProgressSyncError? = null)
 
 /** Automatic signed-in account backup. Offline edits are journalled and retried on next use. */
 object ProgressSyncRepository {
@@ -50,11 +49,13 @@ object ProgressSyncRepository {
         val app = context.applicationContext
         scope.launch {
             if (!mutex.tryLock()) return@launch
+            var syncingEmail: String? = null
             try {
                 val email = AccountRepository.user.value?.email ?: return@launch
+                syncingEmail = email
                 val token = AccountRepository.token(app) ?: return@launch
                 val prefs = journal(app, email)
-                _state.value = _state.value.copy(busy = true, error = false)
+                _state.value = _state.value.copy(busy = true, error = false, errorReason = null)
                 val snapshot = ProgressSnapshot(app)
                 var baseline = JSONObject(prefs.getString("baseline", "{}").orEmpty())
                 var records = JSONObject(prefs.getString("records", "{}").orEmpty())
@@ -64,11 +65,13 @@ object ProgressSyncRepository {
                 baseline = local
                 // Persist pending changes even if the phone goes offline or the process is killed.
                 prefs.edit().putString("records", records.toString()).putString("baseline", baseline.toString()).commit()
-                val response = withContext(Dispatchers.IO) { request(token, ProgressRecords.array(records)) }
-                if (AccountRepository.token(app) != token || AccountRepository.user.value?.email != email) return@launch
+                val response = withContext(Dispatchers.IO) {
+                    ProgressSyncApi().sync(token, ProgressRecords.array(records)) { AccountRepository.refreshToken(app, it) }
+                }
+                if (AccountRepository.token(app) != response.token || AccountRepository.user.value?.email != email) return@launch
                 val latest = snapshot.read()
                 records = ProgressRecords.capture(baseline, records, latest, device, System.currentTimeMillis())
-                records = ProgressRecords.merge(records, response)
+                records = ProgressRecords.merge(records, response.records)
                 val merged = ProgressRecords.snapshot(records)
                 snapshot.apply(latest, merged)
                 val actual = snapshot.read()
@@ -81,39 +84,28 @@ object ProgressSyncRepository {
                     com.example.widget.ChecklistWidgetProvider.updateAll(app)
                 }
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (_: Exception) { _state.value = _state.value.copy(busy = false, error = true) }
+            catch (failure: Exception) {
+                if (syncingEmail != null && AccountRepository.user.value?.email == syncingEmail)
+                    _state.value = _state.value.copy(busy = false, error = true, errorReason = syncError(failure))
+            }
             finally { _state.value = _state.value.copy(busy = false); mutex.unlock() }
         }
     }
+}
 
-    private fun request(token: String, records: JSONArray): JSONArray {
-        val connection = URL("https://api.adhkar.ir/api/progress/sync").openConnection() as HttpURLConnection
-        try {
-            connection.requestMethod = "POST"
-            connection.connectTimeout = 15_000
-            connection.readTimeout = 20_000
-            connection.doOutput = true
-            connection.setRequestProperty("Authorization", "Bearer $token")
-            connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
-            connection.setRequestProperty("Accept", "application/json")
-            val payload = JSONObject().put("version", 1).put("records", records).toString().toByteArray()
-            require(payload.size <= 4_000_000)
-            connection.outputStream.use { it.write(payload) }
-            check(connection.responseCode in 200..299)
-            val body = connection.inputStream.use { input ->
-                val output = java.io.ByteArrayOutputStream()
-                val buffer = ByteArray(8192)
-                while (output.size() <= 4_000_000) {
-                    val count = input.read(buffer)
-                    if (count < 0) break
-                    output.write(buffer, 0, count)
-                }
-                val bytes = output.toByteArray()
-                require(bytes.size <= 4_000_000)
-                String(bytes, Charsets.UTF_8)
-            }
-            return JSONObject(body).getJSONArray("records")
-        } finally { connection.disconnect() }
+internal fun syncError(failure: Exception): ProgressSyncError {
+    val status = when (failure) {
+        is ProgressSyncHttpException -> failure.status
+        is AuthException -> failure.status
+        else -> null
+    }
+    return when (status) {
+        401, 403 -> ProgressSyncError.SIGN_IN_REQUIRED
+        413 -> ProgressSyncError.TOO_LARGE
+        422 -> ProgressSyncError.INVALID_DATA
+        429 -> ProgressSyncError.RATE_LIMITED
+        null -> if (failure is java.io.IOException || failure is AuthException) ProgressSyncError.CONNECTION else ProgressSyncError.UNKNOWN
+        else -> if (status in 500..599) ProgressSyncError.SERVER else ProgressSyncError.UNKNOWN
     }
 }
 

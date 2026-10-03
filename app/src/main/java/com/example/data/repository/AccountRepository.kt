@@ -9,13 +9,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
 data class AccountUser(val name: String, val email: String)
 
-class AuthException(message: String) : Exception(message)
+class AuthException(message: String, val status: Int? = null) : Exception(message)
 
 /** Result of login/register: signed in, or a 5-digit code was emailed and must be confirmed. */
 sealed interface AuthResult {
@@ -35,6 +37,23 @@ object AccountRepository {
     private val _user = MutableStateFlow<AccountUser?>(null)
     val user: StateFlow<AccountUser?> = _user.asStateFlow()
     private var loaded = false
+    private val refreshMutex = Mutex()
+
+    /** Serialize refreshes and never replace a token from a newer login or restore a logged-out session. */
+    internal suspend fun refreshToken(context: Context, expectedToken: String): String? = refreshMutex.withLock {
+        val current = token(context) ?: return@withLock null
+        if (current != expectedToken) return@withLock null
+        val (_, response) = request("auth/refresh", JSONObject(), expectedToken)
+        val refreshed = response.optString("token").takeIf { it.isNotBlank() }
+            ?: throw java.io.IOException("Missing refreshed session")
+        withContext(Dispatchers.Main.immediate) {
+            if (token(context) != expectedToken) null
+            else {
+                prefs(context).edit().putString("token", refreshed).apply()
+                refreshed
+            }
+        }
+    }
 
     fun init(context: Context) {
         if (loaded) return
@@ -156,7 +175,7 @@ object AccountRepository {
             val text = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
             val json = runCatching { JSONObject(text) }.getOrDefault(JSONObject())
             if (code !in 200..299 && code !in allowStatus) {
-                throw AuthException(friendlyMessage(code, json.optString("message")))
+                throw AuthException(friendlyMessage(code, json.optString("message")), code)
             }
             code to json
         } finally {
