@@ -26,6 +26,19 @@ class PreferenceRepository(context: Context) {
         Context.MODE_PRIVATE
     )
 
+    fun getHomeShortcuts(): List<String> {
+        val saved = prefs.getString("home_shortcuts", null) ?: return com.example.data.model.HomeShortcuts.defaults
+        return runCatching {
+            val array = org.json.JSONArray(saved)
+            com.example.data.model.HomeShortcuts.normalize((0 until array.length()).map { array.getString(it) })
+        }.getOrDefault(com.example.data.model.HomeShortcuts.defaults)
+    }
+
+    fun setHomeShortcuts(ids: List<String>) {
+        val valid = com.example.data.model.HomeShortcuts.normalize(ids)
+        prefs.edit().putString("home_shortcuts", org.json.JSONArray(valid).toString()).apply()
+    }
+
     fun getPrayerSettings(): com.example.prayer.PrayerSettings = runCatching {
         com.example.prayer.PrayerSettings(prefs.getString("prayer_location", "").orEmpty(),
             prefs.getString("prayer_lat", "0")!!.toDouble(), prefs.getString("prayer_lon", "0")!!.toDouble(),

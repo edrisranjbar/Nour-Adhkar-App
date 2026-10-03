@@ -664,7 +664,11 @@ fun AppMainScaffold(
                     label = "tabTransitions"
                 ) { targetTab ->
                     when (targetTab) {
-                        "home" -> HomeScreen(viewModel = viewModel, innerPadding = innerPadding)
+                        "home" -> HomeScreen(viewModel = viewModel, innerPadding = innerPadding,
+                            onOpenShortcut = { destination ->
+                                if (destination == "quran_audio") quranAudioBackTab = "home"
+                                viewModel.selectTab(destination)
+                            })
                         "checklist" -> DailyChecklistScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "tasbih" -> TasbihScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "achievements" -> AchievementsScreen(

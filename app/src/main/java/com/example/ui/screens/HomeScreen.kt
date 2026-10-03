@@ -126,7 +126,8 @@ import com.example.ui.viewmodel.AdhkarViewModel
 @Composable
 fun HomeScreen(
     viewModel: AdhkarViewModel,
-    innerPadding: PaddingValues
+    innerPadding: PaddingValues,
+    onOpenShortcut: (String) -> Unit = { viewModel.selectTab(it) }
 ) {
     val searchQuery by viewModel.searchQuery.collectAsState()
     val searchResults by viewModel.searchResults.collectAsState(initial = emptyList())
@@ -282,6 +283,10 @@ fun HomeScreen(
                             )
                         }
 
+
+                        item {
+                            HomeQuickAccess(viewModel, fontScale, onOpenShortcut)
+                        }
 
                         item {
                             MonthlyActivityCard(viewModel = viewModel, fontScale = fontScale)

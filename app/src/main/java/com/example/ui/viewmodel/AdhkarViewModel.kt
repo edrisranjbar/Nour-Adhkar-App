@@ -45,6 +45,13 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
     private val prefs = PreferenceRepository(application)
     private val notificationManager = AdhkarNotificationManager(application)
 
+    private val _homeShortcuts = MutableStateFlow(prefs.getHomeShortcuts())
+    val homeShortcuts = _homeShortcuts.asStateFlow()
+    fun setHomeShortcuts(ids: List<String>) {
+        prefs.setHomeShortcuts(ids)
+        _homeShortcuts.value = prefs.getHomeShortcuts()
+    }
+
     private val _onboardingComplete = MutableStateFlow(prefs.isOnboardingComplete())
     val onboardingComplete = _onboardingComplete.asStateFlow()
 
