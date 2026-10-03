@@ -34,13 +34,13 @@ Unit coverage includes invalid settings, chronological ordering, calculation met
 
 ## Adhan sound selection
 
-Settings uses one compact `موذن` dropdown for three bundled choices: Ali ibn Ahmad Mulla from Makkah, the Adhan of Al-Masjid an-Nabawi in Madinah, and Mishary Rashid Alafasy. Choosing an item saves it immediately as a stable recording ID, independently of location settings. A single adjacent play/stop icon previews the selected sound. No file picker, storage permission, audio download, source list, or credits dialog appears in the UI. Preview stops on completion, playback errors, audio-focus loss, app backgrounding, or leaving the section. Source details remain in `licenses/adhan-audio.md`.
+Settings uses one compact `موذن` dropdown for six bundled choices: Ali ibn Ahmad Mulla from Makkah, the Adhan of Al-Masjid an-Nabawi in Madinah, Mishary Rashid Alafasy, Abdulbasit Abdusamad, Nasser Al Qatami, and Yasser Al-Dosari. Choosing an item saves it immediately as a stable recording ID, independently of location settings. Existing choices and saved IDs are preserved. A single adjacent play/stop icon previews the selected sound. No file picker, storage permission, audio download, source list, or credits dialog appears in the UI. Preview stops on completion, playback errors, audio-focus loss, app backgrounding, or leaving the section. Source details remain in `licenses/adhan-audio.md`.
 
 Five independent checkboxes (Fajr, Dhuhr, Asr, Maghrib, Isha) enable automatic Adhan playback. All are off by default and selections save immediately. Sunrise is excluded. Playback requires a saved valid location, a selected voice, notification permission, and exact-alarm access on Android 12+. Missing prerequisites appear beside the controls. Existing Adhkar reminders remain independent.
 
 Each enabled prayer has a separate exact idle-aware alarm for its next calculated occurrence using the saved timezone. Changing location, voice, or enabled prayers refreshes the schedule; disabling a prayer cancels its alarm. Schedules also refresh on app resume, reboot, app update, clock changes, timezone changes, and exact-alarm permission grants. Unavailable times are skipped. The receiver rechecks enabled state and ignores alerts delayed by more than ten minutes. Audio runs in a media-playback foreground service using alarm volume and a visible Stop notification; completion, errors, or audio-focus loss stop playback. Boot receivers only schedule future alarms and do not start audio. Invalid/legacy file selections resolve to no built-in selection until a user chooses one.
 
-Focused verification covers selection persistence, invalid IDs, unchanged reminder time, exactly three distinct resources, and hashes matching the downloaded source audio. All three files were fully decoded with FFmpeg to verify readability.
+Focused test coverage includes selection persistence, invalid IDs, unchanged reminder time, six distinct resources, and hashes matching the downloaded source audio. The six files were fully decoded with FFmpeg to verify readability; updated Android tests and compilation are deferred until a build is requested.
 
 ## Battery optimization (background adhan and reminders)
 
@@ -83,4 +83,3 @@ Users can keep up to 10 named places (for example «خانه», «مشهد», «
 - **Adding:** «افزودن مکان» opens the same editor for a fresh draft. It starts with a name field and quick names. Location comes from city search or GPS detection; GPS is only a way to add a place, not a live entry. The timezone is still an explicit choice. The method, madhab and corrections are copied from the active place. Saving adds the place and makes it active. Leaving Settings abandons the draft.
 - **Storage:** `prayer_places` (JSON) and `prayer_active_place`. The original `prayer_*` keys always mirror the active place, so the widget and schedulers read prayer settings unchanged.
 - **Migration:** on first launch after the update, an existing saved location becomes place #1, named after its city, with every value preserved. Places are not part of progress sync.
-
