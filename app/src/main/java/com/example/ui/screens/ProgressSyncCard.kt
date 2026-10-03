@@ -12,7 +12,9 @@ import com.example.ui.language.AppLanguage
 import com.example.ui.language.LocalAppLanguage
 import com.example.ui.language.text
 import com.example.ui.util.toPersianDigits
+import com.example.ui.util.formatPersianDateTime
 import java.text.DateFormat
+import java.util.TimeZone
 
 @Composable
 fun ProgressSyncCard() {
@@ -37,7 +39,12 @@ fun ProgressSyncCard() {
                 }
                 Text(LocalAppLanguage.current.text(message), color = MaterialTheme.colorScheme.error)
             }
-            if (state.lastSynced > 0) Text((if (arabic) "آخر مزامنة: " else "آخرین همگام‌سازی: ") + DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(state.lastSynced).toPersianDigits(), style = MaterialTheme.typography.bodySmall)
+            if (state.lastSynced > 0) {
+                val date = if (arabic) DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
+                    .format(state.lastSynced).toPersianDigits()
+                else formatPersianDateTime(state.lastSynced, TimeZone.getDefault())
+                Text((if (arabic) "آخر مزامنة: " else "آخرین همگام‌سازی: ") + date, style = MaterialTheme.typography.bodySmall)
+            }
             TextButton(enabled = !state.busy, onClick = { ProgressSyncRepository.sync(context) }) {
                 Text(if (arabic) "مزامنة الآن" else "همگام‌سازی اکنون")
             }

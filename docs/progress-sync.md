@@ -2,6 +2,8 @@
 
 Google sign-in continues to use the existing Nour account API. Progress sync starts automatically whenever signed in, including existing accounts; there is no enable/disable setting. Profile shows status, manual retry and last successful sync time. Signed-out/offline use remains available.
 
+In Persian, the last-sync timestamp uses the shared Jalali date formatter with Persian digits and the phone's local time zone, including a 24-hour time. Arabic retains its existing date presentation.
+
 When sync receives HTTP 401, it refreshes the saved JWT through `POST /api/auth/refresh` and retries the identical journal once. Refreshes are serialized and only replace the same active session: logout or a newer login during the request cannot restore/overwrite credentials. Sync accepts results only for the matching account and refreshed token. If refresh is no longer permitted, Profile asks the user to sign out and sign in again; connection, server, rate-limit, invalid-data, and size errors have separate Persian/Arabic messages. Errors never discard local progress or the pending journal. `ProgressSyncApiTest` covers retry bounds and preserved uploads; build/test execution remains separate from source changes.
 
 The account backup includes streak activity days, daily checklist membership, saved tasbih/collection history, adhkar counters, favorites/custom dhikr, current tasbih counts, Quran last-read page/highlights/notes/khatm progress, and fasting progress. Credentials, installation identity, location, calculation/notification settings and audio files are excluded. Signing out stops sync and preserves local progress and the existing cloud backup. Old optional-sync preferences are ignored.
