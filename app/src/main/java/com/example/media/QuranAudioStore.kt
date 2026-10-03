@@ -51,6 +51,7 @@ class QuranAudioStore(
         // No other store mutation runs concurrently; discard abandoned partials after process death.
         root.walkTopDown().filter { it.isFile && it.name.endsWith(".part") }.forEach { it.delete() }
         val destination = file(reciter.id, surah)
+        if (destination.isFile && destination.length() > 0) return@withLock destination
         if (!destination.parentFile!!.isDirectory && !destination.parentFile!!.mkdirs()) throw IOException("storage")
         val part = File(destination.parentFile, "${destination.name}.${UUID.randomUUID()}.part")
         val connection = openConnection(URL(reciter.surahUrl(surah)))

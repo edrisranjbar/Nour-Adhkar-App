@@ -67,6 +67,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.RecordVoiceOver
+import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.VolunteerActivism
@@ -237,6 +238,7 @@ fun AppMainScaffold(
     val context = LocalContext.current
     // Where the achievements screen returns to: Home (app bar icon) or Profile (banner).
     var achievementsBackTab by remember { mutableStateOf("account") }
+    var quranAudioBackTab by remember { mutableStateOf("home") }
     val language = LocalAppLanguage.current
     val currentTab by viewModel.currentTab.collectAsState()
     LaunchedEffect(context) { com.example.data.repository.AccountRepository.init(context) }
@@ -272,6 +274,7 @@ fun AppMainScaffold(
         when {
             drawerState.isOpen -> coroutineScope.launch { drawerState.close() }
             currentTab == "achievements" -> viewModel.selectTab(achievementsBackTab)
+            currentTab == "quran_audio" -> viewModel.selectTab(quranAudioBackTab)
             currentTab != "home" -> viewModel.selectTab("home")
             else -> {
                 val now = android.os.SystemClock.elapsedRealtime()
@@ -349,6 +352,7 @@ fun AppMainScaffold(
                             val drawerItems = listOf(
                                 Triple("adhkar", "اذکار و ادعیه", Icons.Default.Article),
                                 Triple("calendar", "تقویم", Icons.Default.CalendarMonth),
+                                Triple("quran_audio", "قرآن صوتی", Icons.Default.Headphones),
                                 Triple("qibla", "قبله‌نما", Icons.Default.Explore),
                                 Triple("scholars", "علما و مشاهیر", Icons.Default.RecordVoiceOver),
                                 Triple("articles", "مقالات", Icons.Default.Article),
@@ -386,6 +390,7 @@ fun AppMainScaffold(
                                                 )
                                             )
                                         } else {
+                                            if (tab == "quran_audio" && currentTab != tab) quranAudioBackTab = currentTab
                                             viewModel.selectTab(tab)
                                         }
                                         coroutineScope.launch { drawerState.close() }
@@ -441,6 +446,7 @@ fun AppMainScaffold(
                                 "articles" -> "مقالات"
                                 "adhkar" -> "اذکار و ادعیه"
                                 "quran" -> "قرآن کریم"
+                                "quran_audio" -> "قرآن صوتی"
                                 "favorites" -> "علاقه‌مندی‌ها"
                                 else -> "اذکار نور"
                             },
@@ -542,7 +548,7 @@ fun AppMainScaffold(
                                 }
 
                                 // 2. Quran Tab (right side in the RTL bottom bar)
-                                val isQuranSelected = currentTab == "quran"
+                                val isQuranSelected = currentTab in setOf("quran", "quran_audio")
                                 Column(
                                     modifier = Modifier
                                         .weight(1f)
@@ -682,10 +688,12 @@ fun AppMainScaffold(
                         "quran" -> QuranScreen(
                             innerPadding = innerPadding,
                             onNavigateHome = { viewModel.selectTab("home") },
+                            onOpenAudio = { quranAudioBackTab = "quran"; viewModel.selectTab("quran_audio") },
                             requestedPage = openQuranPage,
                             onRequestedPageConsumed = onQuranPageConsumed
                         )
                         "qibla" -> QiblaScreen(viewModel = viewModel, innerPadding = innerPadding)
+                        "quran_audio" -> com.example.ui.screens.QuranAudioScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "qaza" -> QazaScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "calendar" -> com.example.ui.screens.CalendarScreen(viewModel = viewModel, innerPadding = innerPadding)
                         "stats" -> com.example.ui.screens.StatsScreen(viewModel = viewModel, innerPadding = innerPadding)

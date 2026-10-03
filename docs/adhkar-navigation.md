@@ -17,7 +17,9 @@ New installations open a five-step, swipeable onboarding (the last step is an op
 
 The navigation drawer starts with a Telegram-style profile header (avatar, name/email, streak count) that opens Profile. It no longer lists Home, Quran, tasbih, daily checklist, Settings, achievements, Profile, messages, or favorites; those are reached from the bottom navigation, the header, Profile, and the home app bar (favorites heart beside the notifications icon).
 
-The drawer lists «اذکار و ادعیه», «تقویم», «قبله‌نما», «علما و مشاهیر», «مقالات», «قضای روزه», «حمایت مالی» and «درباره برنامه». «تقویم» opens the Jalali/Hijri month calendar with occasions and activity (see [docs/calendar.md](calendar.md)); «قضای روزه» opens the missed-fast tracker (see [docs/qaza-tracker.md](qaza-tracker.md)); the bottom navigation is unchanged.
+The drawer lists «اذکار و ادعیه», «تقویم», «قرآن صوتی», «قبله‌نما», «علما و مشاهیر», «مقالات», «قضای روزه», «حمایت مالی» and «درباره برنامه». «تقویم» opens the Jalali/Hijri month calendar with occasions and activity (see [docs/calendar.md](calendar.md)); «قرآن صوتی» opens the dedicated Qari/Surah listening player (see [docs/quran.md](quran.md)); «قضای روزه» opens the missed-fast tracker (see [docs/qaza-tracker.md](qaza-tracker.md)). The bottom navigation keeps its five destinations and highlights Quran while the listening screen is open.
+
+Android Back from «قرآن صوتی» returns to the page it was opened from, including the Quran reader when opened from its reciter menu.
 
 ## Verses for a feeling
 

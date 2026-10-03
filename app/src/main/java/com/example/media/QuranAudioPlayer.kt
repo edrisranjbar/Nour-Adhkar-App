@@ -9,25 +9,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-
-/** A reciter whose complete per-surah recitations are streamed from mp3quran.net (`NNN.mp3`). */
-data class QuranReciter(val id: String, val faName: String, val arName: String, val baseUrl: String) {
-    fun surahUrl(surah: Int) = "$baseUrl/${surah.toString().padStart(3, '0')}.mp3"
-}
-
-/** Ten widely known reciters; each base URL was checked to serve 001.mp3 and 114.mp3. */
-val QuranReciters = listOf(
-    QuranReciter("afs", "مشاری راشد العفاسی", "مشاري راشد العفاسي", "https://server8.mp3quran.net/afs"),
-    QuranReciter("basit", "عبدالباسط عبدالصمد", "عبد الباسط عبد الصمد", "https://server7.mp3quran.net/basit"),
-    QuranReciter("sds", "عبدالرحمن السدیس", "عبد الرحمن السديس", "https://server11.mp3quran.net/sds"),
-    QuranReciter("shur", "سعود الشریم", "سعود الشريم", "https://server7.mp3quran.net/shur"),
-    QuranReciter("husr", "محمود خلیل الحصری", "محمود خليل الحصري", "https://server13.mp3quran.net/husr"),
-    QuranReciter("minsh", "محمد صدیق المنشاوی", "محمد صديق المنشاوي", "https://server10.mp3quran.net/minsh"),
-    QuranReciter("maher", "ماهر المعیقلی", "ماهر المعيقلي", "https://server12.mp3quran.net/maher"),
-    QuranReciter("s_gmd", "سعد الغامدی", "سعد الغامدي", "https://server7.mp3quran.net/s_gmd"),
-    QuranReciter("ajm", "احمد العجمی", "أحمد العجمي", "https://server10.mp3quran.net/ajm"),
-    QuranReciter("yasser", "یاسر الدوسری", "ياسر الدوسري", "https://server11.mp3quran.net/yasser")
-)
+import kotlinx.coroutines.flow.update
 
 data class QuranAudioState(
     val surah: Int? = null,
@@ -37,6 +19,9 @@ data class QuranAudioState(
     val downloadPercent: Int? = null,
     val mobileConfirmationBytes: Long? = null,
     val reciterId: String? = null,
+    val positionMs: Int = 0,
+    val durationMs: Int = 0,
+    val speed: Float = 1f,
     val error: String? = null
 )
 
@@ -46,14 +31,22 @@ object QuranAudioPlayer {
     private var job: Job? = null
     @Volatile private var generation = 0L
     private var player: MediaPlayer? = null
+    private var prepared = false
     private val _state = MutableStateFlow(QuranAudioState())
     val state: StateFlow<QuranAudioState> = _state.asStateFlow()
 
     fun play(context: Context, reciter: QuranReciter, surah: Int, allowMobile: Boolean = false) {
+        require(surah in 1..114)
+        if (_state.value.reciterId == reciter.id && _state.value.surah == surah &&
+            _state.value.error == null && _state.value.mobileConfirmationBytes == null &&
+            (player != null || job?.isActive == true)) {
+            if (prepared && player != null && !_state.value.isPlaying) togglePlayPause()
+            return
+        }
         stop()
         val request = generation
         val app = context.applicationContext
-        _state.value = QuranAudioState(surah = surah, reciterId = reciter.id, isLoading = true)
+        _state.value = QuranAudioState(surah = surah, reciterId = reciter.id, isLoading = true, speed = _state.value.speed)
         job = scope.launch {
             try {
                 val store = QuranAudioStore(app)
@@ -62,23 +55,18 @@ object QuranAudioPlayer {
                         val network = app.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
                         val wifi = network.getNetworkCapabilities(network.activeNetwork)?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
                         if (!wifi && !allowMobile) {
-                            if (request == generation) _state.value = QuranAudioState(
-                                surah = surah, reciterId = reciter.id, mobileConfirmationBytes = bytes
-                            )
+                            _state.update { if (request == generation) it.copy(isLoading = false, mobileConfirmationBytes = bytes) else it }
                             false
                         } else true
                     }, progress = { percent ->
-                        if (request == generation) _state.value = QuranAudioState(
-                            surah = surah, reciterId = reciter.id, isLoading = true,
-                            isDownloading = true, downloadPercent = percent
-                        )
+                        _state.update { if (request == generation) it.copy(isLoading = true, isDownloading = true, downloadPercent = percent) else it }
                     })
                 }
                 ensureActive()
                 if (request == generation && local != null) playLocal(local.absolutePath, surah, reciter.id)
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (error: Exception) {
-                if (request == generation) _state.value = QuranAudioState(surah = surah, error =
+                if (request == generation) _state.value = QuranAudioState(surah = surah, reciterId = reciter.id, speed = _state.value.speed, error =
                     if (error is AudioStorageFullException) "فضای کافی برای دانلود وجود ندارد. کمی فضا آزاد کنید."
                     else "این تلاوت برای بار اول به اینترنت نیاز دارد. اتصال را بررسی و دوباره تلاش کنید."
                 )
@@ -88,7 +76,7 @@ object QuranAudioPlayer {
 
     private fun playLocal(path: String, surah: Int, reciterId: String) {
         release()
-        _state.value = QuranAudioState(surah = surah, reciterId = reciterId, isLoading = true)
+        _state.value = QuranAudioState(surah = surah, reciterId = reciterId, isLoading = true, speed = _state.value.speed)
         val mp = MediaPlayer()
         player = mp
         try {
@@ -101,22 +89,24 @@ object QuranAudioPlayer {
             mp.setDataSource(path)
             mp.setOnPreparedListener {
                 if (player === it) {
+                    prepared = true
+                    applySpeed(it)
                     it.start()
-                    _state.value = QuranAudioState(surah = surah, reciterId = reciterId, isPlaying = true)
+                    _state.value = _state.value.copy(isLoading = false, isPlaying = true, durationMs = it.duration)
                 }
             }
-            mp.setOnCompletionListener { if (player === it) stop() }
+            mp.setOnCompletionListener { if (player === it) _state.value = _state.value.copy(isPlaying = false, positionMs = it.duration) }
             mp.setOnErrorListener { it, _, _ ->
                 if (player === it) {
                     release()
-                    _state.value = QuranAudioState(surah = surah, error = "پخش انجام نشد. اتصال اینترنت را بررسی کنید.")
+                    _state.value = _state.value.copy(isLoading = false, isPlaying = false, error = "پخش انجام نشد. اتصال اینترنت را بررسی کنید.")
                 }
                 true
             }
             mp.prepareAsync()
         } catch (e: Exception) {
             release()
-            _state.value = QuranAudioState(surah = surah, error = "پخش انجام نشد. اتصال اینترنت را بررسی کنید.")
+            _state.value = _state.value.copy(isLoading = false, isPlaying = false, error = "پخش انجام نشد. اتصال اینترنت را بررسی کنید.")
         }
     }
 
@@ -125,14 +115,52 @@ object QuranAudioPlayer {
         job?.cancel()
         job = null
         release()
-        _state.value = QuranAudioState()
+        _state.value = QuranAudioState(speed = _state.value.speed)
     }
 
     fun clearError() {
-        if (_state.value.error != null) _state.value = QuranAudioState()
+        if (_state.value.error != null) stop()
+    }
+
+    fun togglePlayPause() {
+        val mp = player ?: return
+        if (!prepared) return
+        if (mp.isPlaying) {
+            mp.pause()
+            _state.value = _state.value.copy(isPlaying = false)
+        } else {
+            if (mp.currentPosition >= mp.duration - 300) mp.seekTo(0)
+            mp.start()
+            _state.value = _state.value.copy(isPlaying = true)
+        }
+    }
+
+    fun seekTo(position: Int) {
+        val mp = player ?: return
+        if (!prepared) return
+        val target = position.coerceIn(0, mp.duration)
+        mp.seekTo(target)
+        _state.value = _state.value.copy(positionMs = target)
+    }
+
+    fun skip(delta: Int) { if (prepared) player?.let { seekTo(it.currentPosition + delta) } }
+    fun refreshPosition() { if (prepared) player?.let { _state.value = _state.value.copy(positionMs = it.currentPosition) } }
+    fun setSpeed(speed: Float) {
+        require(speed in 0.75f..2f)
+        _state.value = _state.value.copy(speed = speed)
+        if (prepared) player?.let(::applySpeed)
+    }
+
+    private fun applySpeed(mp: MediaPlayer) {
+        runCatching {
+            val wasPlaying = mp.isPlaying
+            mp.playbackParams = android.media.PlaybackParams().setSpeed(_state.value.speed)
+            if (!wasPlaying) mp.pause()
+        }
     }
 
     private fun release() {
+        prepared = false
         player?.let { runCatching { it.stop() }; it.release() }
         player = null
     }

@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import com.example.ui.language.text
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -159,6 +161,7 @@ private val highlightChoices = listOf(
 fun QuranScreen(
     innerPadding: PaddingValues,
     onNavigateHome: () -> Unit,
+    onOpenAudio: () -> Unit = {},
     requestedPage: Int? = null,
     onRequestedPageConsumed: () -> Unit = {}
 ) {
@@ -333,6 +336,10 @@ fun QuranScreen(
                             )
                         }
                         DropdownMenu(expanded = reciterMenuOpen, onDismissRequest = { reciterMenuOpen = false }) {
+                            DropdownMenuItem(
+                                text = { Text(language.text("قرآن صوتی")) },
+                                onClick = { reciterMenuOpen = false; onOpenAudio() }
+                            )
                             QuranReciters.forEach { item ->
                                 DropdownMenuItem(
                                     text = {
