@@ -67,11 +67,19 @@
 
 ## Audio recitation
 
+«قرآن صوتی» (`quran_audio`) is a dedicated listening screen available from the drawer and the reader's reciter menu. Its offline, theme-colored cover displays the selected Qari's name; it does not use unverified portraits. Searchable bottom sheets select a Qari or any of the 114 Surahs, accepting Persian/Arabic digits and normalizing common Arabic/Persian spelling differences. The Qari selection is shared with the reader; the listening screen also remembers its last Surah. Changing either selection stops the current session and waits for an explicit Play action rather than downloading automatically.
+
+The listening player provides pause/resume, a seek slider with elapsed/duration labels, ten-second skips, and previous/next Surah selection. Quran recitations play at their original speed; there is no speed control or playback-rate adjustment in the shared Quran player. A download icon marks saved Surahs in the selector. Loading, cancellation, mobile-data confirmation, retryable errors, and an empty search state are presented in the existing Persian/Arabic Material theme. Leaving the listening screen stops playback/downloads, matching the reader lifecycle; background playback is not provided.
+
+The shared catalog contains 50 curated complete Hafs recitations from the [MP3Quran public catalog](https://www.mp3quran.net/api/v3/reciters?language=ar), checked on 2026-10-03. This is a curated selection, not a popularity ranking supplied by the source. All 50 sources' Surah 001 and 114 URLs returned HTTP 200 in endpoint probes; this does not verify every individual recording. The original ten IDs and URLs remain unchanged so existing preferences and saved audio continue to work. Catalog compatibility is covered by `QuranRecitersTest`.
+
 The reader's top bar has a reciter picker and play/stop button. First play downloads the active surah from mp3quran.net into `filesDir/quran_audio/<reciter>/<NNN>.mp3`, shows progress, validates content length and Android-readable audio, then atomically publishes it and plays locally. Later plays use the saved file without a network request. A missing download needs internet once; failures remain retryable. Partial files are ignored and cleaned up; downloads are restartable, not range-resumed. No broad storage permission is needed.
 
 Changing reciter cancels the old request and restarts the same surah with the chosen voice. Leaving the reader or tapping stop cancels downloading/playback, and stale callbacks cannot start another session. Reciter choice remains in the existing `quran_audio` preferences. On a connection without Wi-Fi, the app asks before downloading and shows the size when supplied by the server. Wi-Fi needs no confirmation.
 
-The reciter menu marks voices whose current surah is saved. Downloads are managed automatically; there is no downloaded-audio management entry or dialog. Audio is excluded from Android cloud backup/device transfer. All ten existing reciters and reader behavior are retained.
+Both Quran screens use the shared `QuranDownloadDialog`. It identifies the pending Surah and Qari in a themed summary card, shows the rounded download size in localized units (or explicitly says the server did not report a size), explains mobile-data usage and persistent offline storage, and offers «دانلود و پخش» / «فعلاً نه». Confirm resumes that pending request; dismiss/Back cancels it. Content scrolls on small screens without fixed text heights. Permission and download scheduling behavior remain unchanged.
+
+The reciter menu marks voices whose current surah is saved. Downloads are managed automatically; there is no downloaded-audio management entry or dialog. Audio is excluded from Android cloud backup/device transfer. Both screens share persistent downloads per Qari/Surah across app restarts. The store rechecks for a completed file under its mutation lock before requesting the network; `QuranAudioStoreTest` covers reuse across store instances.
 
 ## Search
 

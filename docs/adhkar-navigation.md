@@ -1,5 +1,9 @@
 # Adhkar collection navigation
 
+Home has a customizable «دسترسی سریع» section immediately before «فعالیت ۳۰ روز گذشته», after the daily checklist. Its themed icon cards open existing pages or individual dhikr collections; collection Back retains Home, and Quran-audio Back returns to Home. Initially Quran audio, tasbih, calendar, and post-prayer adhkar are selected. «ویرایش» opens a searchable, grouped checkbox sheet: changes remain a draft until «ذخیره», and Cancel/dismiss discards them. Removing every shortcut leaves an illustrated add-shortcut prompt so the section can always be configured again. Cards wrap their labels and adapt to larger text.
+
+Selections are stored locally as an ordered JSON list of stable destination IDs in `nour_adhkar_prefs.home_shortcuts`, exposed through `PreferenceRepository` and `AdhkarViewModel`. Unknown/duplicate IDs are removed without restoring a user's intentionally empty selection; malformed saved data falls back to defaults. This display preference is excluded from account progress sync, and unrelated Home sections and bottom navigation retain their existing behavior.
+
 Quran prayers (`quran_prayers`) and Sunnah prayers (`sunnah_prayers`) with a target count of one omit the circular repetition counter and any reading-action/status footer. Tapping the card retains its existing completion color/border feedback. Undo, saved progress, next-incomplete navigation and collection completion retain their existing behavior. Other collections and any multi-repeat items retain the circular counter.
 
 The Home section «اذکار و دعاها» has a «بیشتر» action that opens the separate اذکار و ادعیه (`adhkar`) collection page, which uses the existing category tiles and selection behavior. Morning, evening, sleep, daily, Quran prayers, and Sunnah prayers remain on Home and are excluded from this grid. Sleep and daily adhkar appear side by side in equal-width illustrated cards beneath morning and evening. Sleep uses a night illustration and daily adhkar uses a daytime landscape. All other categories and the existing counter shortcut move from Home to this page. Streak, prayer times, emotional verse, checklist and activity sections are unchanged. Opening a collection does not change the active tab, so leaving it returns to the collections page.
@@ -17,7 +21,9 @@ New installations open a five-step, swipeable onboarding (the last step is an op
 
 The navigation drawer starts with a Telegram-style profile header (avatar, name/email, streak count) that opens Profile. It no longer lists Home, Quran, tasbih, daily checklist, Settings, achievements, Profile, messages, or favorites; those are reached from the bottom navigation, the header, Profile, and the home app bar (favorites heart beside the notifications icon).
 
-The drawer lists «اذکار و ادعیه», «تقویم», «قبله‌نما», «علما و مشاهیر», «مقالات», «قضای روزه», «حمایت مالی» and «درباره برنامه». «تقویم» opens the Jalali/Hijri month calendar with occasions and activity (see [docs/calendar.md](calendar.md)); «قضای روزه» opens the missed-fast tracker (see [docs/qaza-tracker.md](qaza-tracker.md)); the bottom navigation is unchanged.
+The drawer lists «اذکار و ادعیه», «تقویم», «قرآن صوتی», «قبله‌نما», «علما و مشاهیر», «مقالات», «قضای روزه», «حمایت مالی» and «درباره برنامه». «تقویم» opens the Jalali/Hijri month calendar with occasions and activity (see [docs/calendar.md](calendar.md)); «قرآن صوتی» opens the dedicated Qari/Surah listening player (see [docs/quran.md](quran.md)); «قضای روزه» opens the missed-fast tracker (see [docs/qaza-tracker.md](qaza-tracker.md)). The bottom navigation keeps its five destinations and highlights Quran while the listening screen is open.
+
+Android Back from «قرآن صوتی» returns to the page it was opened from, including the Quran reader when opened from its reciter menu.
 
 ## Verses for a feeling
 

@@ -35,6 +35,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,6 +46,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.heading
@@ -52,6 +54,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.sp
 import com.example.calendar.Jalali
 import com.example.stats.StatsAggregator
@@ -139,22 +142,25 @@ private fun DailyCard(input: StatsInput, fontScale: Float) {
             selected = selected,
             onSelect = { selected = it },
             marks = days.map { it.checklist > 0 },
+            oldestOnLeft = true,
             description = "${language.text("نمودار روزانه")}: ${dayLabel(days.first().jdn, language)} – ${dayLabel(days.last().jdn, language)}"
         )
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(
-                onClick = { pagesBack++ },
-                enabled = firstDay != null && endJdn - DAILY_WINDOW >= firstDay
-            ) { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "بازه قبل") }
-            Text(
-                text = "${dayLabel(days.first().jdn, language)} – ${dayLabel(days.last().jdn, language)}".toPersianDigits(),
-                modifier = Modifier.weight(1f),
-                textAlign = TextAlign.Center,
-                fontSize = (12 * fontScale).sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            IconButton(onClick = { pagesBack-- }, enabled = pagesBack > 0) {
-                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = "بازه بعد")
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = { pagesBack++ },
+                    enabled = firstDay != null && endJdn - DAILY_WINDOW >= firstDay
+                ) { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = "بازه قبل") }
+                Text(
+                    text = "${dayLabel(days.first().jdn, language)} – ${dayLabel(days.last().jdn, language)}".toPersianDigits(),
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
+                    fontSize = (12 * fontScale).sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                IconButton(onClick = { pagesBack-- }, enabled = pagesBack > 0) {
+                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "بازه بعد")
+                }
             }
         }
     }

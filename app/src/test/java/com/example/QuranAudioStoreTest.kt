@@ -57,6 +57,15 @@ class QuranAudioStoreTest {
         }
     }
 
+    @Test fun completedDownloadIsReusedAcrossStoreInstancesWithoutNetwork() = runBlocking {
+        val bytes = ByteArray(50000) { 2 }
+        val first = store(bytes).download(voice, 1, { true }, {})!!
+        val reopened = QuranAudioStore(context, openConnection = { throw AssertionError("Saved audio must not request the network") })
+        val reused = reopened.download(voice, 1, { throw AssertionError("No download confirmation needed") }, {})!!
+        assertEquals(first.absolutePath, reused.absolutePath)
+        assertArrayEquals(bytes, reused.readBytes())
+    }
+
     @Test fun cancellationAndDeclinedMobileDownloadNeverPublishAudio() = runBlocking {
         val store = store(ByteArray(100000))
         assertNull(store.download(voice, 1, { false }, {}))
