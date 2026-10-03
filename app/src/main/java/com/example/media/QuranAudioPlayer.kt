@@ -21,7 +21,6 @@ data class QuranAudioState(
     val reciterId: String? = null,
     val positionMs: Int = 0,
     val durationMs: Int = 0,
-    val speed: Float = 1f,
     val error: String? = null
 )
 
@@ -46,7 +45,7 @@ object QuranAudioPlayer {
         stop()
         val request = generation
         val app = context.applicationContext
-        _state.value = QuranAudioState(surah = surah, reciterId = reciter.id, isLoading = true, speed = _state.value.speed)
+        _state.value = QuranAudioState(surah = surah, reciterId = reciter.id, isLoading = true)
         job = scope.launch {
             try {
                 val store = QuranAudioStore(app)
@@ -66,7 +65,7 @@ object QuranAudioPlayer {
                 if (request == generation && local != null) playLocal(local.absolutePath, surah, reciter.id)
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (error: Exception) {
-                if (request == generation) _state.value = QuranAudioState(surah = surah, reciterId = reciter.id, speed = _state.value.speed, error =
+                if (request == generation) _state.value = QuranAudioState(surah = surah, reciterId = reciter.id, error =
                     if (error is AudioStorageFullException) "فضای کافی برای دانلود وجود ندارد. کمی فضا آزاد کنید."
                     else "این تلاوت برای بار اول به اینترنت نیاز دارد. اتصال را بررسی و دوباره تلاش کنید."
                 )
@@ -76,7 +75,7 @@ object QuranAudioPlayer {
 
     private fun playLocal(path: String, surah: Int, reciterId: String) {
         release()
-        _state.value = QuranAudioState(surah = surah, reciterId = reciterId, isLoading = true, speed = _state.value.speed)
+        _state.value = QuranAudioState(surah = surah, reciterId = reciterId, isLoading = true)
         val mp = MediaPlayer()
         player = mp
         try {
@@ -90,7 +89,6 @@ object QuranAudioPlayer {
             mp.setOnPreparedListener {
                 if (player === it) {
                     prepared = true
-                    applySpeed(it)
                     it.start()
                     _state.value = _state.value.copy(isLoading = false, isPlaying = true, durationMs = it.duration)
                 }
@@ -115,7 +113,7 @@ object QuranAudioPlayer {
         job?.cancel()
         job = null
         release()
-        _state.value = QuranAudioState(speed = _state.value.speed)
+        _state.value = QuranAudioState()
     }
 
     fun clearError() {
@@ -145,19 +143,6 @@ object QuranAudioPlayer {
 
     fun skip(delta: Int) { if (prepared) player?.let { seekTo(it.currentPosition + delta) } }
     fun refreshPosition() { if (prepared) player?.let { _state.value = _state.value.copy(positionMs = it.currentPosition) } }
-    fun setSpeed(speed: Float) {
-        require(speed in 0.75f..2f)
-        _state.value = _state.value.copy(speed = speed)
-        if (prepared) player?.let(::applySpeed)
-    }
-
-    private fun applySpeed(mp: MediaPlayer) {
-        runCatching {
-            val wasPlaying = mp.isPlaying
-            mp.playbackParams = android.media.PlaybackParams().setSpeed(_state.value.speed)
-            if (!wasPlaying) mp.pause()
-        }
-    }
 
     private fun release() {
         prepared = false

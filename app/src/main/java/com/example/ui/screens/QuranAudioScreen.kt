@@ -164,9 +164,6 @@ fun QuranAudioScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
                 }
             }
         }
-        TextButton(onClick = { openPicker("speed") }) {
-            Text(language.text("سرعت پخش") + " · ${state.speed}×".toPersianDigits())
-        }
         if (current && state.isDownloading) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(language.text("در حال دریافت تلاوت") + (state.downloadPercent?.let { " · ${it.toPersianDigits()}٪" } ?: ""))
@@ -185,16 +182,14 @@ fun QuranAudioScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
         }
     }
 
-    if (picker != null) {
+    if (picker in listOf("reciter", "surah")) {
         ModalBottomSheet(onDismissRequest = { picker = null }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).navigationBarsPadding()) {
-                Text(language.text(when (picker) { "reciter" -> "انتخاب قاری"; "surah" -> "انتخاب سوره"; else -> "سرعت پخش" }),
+                Text(language.text(if (picker == "reciter") "انتخاب قاری" else "انتخاب سوره"),
                     style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                if (picker != "speed") {
-                    OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth().padding(vertical = 12.dp), singleLine = true,
-                        label = { Text(language.text(if (picker == "reciter") "جست‌وجوی قاری" else "نام یا شمارهٔ سوره")) },
-                        leadingIcon = { Icon(Icons.Default.Search, null) })
-                }
+                OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth().padding(vertical = 12.dp), singleLine = true,
+                    label = { Text(language.text(if (picker == "reciter") "جست‌وجوی قاری" else "نام یا شمارهٔ سوره")) },
+                    leadingIcon = { Icon(Icons.Default.Search, null) })
                 LazyColumn(Modifier.fillMaxWidth().heightIn(max = 440.dp).padding(bottom = 20.dp)) {
                     when (picker) {
                         "reciter" -> {
@@ -219,9 +214,6 @@ fun QuranAudioScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
                                     selectSurah(item.number); picker = null
                                 }
                             }
-                        }
-                        else -> items(listOf(0.75f, 1f, 1.25f, 1.5f, 2f)) { speed ->
-                            AudioChoice("${speed}×".toPersianDigits(), state.speed == speed) { QuranAudioPlayer.setSpeed(speed); picker = null }
                         }
                     }
                 }
