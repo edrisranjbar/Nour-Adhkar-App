@@ -6,8 +6,9 @@ The «آمار» button on the Home card «فعالیت ۳۰ روز گذشته»
 
 1. **Summary tiles:** current streak (the same value as the Home streak), active days this month, and total tasbih.
 2. **روزانه (daily):** bars of tasbih per day for 30 days. A dot above a bar means checklist items were done that day.
+   - The time axis runs left to right: older days on the left, newer days on the right. Labels, checklist dots, highlights, and tap selection use the same chronological positions.
    - Tapping a bar shows its date and counts above the chart.
-   - Arrows page back and forward in 30-day windows.
+   - The left arrow opens older 30-day windows; the right arrow returns toward today.
 3. **ماهانه (monthly):** bars for the last 12 Jalali months.
    - A segmented switch chooses the metric: «روزهای فعال» (default, out of the month's length), «تسبیح», or «چک‌لیست».
 4. **کل مسیر (overall):** an area chart of the running total of the chosen metric.
@@ -15,7 +16,7 @@ The «آمار» button on the Home card «فعالیت ۳۰ روز گذشته»
    - A caption gives the lifetime totals since the first recorded day.
 5. **Empty state:** with fewer than three active days, a short message replaces the charts.
 
-The charts read right to left: the newest data is on the left. They use Persian digits, theme colours only, and three dashed gridlines with no legend. They animate in, unless the system's "remove animations" setting is on. Each chart has a TalkBack description.
+The daily chart uses a left-to-right time axis while the screen retains Persian/Arabic RTL text. Monthly and overall charts retain their existing right-to-left order. Charts use Persian digits, theme colours only, and three dashed gridlines with no legend. They animate in, unless the system's "remove animations" setting is on. Each chart has a TalkBack description.
 
 ## Data
 

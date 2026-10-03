@@ -44,7 +44,7 @@ import kotlin.math.pow
 
 /*
  * Small hand-drawn charts for the statistics page. They read right to left like the rest of the
- * app: the oldest value is on the right and the newest on the left. Values are given oldest first.
+ * app by default. The daily chart opts into a left-to-right time axis. Values are oldest first.
  * Drawing on a Canvas keeps them dependency-free, fast with hundreds of points, and in the theme.
  */
 
@@ -110,7 +110,8 @@ fun StatsBarChart(
     marks: List<Boolean>? = null,
     barColor: Color = MaterialTheme.colorScheme.primaryContainer,
     selectedColor: Color = MaterialTheme.colorScheme.tertiary,
-    markColor: Color = MaterialTheme.colorScheme.onTertiaryContainer
+    markColor: Color = MaterialTheme.colorScheme.onTertiaryContainer,
+    oldestOnLeft: Boolean = false
 ) {
     val measurer = rememberTextMeasurer()
     val progress = rememberEntryProgress(values)
@@ -124,12 +125,12 @@ fun StatsBarChart(
             .fillMaxWidth()
             .height(height)
             .semantics { contentDescription = description }
-            .pointerInput(values.size) {
+            .pointerInput(values.size, oldestOnLeft) {
                 detectTapGestures { offset ->
                     if (values.isEmpty()) return@detectTapGestures
                     val slot = size.width / values.size.toFloat()
-                    // Mirrored: index 0 (oldest) is the right-most slot.
-                    val index = values.size - 1 - (offset.x / slot).toInt()
+                    val slotIndex = (offset.x / slot).toInt().coerceIn(0, values.size - 1)
+                    val index = if (oldestOnLeft) slotIndex else values.size - 1 - slotIndex
                     onSelect(index.coerceIn(0, values.size - 1))
                 }
             }
@@ -140,7 +141,7 @@ fun StatsBarChart(
         val slot = size.width / values.size
         val barWidth = (slot * 0.62f).coerceAtMost(28.dp.toPx())
         values.forEachIndexed { index, value ->
-            val centerX = size.width - (index + 0.5f) * slot
+            val centerX = if (oldestOnLeft) (index + 0.5f) * slot else size.width - (index + 0.5f) * slot
             val barHeight = (value / maxValue) * chartHeight * progress.value
             val color = if (index == selected) selectedColor else barColor
             if (value > 0) {
