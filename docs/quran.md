@@ -77,6 +77,8 @@ The reader's top bar has a reciter picker and play/stop button. First play downl
 
 Changing reciter cancels the old request and restarts the same surah with the chosen voice. Leaving the reader or tapping stop cancels downloading/playback, and stale callbacks cannot start another session. Reciter choice remains in the existing `quran_audio` preferences. On a connection without Wi-Fi, the app asks before downloading and shows the size when supplied by the server. Wi-Fi needs no confirmation.
 
+Both Quran screens use the shared `QuranDownloadDialog`. It identifies the pending Surah and Qari in a themed summary card, shows the rounded download size in localized units (or explicitly says the server did not report a size), explains mobile-data usage and persistent offline storage, and offers «دانلود و پخش» / «فعلاً نه». Confirm resumes that pending request; dismiss/Back cancels it. Content scrolls on small screens without fixed text heights. Permission and download scheduling behavior remain unchanged.
+
 The reciter menu marks voices whose current surah is saved. Downloads are managed automatically; there is no downloaded-audio management entry or dialog. Audio is excluded from Android cloud backup/device transfer. Both screens share persistent downloads per Qari/Surah across app restarts. The store rechecks for a completed file under its mutation lock before requesting the network; `QuranAudioStoreTest` covers reuse across store instances.
 
 ## Search

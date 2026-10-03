@@ -218,16 +218,16 @@ fun QuranScreen(
     var reciterMenuOpen by remember { mutableStateOf(false) }
     val audioState by QuranAudioPlayer.state.collectAsState()
     audioState.mobileConfirmationBytes?.let { bytes ->
-        AlertDialog(
-            onDismissRequest = { QuranAudioPlayer.stop() },
-            title = { Text(if (language == AppLanguage.ARABIC) "تنزيل عبر بيانات الهاتف؟" else "دانلود با اینترنت همراه؟") },
-            text = { Text((if (language == AppLanguage.ARABIC) "سيُحفظ الصوت للاستماع دون إنترنت. الحجم: " else "تلاوت برای پخش آفلاین ذخیره می‌شود. حجم: ") + audioSize(bytes)) },
-            confirmButton = { TextButton(onClick = {
-                val voice = QuranReciters.first { it.id == audioState.reciterId }
-                audioState.surah?.let { QuranAudioPlayer.play(context, voice, it, allowMobile = true) }
-            }) { Text(if (language == AppLanguage.ARABIC) "تنزيل" else "دانلود") } },
-            dismissButton = { TextButton(onClick = { QuranAudioPlayer.stop() }) { Text(if (language == AppLanguage.ARABIC) "إلغاء" else "لغو") } }
-        )
+        val pendingVoice = QuranReciters.firstOrNull { it.id == audioState.reciterId }
+        val pendingSurah = audioState.surah
+        if (pendingVoice != null && pendingSurah != null) {
+            com.example.ui.components.QuranDownloadDialog(
+                reciter = pendingVoice, surahNumber = pendingSurah,
+                surahName = corpus?.surahs?.firstOrNull { it.number == pendingSurah }?.name, bytes = bytes,
+                onDownload = { QuranAudioPlayer.play(context, pendingVoice, pendingSurah, allowMobile = true) },
+                onDismiss = { QuranAudioPlayer.stop() }
+            )
+        }
     }
     androidx.compose.runtime.DisposableEffect(Unit) { onDispose { QuranAudioPlayer.stop() } }
     LaunchedEffect(audioState.error) {

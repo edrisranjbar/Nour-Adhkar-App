@@ -221,12 +221,16 @@ fun QuranAudioScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
         }
     }
     state.mobileConfirmationBytes?.let { bytes ->
-        AlertDialog(onDismissRequest = { QuranAudioPlayer.stop() },
-            title = { Text(language.text("دانلود با اینترنت همراه؟")) },
-            text = { Text(language.text("تلاوت یک‌بار دریافت و برای شنیدن آفلاین ذخیره می‌شود.") +
-                if (bytes > 0) "\n${(bytes / 1_048_576.0).let { "%.1f".format(java.util.Locale.US, it) }.toPersianDigits()} MB" else "") },
-            confirmButton = { TextButton(onClick = { QuranAudioPlayer.play(context, reciter, surahNumber, allowMobile = true) }) { Text(language.text("دانلود")) } },
-            dismissButton = { TextButton(onClick = { QuranAudioPlayer.stop() }) { Text(language.text("لغو")) } })
+        val pendingVoice = QuranReciters.firstOrNull { it.id == state.reciterId }
+        val pendingSurah = state.surah
+        if (pendingVoice != null && pendingSurah != null) {
+            com.example.ui.components.QuranDownloadDialog(
+                reciter = pendingVoice, surahNumber = pendingSurah,
+                surahName = surahs?.firstOrNull { it.number == pendingSurah }?.name, bytes = bytes,
+                onDownload = { QuranAudioPlayer.play(context, pendingVoice, pendingSurah, allowMobile = true) },
+                onDismiss = { QuranAudioPlayer.stop() }
+            )
+        }
     }
 }
 
