@@ -8,3 +8,4 @@
 - Customizable Home quick access with shortcuts users can add or remove.
 - Clearer recitation download confirmation with the reciter, Surah, and file size.
 - Corrected the daily statistics chart so older days appear on the left.
+- Three additional adhan voices: Abdulbasit Abdusamad, Nasser Al Qatami, and Yasser Al-Dosari, with offline preview and playback.

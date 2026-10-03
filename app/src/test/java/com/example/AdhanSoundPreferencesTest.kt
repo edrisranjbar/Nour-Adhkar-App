@@ -19,23 +19,28 @@ class AdhanSoundPreferencesTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val prefs = PreferenceRepository(context)
         prefs.setMorningNotificationTime("06:45")
-        val selected = AdhanSound("adhan_two")
-        prefs.setAdhanSound(selected)
+        adhanRecordings.forEach { recording ->
+            val selected = AdhanSound(recording.id)
+            prefs.setAdhanSound(selected)
+            assertEquals(selected, PreferenceRepository(context).getAdhanSound())
+            assertTrue(PreferenceRepository(context).getAdhanSound().isSelected)
+        }
         val recreated = PreferenceRepository(context)
-        assertEquals(selected, recreated.getAdhanSound())
-        assertTrue(recreated.getAdhanSound().isSelected)
         recreated.setAdhanSound(AdhanSound())
         assertFalse(PreferenceRepository(context).getAdhanSound().isSelected)
         assertEquals("06:45", recreated.getMorningNotificationTime())
     }
 
-    @Test fun exactlyThreeDistinctBundledRecordingsMatchTheirSources() {
+    @Test fun sixDistinctBundledRecordingsMatchTheirSources() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val expectedTitles = listOf("علی بن احمد ملا (مکه)", "اذان مسجدالنبی (مدینه)", "مشاری راشد العفاسی")
+        val expectedTitles = listOf("علی بن احمد ملا (مکه)", "اذان مسجدالنبی (مدینه)", "مشاری راشد العفاسی",
+            "عبدالباسط عبدالصمد", "ناصر القطامی", "یاسر الدوسری")
         val expectedHashes = listOf("a16fb14b22397c22fb809187e81d3b3ef9a02f29",
-            "1b0602ae0af66e77d65512297eccd37ecc9e1899", "f36d1d6dbcb69692e0269aa60d3c915610e986e0")
-        assertEquals(3, adhanRecordings.size)
-        assertEquals(3, adhanRecordings.map { it.id }.toSet().size)
+            "1b0602ae0af66e77d65512297eccd37ecc9e1899", "f36d1d6dbcb69692e0269aa60d3c915610e986e0",
+            "1412837b8d0d75323c8f36308a66b649df62799b", "3bb36bbc8595a228fc949ed7e53eea1c6cb50e3a",
+            "3e5c6cd42cd635343f1ed0fc2182f87dfa9c2e32")
+        assertEquals(6, adhanRecordings.size)
+        assertEquals(6, adhanRecordings.map { it.id }.toSet().size)
         assertEquals(expectedTitles, adhanRecordings.map { it.title })
         adhanRecordings.forEachIndexed { index, recording ->
             val bytes = context.resources.openRawResource(recording.resource).use { it.readBytes() }
