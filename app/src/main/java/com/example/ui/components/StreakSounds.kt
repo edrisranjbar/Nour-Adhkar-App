@@ -9,7 +9,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.example.R
 
-/** Short celebration effects (synthesised by tools/sfx/streak_sfx.py). Follows the media volume. */
+/**
+ * Short celebration effects (synthesised by tools/sfx/streak_sfx.py). They play on the media stream
+ * (USAGE_GAME), so they follow the volume the user sets with the volume keys and are silent at zero.
+ * USAGE_ASSISTANCE_SONIFICATION used the separate system-sounds volume, which ignored that setting.
+ */
 internal class StreakSounds(context: Context) {
     enum class Sfx { IGNITE, TICK, LAND, CHIME }
 
@@ -17,7 +21,7 @@ internal class StreakSounds(context: Context) {
         .setMaxStreams(3)
         .setAudioAttributes(
             AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                .setUsage(AudioAttributes.USAGE_GAME) // media stream: follows the volume keys
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .build()
         )
