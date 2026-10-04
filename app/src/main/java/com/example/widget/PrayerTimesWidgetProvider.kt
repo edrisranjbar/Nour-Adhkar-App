@@ -73,7 +73,8 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
                     setTextColor(id, color)
                 }
                 text(R.id.prayer_widget_title, if (arabic) "مواقيت الصلاة" else "اوقات شرعی", foreground, true)
-                text(R.id.prayer_widget_city, settings.location.ifBlank { if (arabic) "تحديد الموقع" else "تعیین موقعیت" }, muted)
+                val placeName = if (settings.isValid()) prefs.getActivePlaceName() else null
+                text(R.id.prayer_widget_city, (placeName ?: settings.location).ifBlank { if (arabic) "تحديد الموقع" else "تعیین موقعیت" }, muted)
                 val next = schedule?.next
                 val nextLabel = next?.let { labels[schedule.today.indexOfFirst { row -> row.first == it.first }] }
                 val nextText = when {
