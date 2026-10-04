@@ -71,7 +71,10 @@ fun AboutScreen(
     val appLanguage = LocalAppLanguage.current
     val scope = rememberCoroutineScope()
     var feedbackOpen by remember { mutableStateOf(false) }
-    if (feedbackOpen) FeedbackSheet(onDismiss = { feedbackOpen = false })
+    if (feedbackOpen) FeedbackSheet(
+        onDismiss = { feedbackOpen = false },
+        onSignIn = { feedbackOpen = false; viewModel.selectTab("account") }
+    )
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Column(
@@ -361,8 +364,10 @@ private val FeedbackTypes = listOf("suggestion" to "پیشنهاد", "criticism"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FeedbackSheet(onDismiss: () -> Unit) {
+private fun FeedbackSheet(onDismiss: () -> Unit, onSignIn: () -> Unit) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val user by com.example.data.repository.AccountRepository.user.collectAsState()
     var type by remember { mutableStateOf(FeedbackTypes.first().first) }
     var typeMenuOpen by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
@@ -378,6 +383,16 @@ private fun FeedbackSheet(onDismiss: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text("ارسال نظر و پیشنهاد", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            val signedIn = user
+            if (signedIn == null) {
+                // Feedback is sent with the user's name, so signing in comes first.
+                Text("برای ارسال نظر و پیشنهاد، ابتدا وارد حساب کاربری خود شوید تا بتوانیم پیام شما را پیگیری کنیم.",
+                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Button(onClick = onSignIn, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text("ورود به حساب") }
+                return@Column
+            }
+            Text("ارسال با نام ${signedIn.name.ifBlank { signedIn.email }}",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             ExposedDropdownMenuBox(expanded = typeMenuOpen, onExpandedChange = { typeMenuOpen = it }) {
                 OutlinedTextField(
                     value = FeedbackTypes.first { it.first == type }.second,
@@ -409,9 +424,12 @@ private fun FeedbackSheet(onDismiss: () -> Unit) {
                     status = ""
                     scope.launch {
                         try {
-                            AppInboxApi.sendFeedback(type, message.trim())
+                            AppInboxApi.sendFeedback(context, type, message.trim())
                             message = ""
                             status = "پیام شما ارسال شد. سپاسگزاریم."
+                        } catch (e: com.example.data.repository.ServerException) {
+                            status = if (e.code == 401) "نشست شما منقضی شده است. لطفاً دوباره وارد حساب شوید."
+                            else "ارسال انجام نشد. لطفاً بعداً دوباره تلاش کنید."
                         } catch (e: Exception) {
                             status = if (e is java.io.IOException) "ارسال انجام نشد. اتصال اینترنت را بررسی کنید."
                             else "ارسال انجام نشد. لطفاً بعداً دوباره تلاش کنید."
