@@ -30,6 +30,10 @@ class PrayerTimesWidgetProviderTest {
         prefs.setPrayerSettings(PrayerSettings("تهران", 35.6892, 51.3890))
         val rendered = manager.getViewFor(id)
         assertEquals("تهران", rendered.findViewById<TextView>(R.id.prayer_widget_city).text.toString())
+        // A renamed saved place shows its own name instead of the city.
+        val places = prefs.getPrayerPlaces()
+        prefs.setPrayerPlaces(places.update(places.active!!.copy(name = "خانه")))
+        assertEquals("خانه", manager.getViewFor(id).findViewById<TextView>(R.id.prayer_widget_city).text.toString())
         assertEquals(2, rendered.findViewById<LinearLayout>(R.id.prayer_widget_row1).childCount)
         assertEquals(2, rendered.findViewById<LinearLayout>(R.id.prayer_widget_row2).childCount)
         assertEquals(2, rendered.findViewById<LinearLayout>(R.id.prayer_widget_row3).childCount)

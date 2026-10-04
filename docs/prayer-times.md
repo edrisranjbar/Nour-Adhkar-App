@@ -81,5 +81,6 @@ Users can keep up to 10 named places (for example «خانه», «مشهد», «
   - The ⋮ menu offers activate, rename, move up or down, and delete. Delete asks first. The last place can't be deleted, and deleting the active place activates the first remaining one.
   - The editor cards below always edit the active place. Their titles name it, for example «روش محاسبه · مشهد».
 - **Adding:** «افزودن مکان» opens the same editor for a fresh draft. It starts with a name field and quick names. Location comes from city search or GPS detection; GPS is only a way to add a place, not a live entry. The timezone is still an explicit choice. The method, madhab and corrections are copied from the active place. Saving adds the place and makes it active. Leaving Settings abandons the draft.
+- **Place name shown:** the widget header and the adhan notification title show the active place's name, for example «اذان ظهر · خانه». Before any place is saved, the widget keeps its setup prompt.
 - **Storage:** `prayer_places` (JSON) and `prayer_active_place`. The original `prayer_*` keys always mirror the active place, so the widget and schedulers read prayer settings unchanged.
 - **Migration:** on first launch after the update, an existing saved location becomes place #1, named after its city, with every value preserved. Places are not part of progress sync.

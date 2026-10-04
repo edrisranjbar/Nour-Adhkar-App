@@ -61,6 +61,9 @@ class PreferenceRepository(context: Context) {
         return migrated
     }
 
+    /** Name of the active saved place (e.g. «خانه»), shown in the widget and adhan notification. */
+    fun getActivePlaceName(): String? = getPrayerPlaces().active?.name?.takeIf { it.isNotBlank() }
+
     /** Persists [places] and mirrors the active place into the legacy keys. */
     fun setPrayerPlaces(places: com.example.prayer.PrayerPlaces) {
         storePrayerPlaces(places)
