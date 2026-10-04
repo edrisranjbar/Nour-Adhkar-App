@@ -1,8 +1,11 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -22,7 +25,7 @@ fun ProgressSyncCard() {
     val arabic = LocalAppLanguage.current == AppLanguage.ARABIC
     val state by ProgressSyncRepository.state.collectAsState()
     OutlinedCard(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(if (arabic) "نسخ التقدم ومزامنته" else "پشتیبان‌گیری و همگام‌سازی پیشرفت", style = MaterialTheme.typography.titleMedium)
             Text(if (arabic) "احفظ سلسلة الأيام والسجل والأعمال اليومية وتقدم القراءة في حسابك لاستعادتها على هاتف جديد. تُرسل إلى خادم أذكار نور؛ الاستخدام دون حساب يبقى متاحًا." else "زنجیره، تاریخچه، چک‌لیست و پیشرفت مطالعه را در حساب خود نگه دارید و روی گوشی جدید بازیابی کنید. این اطلاعات روی سرور اذکار نور ذخیره می‌شود؛ استفاده بدون حساب همچنان ممکن است.", style = MaterialTheme.typography.bodySmall)
             Text(if (arabic) "تتم مزامنة تقدمك تلقائيًا عند تسجيل الدخول." else "پیشرفت شما پس از ورود به حساب، به‌صورت خودکار همگام می‌شود.", style = MaterialTheme.typography.bodySmall)
@@ -45,7 +48,13 @@ fun ProgressSyncCard() {
                 else formatPersianDateTime(state.lastSynced, TimeZone.getDefault())
                 Text((if (arabic) "آخر مزامنة: " else "آخرین همگام‌سازی: ") + date, style = MaterialTheme.typography.bodySmall)
             }
-            TextButton(enabled = !state.busy, onClick = { ProgressSyncRepository.sync(context) }) {
+            OutlinedButton(
+                modifier = Modifier.align(Alignment.Absolute.Left),
+                enabled = !state.busy,
+                onClick = { ProgressSyncRepository.sync(context) }
+            ) {
+                Icon(Icons.Outlined.Sync, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                Spacer(Modifier.width(ButtonDefaults.IconSpacing))
                 Text(if (arabic) "مزامنة الآن" else "همگام‌سازی اکنون")
             }
         }
