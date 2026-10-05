@@ -34,6 +34,5 @@ fun ayahShareCard(verse: QuranVerse, translation: String?, language: AppLanguage
     headline = "﴿${verse.text.trim()}﴾",
     headlineIsArabic = true,
     body = translation?.trim()?.takeIf { it.isNotEmpty() },
-    appName = language.text("اذکار نور"),
-    callToAction = language.text("دریافت رایگان از کافه‌بازار")
+    appName = language.text("اذکار نور")
 )

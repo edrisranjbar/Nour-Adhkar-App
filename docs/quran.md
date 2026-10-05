@@ -103,4 +103,4 @@ The share sheet offers:
 
 Sharing goes through the Android share chooser (WhatsApp, Telegram, Instagram, etc.).
 
-The shared image-card footer places the Nour Adhkar logo and app name on the physical right, and the Cafe Bazaar link on the physical left, with the download invitation below. The link fits the remaining width without overlapping the branding. This footer is shared with the app's other image cards.
+The shared image-card footer places the Nour Adhkar logo and app name on the physical right, and the Cafe Bazaar link on the physical left. It omits the download invitation to keep the image uncluttered. The link fits the remaining width without overlapping the branding. This footer is shared with the app's other image cards.
