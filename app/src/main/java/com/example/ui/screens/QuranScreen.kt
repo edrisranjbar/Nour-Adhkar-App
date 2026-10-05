@@ -112,6 +112,10 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
@@ -122,8 +126,10 @@ import com.example.quran.QuranTranslations
 import com.example.quran.QuranVerse
 import com.example.notifications.AdhkarNotificationManager
 import com.example.ui.language.AppLanguage
-import com.example.media.QuranAudioPlayer
-import com.example.media.QuranReciters
+import com.example.media.QuranAyahPlayer
+import com.example.media.QuranAyahReciters
+import com.example.media.quranAyahReciter
+import com.example.ui.language.ArabicCatalog
 import com.example.quran.QuranKhatmGoal
 import com.example.quran.QuranKhatmPlan
 import com.example.ui.language.LocalAppLanguage
@@ -218,26 +224,23 @@ fun QuranScreen(
     var cancelKhatmConfirmationOpen by remember { mutableStateOf(false) }
     var khatmCompletedDialogOpen by remember { mutableStateOf(false) }
     val audioPrefs = remember(context) { context.getSharedPreferences("quran_audio", android.content.Context.MODE_PRIVATE) }
-    var reciterId by remember { mutableStateOf(audioPrefs.getString("reciter", QuranReciters.first().id)!!) }
-    var reciterMenuOpen by remember { mutableStateOf(false) }
-    val audioState by QuranAudioPlayer.state.collectAsState()
-    audioState.mobileConfirmationBytes?.let { bytes ->
-        val pendingVoice = QuranReciters.firstOrNull { it.id == audioState.reciterId }
-        val pendingSurah = audioState.surah
-        if (pendingVoice != null && pendingSurah != null) {
-            com.example.ui.components.QuranDownloadDialog(
-                reciter = pendingVoice, surahNumber = pendingSurah,
-                surahName = corpus?.surahs?.firstOrNull { it.number == pendingSurah }?.name, bytes = bytes,
-                onDownload = { QuranAudioPlayer.play(context, pendingVoice, pendingSurah, allowMobile = true) },
-                onDismiss = { QuranAudioPlayer.stop() }
-            )
-        }
+    // The reader recites verse by verse; full-surah listening and downloads live in «قرآن صوتی».
+    var ayahReciter by remember {
+        mutableStateOf(quranAyahReciter(audioPrefs.getString("ayah_reciter", null), audioPrefs.getString("reciter", null)))
     }
-    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { QuranAudioPlayer.stop() } }
-    LaunchedEffect(audioState.error) {
-        audioState.error?.let {
-            android.widget.Toast.makeText(context, com.example.ui.language.ArabicCatalog.translate(it).takeIf { language == AppLanguage.ARABIC } ?: it, android.widget.Toast.LENGTH_LONG).show()
-            QuranAudioPlayer.clearError()
+    var reciterMenuOpen by remember { mutableStateOf(false) }
+    val ayahState by QuranAyahPlayer.state.collectAsState()
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { QuranAyahPlayer.stop() } }
+    // Keep the page visible while following a recitation.
+    val view = androidx.compose.ui.platform.LocalView.current
+    androidx.compose.runtime.DisposableEffect(ayahState.active) {
+        view.keepScreenOn = ayahState.active
+        onDispose { view.keepScreenOn = false }
+    }
+    LaunchedEffect(ayahState.error) {
+        ayahState.error?.let {
+            android.widget.Toast.makeText(context, if (language == AppLanguage.ARABIC) ArabicCatalog.translate(it) else it, android.widget.Toast.LENGTH_LONG).show()
+            QuranAyahPlayer.clearError()
         }
     }
 
@@ -275,6 +278,17 @@ fun QuranScreen(
         ?: 1
     val currentSurahNumber = activeSurahNumber ?: pageFirstSurahNumber
     val khatmPlan = khatmGoal?.let { QuranKhatmPlanner.plan(it) }
+    val verseCounts = remember(loadedCorpus) { loadedCorpus.surahs.sortedBy { it.number }.map { it.verseCount } }
+    val pageByVerse = remember(loadedCorpus) { loadedCorpus.verses.associate { it.id to it.pageNumber } }
+    val playFrom: (QuranVerse) -> Unit = { verse ->
+        QuranAyahPlayer.play(context, ayahReciter, verseCounts, verse.surahNumber, verse.verseNumber)
+    }
+
+    // Turn to the reciting verse's page as playback moves on; a manual swipe holds until the next verse.
+    LaunchedEffect(ayahState.verseId) {
+        val page = ayahState.verseId?.let(pageByVerse::get) ?: return@LaunchedEffect
+        if (pagerState.currentPage != page - 1) pagerState.animateScrollToPage(page - 1)
+    }
 
     LaunchedEffect(requestedPage, pagerState) {
         requestedPage?.takeIf { it in 1..QuranRepository.PAGE_COUNT }?.let { page ->
@@ -330,7 +344,6 @@ fun QuranScreen(
                         onKhatmClick = { khatmDetailsOpen = true },
                         modifier = Modifier.weight(1f)
                     )
-                    val reciter = QuranReciters.firstOrNull { it.id == reciterId } ?: QuranReciters.first()
                     Box {
                         IconButton(onClick = { reciterMenuOpen = true }) {
                             Icon(
@@ -344,55 +357,45 @@ fun QuranScreen(
                                 text = { Text(language.text("قرآن صوتی")) },
                                 onClick = { reciterMenuOpen = false; onOpenAudio() }
                             )
-                            QuranReciters.forEach { item ->
+                            HorizontalDivider()
+                            Text(
+                                text = labels.verseByVerseReciters,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            QuranAyahReciters.forEach { item ->
+                                val selected = item.id == ayahReciter.id
                                 DropdownMenuItem(
                                     text = {
                                         Text(
-                                            (if (language == AppLanguage.ARABIC) item.arName else item.faName) +
-                                                if (com.example.media.QuranAudioStore(context).stored(item.id, currentSurahNumber) != null)
-                                                    (if (language == AppLanguage.ARABIC) " · محفوظة" else " · دانلودشده") else "",
-                                            fontWeight = if (item.id == reciterId) FontWeight.Bold else FontWeight.Normal
+                                            if (language == AppLanguage.ARABIC) item.arName else item.faName,
+                                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
                                         )
                                     },
-                                    leadingIcon = if (item.id == reciterId) {
+                                    leadingIcon = if (selected) {
                                         { Icon(Icons.Default.Check, contentDescription = null) }
                                     } else null,
                                     onClick = {
                                         reciterMenuOpen = false
-                                        reciterId = item.id
-                                        audioPrefs.edit().putString("reciter", item.id).apply()
-                                        // Switch voice immediately when something is already playing.
-                                        audioState.surah?.let { QuranAudioPlayer.play(context, item, it) }
+                                        ayahReciter = item
+                                        audioPrefs.edit().putString("ayah_reciter", item.id).apply()
+                                        // Continue the current verse in the new voice.
+                                        QuranAyahPlayer.changeReciter(context, item)
                                     }
                                 )
                             }
                         }
                     }
-                    val audioActive = audioState.isPlaying || audioState.isLoading
                     IconButton(onClick = {
-                        if (audioActive) QuranAudioPlayer.stop()
-                        else QuranAudioPlayer.play(context, reciter, currentSurahNumber)
+                        if (ayahState.active) QuranAyahPlayer.stop()
+                        else loadedCorpus.pages[pagerState.currentPage].verses.firstOrNull()?.let(playFrom)
                     }) {
-                        if (audioState.isDownloading && audioState.downloadPercent != null) {
-                            Text(audioState.downloadPercent!!.toPersianDigits() + "%", color = Color(0xFFF5EDE2), style = MaterialTheme.typography.labelSmall)
-                        } else if (audioState.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                                color = Color(0xFFF5EDE2)
-                            )
-                        } else {
-                            Icon(
-                                if (audioActive) Icons.Default.Stop else Icons.Default.PlayArrow,
-                                contentDescription = when {
-                                    audioActive && language == AppLanguage.ARABIC -> "إيقاف التلاوة"
-                                    audioActive -> "توقف تلاوت"
-                                    language == AppLanguage.ARABIC -> "تشغيل تلاوة السورة"
-                                    else -> "پخش تلاوت سوره"
-                                },
-                                tint = Color(0xFFF5EDE2)
-                            )
-                        }
+                        Icon(
+                            if (ayahState.active) Icons.Default.Stop else Icons.Default.PlayArrow,
+                            contentDescription = if (ayahState.active) labels.stopRecitation else labels.playPage,
+                            tint = Color(0xFFF5EDE2)
+                        )
                     }
                     IconButton(onClick = { searchOpen = true }) {
                         Icon(Icons.Default.Search, contentDescription = labels.search, tint = Color(0xFFF5EDE2))
@@ -461,30 +464,59 @@ fun QuranScreen(
             }
         }
 
-        HorizontalPager(
-            state = pagerState,
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
-            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding() + 8.dp),
-            pageSpacing = 10.dp,
-            key = { it }
-        ) { index ->
-            QuranPageView(
-                page = loadedCorpus.pages[index],
-                palette = palette,
-                labels = labels,
-                highlights = highlights,
-                notes = notes,
-                focusedSurahNumber = focusedSurahNumber,
-                onOpenSurahPicker = { goToSurahSheetOpen = true },
-                onOpenPagePicker = {
-                    pageInput = (pagerState.currentPage + 1).toString()
-                    goToPageDialogOpen = true
-                },
-                onSurahFocused = { focusedSurahNumber = null },
-                onVerseSelected = { selectedVerse = it }
-            )
+                .weight(1f)
+        ) {
+            val density = LocalDensity.current
+            var playerHeightPx by remember { mutableStateOf(0) }
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                // While reciting, the page refits above the player instead of hiding its last lines.
+                contentPadding = PaddingValues(
+                    bottom = innerPadding.calculateBottomPadding() + 8.dp +
+                        if (ayahState.active) with(density) { playerHeightPx.toDp() } + 8.dp else 0.dp
+                ),
+                pageSpacing = 10.dp,
+                key = { it }
+            ) { index ->
+                QuranPageView(
+                    page = loadedCorpus.pages[index],
+                    palette = palette,
+                    labels = labels,
+                    highlights = highlights,
+                    notes = notes,
+                    playingVerseId = ayahState.verseId,
+                    focusedSurahNumber = focusedSurahNumber,
+                    onOpenSurahPicker = { goToSurahSheetOpen = true },
+                    onOpenPagePicker = {
+                        pageInput = (pagerState.currentPage + 1).toString()
+                        goToPageDialogOpen = true
+                    },
+                    onSurahFocused = { focusedSurahNumber = null },
+                    onVerseSelected = { selectedVerse = it }
+                )
+            }
+            ayahState.track?.let { track ->
+                AyahPlayerBar(
+                    surahName = loadedCorpus.surahs.firstOrNull { it.number == track.surah }?.name.orEmpty(),
+                    track = track,
+                    reciterName = if (language == AppLanguage.ARABIC) ayahReciter.arName else ayahReciter.faName,
+                    isLoading = ayahState.isLoading,
+                    isPlaying = ayahState.isPlaying,
+                    labels = labels,
+                    onPrevious = { QuranAyahPlayer.previous(context) },
+                    onPlayPause = QuranAyahPlayer::togglePlayPause,
+                    onNext = { QuranAyahPlayer.next(context) },
+                    onStop = QuranAyahPlayer::stop,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(start = 12.dp, end = 12.dp, bottom = innerPadding.calculateBottomPadding() + 8.dp)
+                        .onSizeChanged { playerHeightPx = it.height }
+                )
+            }
         }
     }
 
@@ -737,6 +769,10 @@ fun QuranScreen(
             onShare = {
                 selectedVerse = null
                 shareVerse = verse
+            },
+            onPlayFromHere = {
+                selectedVerse = null
+                playFrom(verse)
             }
         )
     }
@@ -924,6 +960,7 @@ private fun QuranPageView(
     labels: QuranLabels,
     highlights: Map<String, String>,
     notes: Map<String, String>,
+    playingVerseId: String?,
     focusedSurahNumber: Int?,
     onOpenSurahPicker: () -> Unit,
     onOpenPagePicker: () -> Unit,
@@ -979,8 +1016,14 @@ private fun QuranPageView(
             val textMeasurer = rememberTextMeasurer()
             val density = LocalDensity.current
             val textAlign = if (page.number <= 2) TextAlign.Center else TextAlign.Justify
+            // Highlights only change span colors, so the page fit is measured without the reciting verse.
             val sectionTexts = remember(surahSections, highlights, notes, palette) {
-                surahSections.map { it.asMushafText(highlights, notes, palette) }
+                surahSections.map { it.asMushafText(highlights, notes, palette, playingVerseId = null) }
+            }
+            val pageHasPlayingVerse = playingVerseId != null && playingVerseId in verseById
+            val displayTexts = remember(sectionTexts, pageHasPlayingVerse, playingVerseId) {
+                if (!pageHasPlayingVerse) sectionTexts
+                else surahSections.map { it.asMushafText(highlights, notes, palette, playingVerseId) }
             }
             val openingBismillahs = surahSections.map { verses ->
                 verses.first().takeIf { it.verseNumber == 1 }?.let { it.bismillah.orEmpty() }
@@ -1017,7 +1060,7 @@ private fun QuranPageView(
                             scale = scale
                         )
                     }
-                    val sectionText = sectionTexts[index]
+                    val sectionText = displayTexts[index]
                     ClickableText(
                         text = sectionText,
                         modifier = Modifier.fillMaxWidth(),
@@ -1029,6 +1072,80 @@ private fun QuranPageView(
                         }
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AyahPlayerBar(
+    surahName: String,
+    track: com.example.media.QuranAyahTrack,
+    reciterName: String,
+    isLoading: Boolean,
+    isPlaying: Boolean,
+    labels: QuranLabels,
+    onPrevious: () -> Unit,
+    onPlayPause: () -> Unit,
+    onNext: () -> Unit,
+    onStop: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 3.dp,
+        shadowElevation = 6.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 16.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "${labels.surah} $surahName · " +
+                        if (track.bismillah) labels.bismillah else "${labels.verse} ${track.ayah.toPersianDigits()}",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = reciterName,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            // Media transport controls keep their left-to-right order in RTL, per Material guidance.
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onPrevious) {
+                        Icon(Icons.Default.SkipPrevious, contentDescription = labels.previousVerse)
+                    }
+                    Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                        if (isLoading) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                        } else {
+                            androidx.compose.material3.FilledIconButton(onClick = onPlayPause) {
+                                Icon(
+                                    if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                    contentDescription = if (isPlaying) labels.pause else labels.resume
+                                )
+                            }
+                        }
+                    }
+                    IconButton(onClick = onNext) {
+                        Icon(Icons.Default.SkipNext, contentDescription = labels.nextVerse)
+                    }
+                }
+            }
+            IconButton(onClick = onStop) {
+                Icon(Icons.Default.Close, contentDescription = labels.stopRecitation)
             }
         }
     }
@@ -1182,14 +1299,21 @@ private const val VERSE_TAG = "quran_verse"
 private fun List<QuranVerse>.asMushafText(
     highlights: Map<String, String>,
     notes: Map<String, String>,
-    palette: QuranPalette
+    palette: QuranPalette,
+    playingVerseId: String?
 ): AnnotatedString = buildAnnotatedString {
     forEach { verse ->
         pushStringAnnotation(tag = VERSE_TAG, annotation = verse.id)
         val highlight = highlightChoices.firstOrNull { it.id == highlights[verse.id] }?.color
+        // The reciting verse is tinted with the page accent, over any saved highlight.
+        val background = when {
+            verse.id == playingVerseId -> palette.accent.copy(alpha = 0.22f)
+            highlight != null -> highlight.copy(alpha = 0.5f)
+            else -> Color.Transparent
+        }
         withStyle(
             SpanStyle(
-                background = highlight?.copy(alpha = 0.5f) ?: Color.Transparent,
+                background = background,
                 textDecoration = if (notes[verse.id].isNullOrBlank()) null else TextDecoration.Underline
             )
         ) {
@@ -1223,7 +1347,8 @@ private fun VerseActionsSheet(
     onDismiss: () -> Unit,
     onHighlightSelected: (HighlightChoice?) -> Unit,
     onEditNote: () -> Unit,
-    onShare: () -> Unit
+    onShare: () -> Unit,
+    onPlayFromHere: () -> Unit
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -1456,6 +1581,11 @@ private fun VerseActionsSheet(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                androidx.compose.material3.Button(onClick = onPlayFromHere) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(labels.playFromHere, maxLines = 1, softWrap = false)
+                }
                 OutlinedButton(onClick = onShare) {
                     Icon(Icons.Default.Share, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
@@ -1585,6 +1715,15 @@ private class QuranLabels(private val language: AppLanguage) {
     val shareVerse get() = if (arabic) "مشاركة الآية" else "اشتراک‌گذاری"
     val editNote get() = if (arabic) "ویرایش یادداشت" else "ویرایش یادداشت"
     val writeNote get() = if (arabic) "اكتب ملاحظتك" else "یادداشت خود را بنویسید"
+    val playFromHere get() = if (arabic) "التلاوة من هنا" else "پخش از این آیه"
+    val playPage get() = if (arabic) "تلاوة آية بآية من هذه الصفحة" else "پخش آیه‌به‌آیه از این صفحه"
+    val stopRecitation get() = if (arabic) "إيقاف التلاوة" else "توقف تلاوت"
+    val verseByVerseReciters get() = if (arabic) "التلاوة آية بآية" else "قاریان پخش آیه‌به‌آیه"
+    val previousVerse get() = if (arabic) "الآية السابقة" else "آیهٔ قبل"
+    val nextVerse get() = if (arabic) "الآية التالية" else "آیهٔ بعد"
+    val pause get() = if (arabic) "إيقاف مؤقت" else "توقف موقت"
+    val resume get() = if (arabic) "متابعة" else "ادامه"
+    val bismillah get() = if (arabic) "البسملة" else "بسم‌الله"
     val save get() = if (arabic) "حفظ" else "ذخیره"
     val cancel get() = if (arabic) "إلغاء" else "لغو"
 
