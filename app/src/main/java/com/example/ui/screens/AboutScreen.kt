@@ -27,16 +27,22 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import com.example.ui.language.LocalizedIcon as Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import com.example.ui.language.LocalizedText as Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SegmentedButton
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import com.example.data.repository.AppInboxApi
+import com.example.ui.util.toPersianDigits
 import com.example.ui.language.AppLanguage
 import com.example.ui.language.LocalAppLanguage
 import com.example.ui.language.text
@@ -71,6 +77,12 @@ fun AboutScreen(
     val appLanguage = LocalAppLanguage.current
     val scope = rememberCoroutineScope()
     var feedbackOpen by remember { mutableStateOf(false) }
+    // Check for new team replies to the user's feedback (signed-in users only; failures are silent).
+    val newReplies by AppInboxApi.newReplies.collectAsState()
+    val aboutContext = LocalContext.current
+    LaunchedEffect(Unit) {
+        if (com.example.data.repository.AccountRepository.token(aboutContext) != null) runCatching { AppInboxApi.myFeedback(aboutContext) }
+    }
     if (feedbackOpen) FeedbackSheet(
         onDismiss = { feedbackOpen = false },
         onSignIn = { feedbackOpen = false; viewModel.selectTab("account") }
@@ -161,6 +173,13 @@ fun AboutScreen(
                         Icon(Icons.Default.Email, contentDescription = null, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("ارسال نظر و پیشنهاد", fontWeight = FontWeight.Bold)
+                        if (newReplies > 0) {
+                            Spacer(Modifier.width(8.dp))
+                            Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.tertiary) {
+                                Text("${newReplies.toPersianDigits()} پاسخ تازه", style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.surface, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
+                            }
+                        }
                     }
                 }
 
@@ -373,6 +392,10 @@ private fun FeedbackSheet(onDismiss: () -> Unit, onSignIn: () -> Unit) {
     var message by remember { mutableStateOf("") }
     var status by remember { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
+    // 0 = «ارسال پیام», 1 = «پیام‌های من»; opens on «پیام‌های من» when a new reply is waiting.
+    val newReplies by AppInboxApi.newReplies.collectAsState()
+    var tab by remember { mutableStateOf(if (newReplies > 0) 1 else 0) }
+    var sentCount by remember { mutableStateOf(0) }
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
             Modifier
@@ -389,6 +412,18 @@ private fun FeedbackSheet(onDismiss: () -> Unit, onSignIn: () -> Unit) {
                 Text("برای ارسال نظر و پیشنهاد، ابتدا وارد حساب کاربری خود شوید تا بتوانیم پیام شما را پیگیری کنیم.",
                     style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Button(onClick = onSignIn, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text("ورود به حساب") }
+                return@Column
+            }
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                SegmentedButton(selected = tab == 0, onClick = { tab = 0 }, shape = SegmentedButtonDefaults.itemShape(0, 2)) {
+                    Text("ارسال پیام")
+                }
+                SegmentedButton(selected = tab == 1, onClick = { tab = 1 }, shape = SegmentedButtonDefaults.itemShape(1, 2)) {
+                    Text(if (newReplies > 0 && tab != 1) "پیام‌های من (${newReplies.toPersianDigits()})" else "پیام‌های من")
+                }
+            }
+            if (tab == 1) {
+                MyFeedbackList(typeLabels = FeedbackTypes.toMap(), refreshKey = sentCount)
                 return@Column
             }
             Text("ارسال با نام ${signedIn.name.ifBlank { signedIn.email }}",
@@ -426,7 +461,8 @@ private fun FeedbackSheet(onDismiss: () -> Unit, onSignIn: () -> Unit) {
                         try {
                             AppInboxApi.sendFeedback(context, type, message.trim())
                             message = ""
-                            status = "پیام شما ارسال شد. سپاسگزاریم."
+                            sentCount++
+                            status = "پیام شما ارسال شد. سپاسگزاریم. پاسخ ما در «پیام‌های من» نمایش داده می‌شود."
                         } catch (e: com.example.data.repository.ServerException) {
                             status = if (e.code == 401) "نشست شما منقضی شده است. لطفاً دوباره وارد حساب شوید."
                             else "ارسال انجام نشد. لطفاً بعداً دوباره تلاش کنید."
