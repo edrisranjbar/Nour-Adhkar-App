@@ -5,6 +5,7 @@ The «آمار» button on the Home card «فعالیت ۳۰ روز گذشته»
 ## Screen
 
 1. **Summary tiles:** current streak (the same value as the Home streak), active days this month, and total tasbih.
+   - Each tile places its count beside the icon in a vertically centered row, with the label underneath. Counts may wrap at large font sizes rather than being clipped.
 2. **روزانه (daily):** bars of tasbih per day for 30 days. A dot above a bar means checklist items were done that day.
    - The time axis runs left to right: older days on the left, newer days on the right. Labels, checklist dots, highlights, and tap selection use the same chronological positions.
    - Tapping a bar shows its date and counts above the chart.
