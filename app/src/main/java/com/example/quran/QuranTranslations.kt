@@ -43,7 +43,11 @@ enum class QuranTranslation(
     );
 
     companion object {
-        fun optionsFor(language: AppLanguage): List<QuranTranslation> = entries.filter { it.language == language }
+        /** Dari readers get the Persian translations. */
+        fun optionsFor(language: AppLanguage): List<QuranTranslation> {
+            val textLanguage = if (language.usesPersianContent) AppLanguage.FARSI else language
+            return entries.filter { it.language == textLanguage }
+        }
 
         /** The saved choice if it belongs to [language], otherwise that language's default (first) option. */
         fun forLanguage(language: AppLanguage, savedId: String? = null): QuranTranslation {

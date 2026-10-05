@@ -226,7 +226,7 @@ private fun OnboardingStepper(currentPage: Int, language: AppLanguage) {
                         )
                     } else {
                         Text(
-                            text = if (language == AppLanguage.FARSI) (index + 1).toPersianDigits()
+                            text = if (language != AppLanguage.ARABIC) (index + 1).toPersianDigits()
                             else (index + 1).toString(),
                             color = if (active) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 11.sp,
@@ -364,6 +364,15 @@ private fun LanguagePage(
         subtitle = "زبان فارسی و ترجمه اذکار",
         selected = language == AppLanguage.FARSI,
         onClick = { onLanguageChange(AppLanguage.FARSI) }
+    )
+    Spacer(Modifier.height(12.dp))
+    LanguageOption(
+        iconText = "د",
+        iconContentDescription = "نماد زبان دری",
+        title = "دری",
+        subtitle = "زبان دری افغانستان و ترجمه اذکار",
+        selected = language == AppLanguage.DARI,
+        onClick = { onLanguageChange(AppLanguage.DARI) }
     )
     Spacer(Modifier.height(12.dp))
     LanguageOption(
@@ -589,7 +598,7 @@ private fun ReadyPage(
         ) {
             ReadyRow(
                 language.text("زبان برنامه"),
-                if (language == AppLanguage.FARSI) "فارسی" else "العربية"
+                language.label
             )
             ReadyRow(
                 language.text("یادآوری‌های روزانه"),

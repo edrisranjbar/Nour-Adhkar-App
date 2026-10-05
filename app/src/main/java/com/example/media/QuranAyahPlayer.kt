@@ -1,0 +1,278 @@
+package com.example.media
+
+import android.content.Context
+import android.media.AudioAttributes
+import android.media.MediaPlayer
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.IOException
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.UUID
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+
+/** One audio file in the play order; [bismillah] plays 1:1 before a surah's first verse. */
+data class QuranAyahTrack(val surah: Int, val ayah: Int, val bismillah: Boolean = false)
+
+data class QuranAyahState(
+    val reciterId: String? = null,
+    val track: QuranAyahTrack? = null,
+    val isLoading: Boolean = false,
+    val isPlaying: Boolean = false,
+    val error: String? = null
+) {
+    val active: Boolean get() = track != null
+    /** The verse to highlight; none while the bismillah before a surah plays. */
+    val verseId: String? get() = track?.takeUnless { it.bismillah }?.let { "${it.surah}:${it.ayah}" }
+}
+
+/** Play order across surah boundaries. [verseCounts] holds the 114 surahs' verse counts. */
+class QuranAyahQueue(private val verseCounts: List<Int>) {
+    init { require(verseCounts.size == 114) }
+
+    fun first(surah: Int, ayah: Int): QuranAyahTrack {
+        require(surah in 1..114 && ayah in 1..verseCounts[surah - 1])
+        return QuranAyahTrack(surah, ayah, bismillah = ayah == 1 && surah != 1 && surah != 9)
+    }
+
+    fun next(track: QuranAyahTrack): QuranAyahTrack? = when {
+        track.bismillah -> track.copy(bismillah = false)
+        track.ayah < verseCounts[track.surah - 1] -> QuranAyahTrack(track.surah, track.ayah + 1)
+        track.surah < 114 -> first(track.surah + 1, 1)
+        else -> null
+    }
+
+    fun previous(track: QuranAyahTrack): QuranAyahTrack? = when {
+        !track.bismillah && track.ayah > 1 -> QuranAyahTrack(track.surah, track.ayah - 1)
+        track.surah > 1 -> QuranAyahTrack(track.surah - 1, verseCounts[track.surah - 2])
+        else -> null
+    }
+}
+
+/** Downloads each verse once into the trimmable cache and plays it locally, prefetching the next. */
+object QuranAyahPlayer {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var job: Job? = null
+    private var player: MediaPlayer? = null
+    private var reciter: QuranAyahReciter? = null
+    private var queue: QuranAyahQueue? = null
+    private val _state = MutableStateFlow(QuranAyahState())
+    val state: StateFlow<QuranAyahState> = _state.asStateFlow()
+
+    fun play(context: Context, voice: QuranAyahReciter, verseCounts: List<Int>, surah: Int, ayah: Int) {
+        val order = QuranAyahQueue(verseCounts)
+        start(context.applicationContext, voice, order, order.first(surah, ayah))
+    }
+
+    /** Restart the current verse with another voice; does nothing when idle. */
+    fun changeReciter(context: Context, voice: QuranAyahReciter) {
+        val order = queue ?: return
+        val track = _state.value.track ?: return
+        start(context.applicationContext, voice, order, track)
+    }
+
+    fun next(context: Context) = jump(context) { order, track -> order.next(track) }
+    fun previous(context: Context) = jump(context) { order, track -> order.previous(track) }
+
+    private fun jump(context: Context, pick: (QuranAyahQueue, QuranAyahTrack) -> QuranAyahTrack?) {
+        val order = queue ?: return
+        val voice = reciter ?: return
+        val track = _state.value.track ?: return
+        pick(order, track)?.let { start(context.applicationContext, voice, order, it) }
+    }
+
+    fun togglePlayPause() {
+        val mp = player ?: return
+        runCatching {
+            if (mp.isPlaying) mp.pause() else mp.start()
+            _state.update { it.copy(isPlaying = mp.isPlaying) }
+        }
+    }
+
+    fun stop() {
+        job?.cancel()
+        job = null
+        release()
+        _state.value = QuranAyahState()
+    }
+
+    fun clearError() {
+        if (_state.value.error != null) _state.value = QuranAyahState()
+    }
+
+    private fun start(app: Context, voice: QuranAyahReciter, order: QuranAyahQueue, from: QuranAyahTrack) {
+        stop()
+        reciter = voice
+        queue = order
+        val cache = QuranAyahCache(app)
+        _state.value = QuranAyahState(reciterId = voice.id, track = from, isLoading = true)
+        job = scope.launch {
+            var track: QuranAyahTrack? = from
+            var prefetched: Deferred<File?>? = null
+            try {
+                while (track != null) {
+                    val current: QuranAyahTrack = track
+                    // A failed prefetch is retried in the foreground, where its error is reported.
+                    val ready = prefetched?.await() ?: withContext(Dispatchers.IO) { cache.cached(voice, current) }
+                    if (ready == null) _state.update { it.copy(track = current, isLoading = true, isPlaying = false) }
+                    val file = ready ?: withContext(Dispatchers.IO) { cache.fetch(voice, current) }
+                    val upcoming = order.next(current)
+                    prefetched = upcoming?.let { async(Dispatchers.IO) { runCatching { cache.fetch(voice, it) }.getOrNull() } }
+                    try {
+                        playFile(file) { _state.update { it.copy(track = current, isLoading = false, isPlaying = true) } }
+                    } catch (error: IOException) {
+                        file.delete() // A cached file Android cannot play is downloaded again next time.
+                        throw error
+                    }
+                    track = upcoming
+                }
+                release()
+                _state.value = QuranAyahState()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                release()
+                _state.value = QuranAyahState(
+                    reciterId = voice.id,
+                    error = if (error is AudioStorageFullException) "فضای کافی برای پخش وجود ندارد. کمی فضا آزاد کنید."
+                    else "پخش آیه انجام نشد. اتصال اینترنت را بررسی و دوباره تلاش کنید."
+                )
+            }
+        }
+    }
+
+    private suspend fun playFile(file: File, onStarted: () -> Unit): Unit = suspendCancellableCoroutine { continuation ->
+        release()
+        val mp = MediaPlayer()
+        player = mp
+        continuation.invokeOnCancellation { if (player === mp) release() }
+        try {
+            mp.setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build()
+            )
+            mp.setDataSource(file.absolutePath)
+            mp.setOnPreparedListener {
+                if (player === it && continuation.isActive) {
+                    it.start()
+                    onStarted()
+                }
+            }
+            mp.setOnCompletionListener { if (player === it && continuation.isActive) continuation.resume(Unit) }
+            mp.setOnErrorListener { it, _, _ ->
+                if (player === it && continuation.isActive) continuation.resumeWithException(IOException("playback"))
+                true
+            }
+            mp.prepareAsync()
+        } catch (error: Exception) {
+            if (continuation.isActive) continuation.resumeWithException(IOException("playback", error))
+        }
+    }
+
+    private fun release() {
+        player?.let { runCatching { it.stop() }; it.release() }
+        player = null
+    }
+}
+
+/** `cacheDir/quran_ayah/<reciter>/<SSSAAA>.mp3`; Android may reclaim it and it is trimmed to a budget. */
+class QuranAyahCache(
+    context: Context,
+    private val openConnection: (URL) -> HttpURLConnection = { it.openConnection() as HttpURLConnection },
+    private val budgetBytes: Long = 200L * 1024 * 1024
+) {
+    private val root = File(context.cacheDir, "quran_ayah")
+
+    fun file(voice: QuranAyahReciter, track: QuranAyahTrack): File {
+        val (surah, ayah) = if (track.bismillah) 1 to 1 else track.surah to track.ayah
+        return File(File(root, voice.id), "${surah.toString().padStart(3, '0')}${ayah.toString().padStart(3, '0')}.mp3")
+    }
+
+    fun cached(voice: QuranAyahReciter, track: QuranAyahTrack): File? =
+        file(voice, track).takeIf { it.isFile && it.length() > 0 }?.also { it.setLastModified(System.currentTimeMillis()) }
+
+    suspend fun fetch(voice: QuranAyahReciter, track: QuranAyahTrack): File {
+        cached(voice, track)?.let { return it }
+        val destination = file(voice, track)
+        val urls = if (track.bismillah) voice.ayahUrls(1, 1) else voice.ayahUrls(track.surah, track.ayah)
+        var failure: IOException = IOException("no source")
+        for (url in urls) {
+            try {
+                download(URL(url), destination)
+                trim()
+                return destination
+            } catch (storage: AudioStorageFullException) {
+                throw storage
+            } catch (error: IOException) {
+                failure = error
+            }
+        }
+        throw failure
+    }
+
+    private suspend fun download(url: URL, destination: File) {
+        val folder = destination.parentFile!!
+        if (!folder.isDirectory && !folder.mkdirs()) throw IOException("storage")
+        val part = File(folder, "${destination.name}.${UUID.randomUUID()}.part")
+        val connection = openConnection(url)
+        connection.connectTimeout = 15_000
+        connection.readTimeout = 15_000
+        connection.setRequestProperty("Accept-Encoding", "identity")
+        try {
+            if (connection.responseCode != HttpURLConnection.HTTP_OK) throw IOException("http")
+            val type = connection.contentType.orEmpty().lowercase()
+            if (type.contains("text") || type.contains("html") || type.contains("json")) throw IOException("not audio")
+            val length = connection.getHeaderFieldLong("Content-Length", -1)
+            if (length > 0 && folder.usableSpace < length + 1_048_576) throw AudioStorageFullException()
+            var total = 0L
+            connection.inputStream.use { input ->
+                part.outputStream().use { output ->
+                    val buffer = ByteArray(16 * 1024)
+                    while (true) {
+                        currentCoroutineContext().ensureActive()
+                        val read = input.read(buffer)
+                        if (read < 0) break
+                        output.write(buffer, 0, read)
+                        total += read
+                    }
+                }
+            }
+            if (total == 0L || (length > 0 && total != length)) throw IOException("truncated")
+            if (!part.renameTo(destination)) throw IOException("storage")
+        } finally {
+            connection.disconnect()
+            part.delete()
+        }
+    }
+
+    /** Deletes the least recently played verses once the cache exceeds its budget. */
+    private fun trim() {
+        val files = root.walkTopDown().filter { it.isFile && it.extension == "mp3" }.toList()
+        var total = files.sumOf { it.length() }
+        if (total <= budgetBytes) return
+        val target = budgetBytes * 3 / 4
+        for (file in files.sortedBy { it.lastModified() }) {
+            if (total <= target) break
+            val size = file.length()
+            if (file.delete()) total -= size
+        }
+    }
+}

@@ -18,8 +18,8 @@ fun LanguageProvider(language: AppLanguage, content: @Composable () -> Unit) {
     val localized = remember(base, configuration, language) {
         ContextThemeWrapper(base, 0).apply {
             applyOverrideConfiguration(Configuration(configuration).apply {
-                setLocale(Locale(language.code))
-                setLayoutDirection(Locale(language.code))
+                setLocale(Locale.forLanguageTag(language.localeTag))
+                setLayoutDirection(Locale.forLanguageTag(language.localeTag))
             })
         }
     }
