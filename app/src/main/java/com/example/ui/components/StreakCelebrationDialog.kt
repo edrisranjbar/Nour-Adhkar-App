@@ -431,8 +431,7 @@ fun StreakCelebrationDialog(
                                             bigNumber = language.text(days),
                                             headline = language.text("روز متوالی!"),
                                             body = language.text("تبارک‌الله! با استمرار در اذکار روزانه، آتش عبادت خود را فروزان نگه داشته‌اید."),
-                                            appName = language.text("اذکار نور"),
-                                            callToAction = language.text("دریافت رایگان از کافه‌بازار")
+                                            appName = language.text("اذکار نور")
                                         ),
                                         caption = language.text("{0} روز مداومت در اذکار نور".replace("{0}", days)) +
                                             "\n\n" + appShareFooter(language),

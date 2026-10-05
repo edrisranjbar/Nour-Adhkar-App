@@ -40,8 +40,7 @@ data class ShareCardSpec(
     val bigNumber: String? = null,
     /** Circular artwork shown above the headline (achievement badge). */
     @param:DrawableRes val badgeRes: Int? = null,
-    val appName: String,
-    val callToAction: String
+    val appName: String
 )
 
 /** Whether a card's text fits: entirely, only without the body (translation), or only truncated. */
@@ -204,8 +203,6 @@ object ShareCardRenderer {
         val urlBaseline = rowTop + logoSize / 2f - (urlPaint.descent() + urlPaint.ascent()) / 2f
         canvas.drawText(url, SIDE, urlBaseline, urlPaint)
 
-        val cta = layout(spec.callToAction, textPaint(regular, 30f, withAlpha(CREAM, 0.85f)), maxLines = 1)
-        draw(canvas, cta, rowTop + logoSize + 20f)
     }
 
     private fun drawBadge(context: Context, canvas: Canvas, @DrawableRes res: Int, bounds: RectF, ring: Boolean = true) {

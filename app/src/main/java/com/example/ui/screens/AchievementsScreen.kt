@@ -833,8 +833,7 @@ private suspend fun shareAchievement(context: Context, language: AppLanguage, ac
             body = detail,
             caption = language.text(achievement.description),
             badgeRes = achievement.artwork,
-            appName = language.text("اذکار نور"),
-            callToAction = language.text("دریافت رایگان از کافه‌بازار")
+            appName = language.text("اذکار نور")
         ),
         caption = "$title — $detail\n\n${appShareFooter(language)}",
         chooserTitle = language.text("اشتراک‌گذاری دستاورد")

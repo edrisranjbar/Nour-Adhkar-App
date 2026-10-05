@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Image
@@ -26,7 +27,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -123,12 +123,12 @@ fun AyahShareSheet(
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 SegmentedButton(
                     selected = !asImage, onClick = { asImage = false },
-                    shape = SegmentedButtonDefaults.itemShape(0, 2),
+                    shape = AbsoluteRoundedCornerShape(topRight = 24.dp, bottomRight = 24.dp),
                     icon = { Icon(Icons.Rounded.TextFields, contentDescription = null, modifier = Modifier.size(18.dp)) }
                 ) { Text("متن") }
                 SegmentedButton(
                     selected = asImage, onClick = { asImage = true }, enabled = !imageTooLong,
-                    shape = SegmentedButtonDefaults.itemShape(1, 2),
+                    shape = AbsoluteRoundedCornerShape(topLeft = 24.dp, bottomLeft = 24.dp),
                     icon = { Icon(Icons.Rounded.Image, contentDescription = null, modifier = Modifier.size(18.dp)) }
                 ) { Text("تصویر") }
             }

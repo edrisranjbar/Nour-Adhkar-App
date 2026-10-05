@@ -47,6 +47,5 @@ fun DhikrItem.shareCard(language: AppLanguage): ShareCardSpec = ShareCardSpec(
     headlineIsArabic = true,
     body = persianTranslation.trim().takeIf { language.showPersianTranslation && it.isNotBlank() },
     caption = source.trim().takeIf { it.isNotBlank() }?.let { language.reference(it) },
-    appName = language.text("اذکار نور"),
-    callToAction = language.text("دریافت رایگان از کافه‌بازار")
+    appName = language.text("اذکار نور")
 )
