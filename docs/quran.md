@@ -93,7 +93,7 @@ The note and share buttons use their natural content widths with single-line lab
 
 The share sheet offers:
 
-- **Format:** «تصویر» (image) or «متن» (text).
+- **Format:** «متن» (text) on the right and «تصویر» (image) on the left in the RTL sheet. Image remains the initial selection; each option's icon, selection and preview match its label.
 - **«همراه با ترجمه»:** adds the verse's translation in the reader's current translation. It's disabled when no translation is available.
 - **Live preview:** the exact image card, or the exact text that will be sent.
 
@@ -102,3 +102,5 @@ The share sheet offers:
 **Text:** the verse in ﴿ ﴾ using the Unicode (Tanzil) text, so it reads correctly in any app, then the reference, the optional translation with its credit, and the app footer.
 
 Sharing goes through the Android share chooser (WhatsApp, Telegram, Instagram, etc.).
+
+The shared image-card footer places the Nour Adhkar logo and app name on the physical right, and the Cafe Bazaar link on the physical left, with the download invitation below. The link fits the remaining width without overlapping the branding. This footer is shared with the app's other image cards.

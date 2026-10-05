@@ -184,22 +184,28 @@ object ShareCardRenderer {
         val nameWidth = namePaint.measureText(spec.appName)
         val rowWidth = logoSize + 22f + nameWidth
         val rowTop = FOOTER_TOP + 34f
-        val rowLeft = (WIDTH - rowWidth) / 2f
-        // RTL row: the name sits on the left of the logo so the logo leads on the right.
+        val rowRight = WIDTH - SIDE
+        val rowLeft = rowRight - rowWidth
+        // Canvas coordinates keep branding on the physical right and the Latin URL on the left.
         drawBadge(
             context, canvas, R.drawable.ic_nour_adhkar_logo,
-            RectF(rowLeft + rowWidth - logoSize, rowTop, rowLeft + rowWidth, rowTop + logoSize), ring = false
+            RectF(rowRight - logoSize, rowTop, rowRight, rowTop + logoSize), ring = false
         )
         val nameBaseline = rowTop + logoSize / 2f - (namePaint.descent() + namePaint.ascent()) / 2f
         namePaint.textAlign = Paint.Align.LEFT
         canvas.drawText(spec.appName, rowLeft, nameBaseline, namePaint)
 
-        val cta = layout(spec.callToAction, textPaint(regular, 30f, withAlpha(CREAM, 0.85f)), maxLines = 1)
-        val ctaBottom = draw(canvas, cta, rowTop + logoSize + 20f)
-
-        val urlPaint = textPaint(regular, 30f, GOLD).apply { textAlign = Paint.Align.CENTER }
+        val urlPaint = textPaint(regular, 30f, GOLD).apply { textAlign = Paint.Align.LEFT }
         val url = AppLinks.BAZAAR_WEB_URL.removePrefix("https://")
-        canvas.drawText(url, WIDTH / 2f, ctaBottom + 10f - urlPaint.ascent(), urlPaint)
+        val urlWidth = rowLeft - SIDE - 32f
+        if (urlPaint.measureText(url) > urlWidth) {
+            urlPaint.textSize *= urlWidth / urlPaint.measureText(url)
+        }
+        val urlBaseline = rowTop + logoSize / 2f - (urlPaint.descent() + urlPaint.ascent()) / 2f
+        canvas.drawText(url, SIDE, urlBaseline, urlPaint)
+
+        val cta = layout(spec.callToAction, textPaint(regular, 30f, withAlpha(CREAM, 0.85f)), maxLines = 1)
+        draw(canvas, cta, rowTop + logoSize + 20f)
     }
 
     private fun drawBadge(context: Context, canvas: Canvas, @DrawableRes res: Int, bounds: RectF, ring: Boolean = true) {
