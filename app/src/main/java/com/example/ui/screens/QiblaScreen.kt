@@ -66,7 +66,7 @@ fun QiblaScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
             try {
                 if (!Geocoder.isPresent()) return@withContext null
                 @Suppress("DEPRECATION")
-                val address = Geocoder(context, Locale.forLanguageTag(language.code))
+                val address = Geocoder(context, Locale.forLanguageTag(language.localeTag))
                     .getFromLocation(current.latitude, current.longitude, 1)?.firstOrNull()
                 address?.locality?.takeIf { it.isNotBlank() }
                     ?: address?.subAdminArea?.takeIf { it.isNotBlank() }

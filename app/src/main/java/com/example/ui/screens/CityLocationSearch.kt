@@ -42,7 +42,7 @@ fun CityLocationSearch(
             results = withContext(Dispatchers.IO) {
                 check(Geocoder.isPresent()) { "Geocoder unavailable" }
                 @Suppress("DEPRECATION")
-                Geocoder(context, Locale.forLanguageTag(language.code))
+                Geocoder(context, Locale.forLanguageTag(language.localeTag))
                     .getFromLocationName(name, 8).orEmpty()
                     .filter { it.hasLatitude() && it.hasLongitude() }
                     .distinctBy { Triple(it.locality, it.latitude, it.longitude) }
