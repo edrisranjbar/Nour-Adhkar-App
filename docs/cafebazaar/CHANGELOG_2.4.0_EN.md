@@ -7,8 +7,9 @@
 - Jalali date and Persian digits for the last sync time in the Persian profile.
 - Customizable Home quick access with shortcuts users can add or remove.
 - Clearer recitation download confirmation with the reciter, Surah, and file size.
-- Corrected the daily statistics chart so older days appear on the left.
+- Consistent statistics charts with older dates on the left and newer dates on the right; summary counts now appear beside their icons.
 - Three additional adhan voices: Abdulbasit Abdusamad, Nasser Al Qatami, and Yasser Al-Dosari, with offline preview and playback.
 - Clearer profile sync button and more compact prayer-time correction controls.
 - Checklist and streak celebration sounds now follow the phone's media volume.
 - Feedback is sent under the signed-in user's name.
+- Share Quran verses as an image or text, with or without translation.
