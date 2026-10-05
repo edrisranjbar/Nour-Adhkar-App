@@ -84,3 +84,23 @@ The reciter menu marks voices whose current surah is saved. Downloads are manage
 ## Search
 
 The search icon opens a spotlight-style overlay: a dimmed backdrop with a floating, auto-focused field. Results are grouped into matching surahs (by name or number; tapping jumps to the surah) and matching verses (at least two characters; up to 40, tapping opens the verse page). Tapping the backdrop or ✕ on an empty field closes it.
+
+## Share a verse
+
+Tapping a verse opens its sheet, which now has «اشتراک‌گذاری» next to the note button.
+
+The note and share buttons use their natural content widths with single-line labels. On narrow screens or at larger font sizes, the action row wraps entire buttons onto separate rows instead of splitting the note label across lines.
+
+The share sheet offers:
+
+- **Format:** «متن» (text) on the right and «تصویر» (image) on the left in the RTL sheet. Image remains the initial selection; each option's icon, selection and preview match its label.
+- **«همراه با ترجمه»:** adds the verse's translation in the reader's current translation. It's disabled when no translation is available.
+- **Live preview:** the exact image card, or the exact text that will be sent.
+
+**Image:** the existing 1080×1350 share card, with the reference («سوره …، آیه …») at the top, the verse in the Quranic face inside ﴿ ﴾, the translation beneath it, and the app name and store line at the bottom. Quran text is never cut off. If the translation doesn't fit, the image carries the verse only and the translation travels in the message text. If even the verse alone doesn't fit, the image option is disabled and the verse is shared as text. Image shares also include the full text as the caption.
+
+**Text:** the verse in ﴿ ﴾ using the Unicode (Tanzil) text, so it reads correctly in any app, then the reference, the optional translation with its credit, and the app footer.
+
+Sharing goes through the Android share chooser (WhatsApp, Telegram, Instagram, etc.).
+
+The shared image-card footer places the Nour Adhkar logo and app name on the physical right, and the Cafe Bazaar link on the physical left, with the download invitation below. The link fits the remaining width without overlapping the branding. This footer is shared with the app's other image cards.

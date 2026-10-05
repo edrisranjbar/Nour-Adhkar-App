@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -42,6 +43,7 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
@@ -188,6 +190,7 @@ fun QuranScreen(
         }.getOrElse { emptyMap() }
     }
     var selectedVerse by remember { mutableStateOf<QuranVerse?>(null) }
+    var shareVerse by remember { mutableStateOf<QuranVerse?>(null) }
     var noteVerse by remember { mutableStateOf<QuranVerse?>(null) }
     var readerColor by remember { mutableStateOf(QuranReaderColor.fromId(prefs.getQuranReaderColor())) }
     var highlights by remember { mutableStateOf(prefs.getQuranHighlights()) }
@@ -729,7 +732,20 @@ fun QuranScreen(
             onEditNote = {
                 selectedVerse = null
                 noteVerse = verse
+            },
+            onShare = {
+                selectedVerse = null
+                shareVerse = verse
             }
+        )
+    }
+
+    shareVerse?.let { verse ->
+        AyahShareSheet(
+            verse = verse,
+            translation = translationTexts?.let { it[verse.id].orEmpty() },
+            translationCredit = translation.credit,
+            onDismiss = { shareVerse = null }
         )
     }
 
@@ -1205,7 +1221,8 @@ private fun VerseActionsSheet(
     currentNote: String?,
     onDismiss: () -> Unit,
     onHighlightSelected: (HighlightChoice?) -> Unit,
-    onEditNote: () -> Unit
+    onEditNote: () -> Unit,
+    onShare: () -> Unit
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -1431,15 +1448,23 @@ private fun VerseActionsSheet(
                     }
                 }
             }
-            OutlinedButton(
-                onClick = onEditNote,
+            FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp)
+                    .padding(top = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Icon(Icons.Default.EditNote, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(if (currentNote.isNullOrBlank()) labels.addNote else labels.editNote)
+                OutlinedButton(onClick = onShare) {
+                    Icon(Icons.Default.Share, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(labels.shareVerse, maxLines = 1, softWrap = false)
+                }
+                OutlinedButton(onClick = onEditNote) {
+                    Icon(Icons.Default.EditNote, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(if (currentNote.isNullOrBlank()) labels.addNote else labels.editNote, maxLines = 1, softWrap = false)
+                }
             }
             Spacer(Modifier.height(18.dp))
         }
@@ -1556,6 +1581,7 @@ private class QuranLabels(private val language: AppLanguage) {
 
     val translationUnavailable get() = if (arabic) "المعنى غير متاح حاليًا." else "ترجمهٔ این آیه در دسترس نیست."
     val addNote get() = if (arabic) "إضافة ملاحظة" else "افزودن یادداشت"
+    val shareVerse get() = if (arabic) "مشاركة الآية" else "اشتراک‌گذاری"
     val editNote get() = if (arabic) "ویرایش یادداشت" else "ویرایش یادداشت"
     val writeNote get() = if (arabic) "اكتب ملاحظتك" else "یادداشت خود را بنویسید"
     val save get() = if (arabic) "حفظ" else "ذخیره"

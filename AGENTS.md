@@ -9,6 +9,16 @@ This file applies to the whole repository. Follow explicit user requests over th
 - Do not build, install, launch, or otherwise run the app unless the user explicitly asks you to do so. Source edits and non-executing checks are fine; defer build and runtime verification until requested.
 - When the user asks for a build, create a version-appropriate changelog file alongside the release `.aab` and `.bin` artifacts. Place these release artifacts and the changelog in the same release output directory (the `.d` release folder when that is the requested/project convention). Do not assume a build request also authorizes installing or launching the app.
 
+## Release scope: refine, don't expand
+
+This is a standing rule. Follow it unless the user strictly asks otherwise.
+
+- Do not pack many new features into a single release. Keep each release small and focused.
+- Prioritize enhancements, refinement of existing features, a much better UI and UX, and bug fixes over adding new functionality.
+- Before proposing or adding a new feature, consider whether improving, polishing, or fixing something that already exists would serve the user better. Prefer that.
+- If a request would add several features at once, do the most valuable one (or the refinement behind it) and flag the rest as follow-ups instead of bundling them.
+- Only set this rule aside when the user explicitly and strictly requests more features or a larger release.
+
 ## Product and architecture
 
 - Persian-first, RTL Android app for adhkar, prayers, reading, reminders, and personal progress. Keep core content and calculations offline.

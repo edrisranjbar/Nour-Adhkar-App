@@ -142,7 +142,6 @@ private fun DailyCard(input: StatsInput, fontScale: Float) {
             selected = selected,
             onSelect = { selected = it },
             marks = days.map { it.checklist > 0 },
-            oldestOnLeft = true,
             description = "${language.text("نمودار روزانه")}: ${dayLabel(days.first().jdn, language)} – ${dayLabel(days.last().jdn, language)}"
         )
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -301,11 +300,17 @@ private fun SummaryTile(icon: ImageVector, value: String, label: String, fontSca
         border = BorderStroke(1.dp, SoftBorder.copy(alpha = 0.85f))
     ) {
         Column(Modifier.padding(horizontal = 12.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Box(
-                Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.secondaryContainer),
-                contentAlignment = Alignment.Center
-            ) { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(18.dp)) }
-            Text(value, fontSize = (22 * fontScale).sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Box(
+                    Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.secondaryContainer),
+                    contentAlignment = Alignment.Center
+                ) { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(18.dp)) }
+                Text(value, modifier = Modifier.weight(1f), fontSize = (22 * fontScale).sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
+            }
             Text(label, fontSize = (11.5 * fontScale).sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = (16 * fontScale).sp)
         }
     }
