@@ -392,7 +392,7 @@ private fun FeedbackSheet(onDismiss: () -> Unit, onSignIn: () -> Unit) {
     var message by remember { mutableStateOf("") }
     var status by remember { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
-    // 0 = «ارسال پیام», 1 = «پیام‌های من»; opens on «پیام‌های من» when a new reply is waiting.
+    // 0 = «ارسال پیام», 1 = «پیشنهادهای من»; opens on «پیشنهادهای من» when a new reply is waiting.
     val newReplies by AppInboxApi.newReplies.collectAsState()
     var tab by remember { mutableStateOf(if (newReplies > 0) 1 else 0) }
     var sentCount by remember { mutableStateOf(0) }
@@ -419,7 +419,7 @@ private fun FeedbackSheet(onDismiss: () -> Unit, onSignIn: () -> Unit) {
                     Text("ارسال پیام")
                 }
                 SegmentedButton(selected = tab == 1, onClick = { tab = 1 }, shape = SegmentedButtonDefaults.itemShape(1, 2)) {
-                    Text(if (newReplies > 0 && tab != 1) "پیام‌های من (${newReplies.toPersianDigits()})" else "پیام‌های من")
+                    Text(if (newReplies > 0 && tab != 1) "پیشنهادهای من (${newReplies.toPersianDigits()})" else "پیشنهادهای من")
                 }
             }
             if (tab == 1) {
@@ -462,7 +462,7 @@ private fun FeedbackSheet(onDismiss: () -> Unit, onSignIn: () -> Unit) {
                             AppInboxApi.sendFeedback(context, type, message.trim())
                             message = ""
                             sentCount++
-                            status = "پیام شما ارسال شد. سپاسگزاریم. پاسخ ما در «پیام‌های من» نمایش داده می‌شود."
+                            status = "پیام شما ارسال شد. سپاسگزاریم. پاسخ ما در «پیشنهادهای من» نمایش داده می‌شود."
                         } catch (e: com.example.data.repository.ServerException) {
                             status = if (e.code == 401) "نشست شما منقضی شده است. لطفاً دوباره وارد حساب شوید."
                             else "ارسال انجام نشد. لطفاً بعداً دوباره تلاش کنید."

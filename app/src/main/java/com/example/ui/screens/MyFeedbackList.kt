@@ -47,7 +47,7 @@ import com.example.ui.language.LocalizedText as Text
 private val LikeRed = Color(0xFFD23C5A)
 
 /**
- * «پیام‌های من»: the signed-in user's feedback, newest first, each with the team's like
+ * «پیشنهادهای من»: the signed-in user's feedback, newest first, each with the team's like
  * («پسندیده شد») and reply. Replies the user had not seen before are marked «پاسخ تازه».
  */
 @Composable
