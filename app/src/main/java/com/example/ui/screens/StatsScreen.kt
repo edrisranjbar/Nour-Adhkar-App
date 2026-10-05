@@ -142,7 +142,6 @@ private fun DailyCard(input: StatsInput, fontScale: Float) {
             selected = selected,
             onSelect = { selected = it },
             marks = days.map { it.checklist > 0 },
-            oldestOnLeft = true,
             description = "${language.text("نمودار روزانه")}: ${dayLabel(days.first().jdn, language)} – ${dayLabel(days.last().jdn, language)}"
         )
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {

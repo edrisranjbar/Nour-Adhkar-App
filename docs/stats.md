@@ -10,13 +10,15 @@ The «آمار» button on the Home card «فعالیت ۳۰ روز گذشته»
    - Tapping a bar shows its date and counts above the chart.
    - The left arrow opens older 30-day windows; the right arrow returns toward today.
 3. **ماهانه (monthly):** bars for the last 12 Jalali months.
+   - Older months appear on the left and newer months on the right; tapping selects the month at that position.
    - A segmented switch chooses the metric: «روزهای فعال» (default, out of the month's length), «تسبیح», or «چک‌لیست».
 4. **کل مسیر (overall):** an area chart of the running total of the chosen metric.
+   - The first recorded day is on the left; the latest day and its highlighted endpoint are on the right.
    - Range chips: ۳ ماه، ۶ ماه، ۱ سال، همه.
    - A caption gives the lifetime totals since the first recorded day.
 5. **Empty state:** with fewer than three active days, a short message replaces the charts.
 
-The daily chart uses a left-to-right time axis while the screen retains Persian/Arabic RTL text. Monthly and overall charts retain their existing right-to-left order. Charts use Persian digits, theme colours only, and three dashed gridlines with no legend. They animate in, unless the system's "remove animations" setting is on. Each chart has a TalkBack description.
+All three charts use a left-to-right time axis while the screen retains Persian/Arabic RTL text. Bar positions, tap selection, date labels, and the overall endpoint follow the same chronological order. Charts use Persian digits, theme colours only, and three dashed gridlines with no legend. They animate in, unless the system's "remove animations" setting is on. Each chart has a TalkBack description.
 
 ## Data
 

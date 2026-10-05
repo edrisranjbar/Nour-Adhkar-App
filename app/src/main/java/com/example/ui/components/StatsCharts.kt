@@ -43,8 +43,8 @@ import kotlin.math.max
 import kotlin.math.pow
 
 /*
- * Small hand-drawn charts for the statistics page. They read right to left like the rest of the
- * app by default. The daily chart opts into a left-to-right time axis. Values are oldest first.
+ * Small hand-drawn charts for the statistics page. Every time axis runs left to right,
+ * independently of the app's text direction. Values are oldest first.
  * Drawing on a Canvas keeps them dependency-free, fast with hundreds of points, and in the theme.
  */
 
@@ -110,8 +110,7 @@ fun StatsBarChart(
     marks: List<Boolean>? = null,
     barColor: Color = MaterialTheme.colorScheme.primaryContainer,
     selectedColor: Color = MaterialTheme.colorScheme.tertiary,
-    markColor: Color = MaterialTheme.colorScheme.onTertiaryContainer,
-    oldestOnLeft: Boolean = false
+    markColor: Color = MaterialTheme.colorScheme.onTertiaryContainer
 ) {
     val measurer = rememberTextMeasurer()
     val progress = rememberEntryProgress(values)
@@ -125,13 +124,12 @@ fun StatsBarChart(
             .fillMaxWidth()
             .height(height)
             .semantics { contentDescription = description }
-            .pointerInput(values.size, oldestOnLeft) {
+            .pointerInput(values.size) {
                 detectTapGestures { offset ->
                     if (values.isEmpty()) return@detectTapGestures
                     val slot = size.width / values.size.toFloat()
                     val slotIndex = (offset.x / slot).toInt().coerceIn(0, values.size - 1)
-                    val index = if (oldestOnLeft) slotIndex else values.size - 1 - slotIndex
-                    onSelect(index.coerceIn(0, values.size - 1))
+                    onSelect(slotIndex)
                 }
             }
     ) {
@@ -141,7 +139,7 @@ fun StatsBarChart(
         val slot = size.width / values.size
         val barWidth = (slot * 0.62f).coerceAtMost(28.dp.toPx())
         values.forEachIndexed { index, value ->
-            val centerX = if (oldestOnLeft) (index + 0.5f) * slot else size.width - (index + 0.5f) * slot
+            val centerX = (index + 0.5f) * slot
             val barHeight = (value / maxValue) * chartHeight * progress.value
             val color = if (index == selected) selectedColor else barColor
             if (value > 0) {
@@ -200,7 +198,7 @@ fun StatsAreaChart(
         val right = size.width - 4.dp.toPx()
         val left = 4.dp.toPx()
         val span = max(values.size - 1, 1)
-        fun x(i: Int) = right - (right - left) * i / span
+        fun x(i: Int) = left + (right - left) * i / span
         fun y(v: Int) = chartHeight - (v / maxValue) * chartHeight * progress.value
 
         val line = Path()
@@ -224,8 +222,8 @@ fun StatsAreaChart(
         drawCircle(lineColor, radius = 3.5.dp.toPx(), center = Offset(x(last), y(values[last])))
 
         val start = measurer.measure(startLabel, TextStyle(fontSize = 10.sp, color = labelColor))
-        drawText(start, topLeft = Offset(right - start.size.width, chartHeight + 3.dp.toPx()))
+        drawText(start, topLeft = Offset(left, chartHeight + 3.dp.toPx()))
         val end = measurer.measure(endLabel, TextStyle(fontSize = 10.sp, color = labelColor))
-        drawText(end, topLeft = Offset(left, chartHeight + 3.dp.toPx()))
+        drawText(end, topLeft = Offset(right - end.size.width, chartHeight + 3.dp.toPx()))
     }
 }
