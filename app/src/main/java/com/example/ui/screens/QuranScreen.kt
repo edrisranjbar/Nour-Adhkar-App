@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -1447,21 +1448,22 @@ private fun VerseActionsSheet(
                     }
                 }
             }
-            Row(
+            FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                OutlinedButton(onClick = onShare, modifier = Modifier.weight(1f)) {
+                OutlinedButton(onClick = onShare) {
                     Icon(Icons.Default.Share, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text(labels.shareVerse)
+                    Text(labels.shareVerse, maxLines = 1, softWrap = false)
                 }
-                OutlinedButton(onClick = onEditNote, modifier = Modifier.weight(1f)) {
+                OutlinedButton(onClick = onEditNote) {
                     Icon(Icons.Default.EditNote, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text(if (currentNote.isNullOrBlank()) labels.addNote else labels.editNote)
+                    Text(if (currentNote.isNullOrBlank()) labels.addNote else labels.editNote, maxLines = 1, softWrap = false)
                 }
             }
             Spacer(Modifier.height(18.dp))
