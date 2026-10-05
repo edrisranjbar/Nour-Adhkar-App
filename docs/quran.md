@@ -87,9 +87,11 @@ The search icon opens a spotlight-style overlay: a dimmed backdrop with a floati
 
 ## Share a verse
 
-Tapping a verse opens its sheet, which now has «اشتراک‌گذاری» next to the note button. The share sheet offers:
+Tapping a verse opens its sheet, which now has «اشتراک‌گذاری» next to the note button.
 
 The note and share buttons use their natural content widths with single-line labels. On narrow screens or at larger font sizes, the action row wraps entire buttons onto separate rows instead of splitting the note label across lines.
+
+The share sheet offers:
 
 - **Format:** «تصویر» (image) or «متن» (text).
 - **«همراه با ترجمه»:** adds the verse's translation in the reader's current translation. It's disabled when no translation is available.
