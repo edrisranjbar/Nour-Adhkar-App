@@ -3,6 +3,10 @@ import com.example.ui.language.LocalAppLanguage
 import com.example.ui.language.text
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -183,7 +187,7 @@ private fun PlaceEditor(viewModel: AdhkarViewModel, adding: Boolean, activeName:
         }
         }
         PrayerSettingsGroup("اصلاح زمان‌های محاسبه‌شده") {
-            Text("اگر زمان‌ها با تقویم محلی شما تفاوت دارند، فقط زمان موردنظر را اصلاح کنید. در حالت عادی نیازی به تغییر نیست.",
+            Text("اگر با تقویم محلی تفاوت دارد، هر زمان را تا ۳۰ دقیقه زودتر یا دیرتر کنید. پس از ذخیره روی اوقات، اذان و یادآوری‌ها اعمال می‌شود.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             val previewDate by produceState(Date()) {
                 while (true) { delay(60_000L); value = Date() }
@@ -200,52 +204,27 @@ private fun PlaceEditor(viewModel: AdhkarViewModel, adding: Boolean, activeName:
             val previewFormatter = remember(zone) {
                 SimpleDateFormat("HH:mm", Locale.US).apply { timeZone = TimeZone.getTimeZone(zone.trim()) }
             }
-            Text("هر بار لمس، ۱ دقیقه تغییر می‌دهد؛ حداکثر ۳۰ دقیقه زودتر یا دیرتر.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (baseTimes == null) Text("برای دیدن پیش‌نمایش زمان‌ها، ابتدا موقعیت را مشخص کنید.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            listOf("صبح", "طلوع", "ظهر", "عصر", "مغرب", "عشاء").forEachIndexed { index, label ->
-                val adjustment = offsets[index]
-                Surface(shape = RoundedCornerShape(16.dp),
-                    color = if (adjustment == 0) MaterialTheme.colorScheme.surfaceContainerLow
-                        else MaterialTheme.colorScheme.secondaryContainer) {
-                    Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                        Text(when {
-                            adjustment < 0 -> "${(-adjustment).toPersianDigits()} دقیقه زودتر"
-                            adjustment > 0 -> "${adjustment.toPersianDigits()} دقیقه دیرتر"
-                            else -> "بدون تغییر"
-                        }, style = MaterialTheme.typography.bodyMedium)
-                        baseTimes?.getOrNull(index)?.second?.let { base ->
-                            val original = previewFormatter.format(base).toPersianDigits()
-                            val corrected = previewFormatter.format(Date(base.time + adjustment * 60_000L)).toPersianDigits()
-                            Text(if (adjustment == 0) "زمان امروز: $original"
-                                else "امروز: $original · پس از اصلاح: $corrected",
-                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        if (baseTimes != null && baseTimes.getOrNull(index)?.second == null) {
-                            Text("زمان امروز در دسترس نیست", style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedButton(modifier = Modifier.weight(1f), onClick = {
-                                offsets = offsets.toMutableList().also { it[index] = (adjustment - 1).coerceAtLeast(-MAX_OFFSET_MINUTES) }
+            Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainerLow) {
+                Column {
+                    listOf("صبح", "طلوع", "ظهر", "عصر", "مغرب", "عشاء").forEachIndexed { index, label ->
+                        if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                        OffsetRow(
+                            label = label,
+                            adjustment = offsets[index],
+                            base = baseTimes?.getOrNull(index)?.second,
+                            hasPreview = baseTimes != null,
+                            formatter = previewFormatter,
+                            onChange = { value ->
+                                offsets = offsets.toMutableList().also { it[index] = value.coerceIn(-MAX_OFFSET_MINUTES, MAX_OFFSET_MINUTES) }
                                 message = ""
-                            }, enabled = adjustment > -MAX_OFFSET_MINUTES) { Text("۱ دقیقه زودتر") }
-                            OutlinedButton(modifier = Modifier.weight(1f), onClick = {
-                                offsets = offsets.toMutableList().also { it[index] = (adjustment + 1).coerceAtMost(MAX_OFFSET_MINUTES) }
-                                message = ""
-                            }, enabled = adjustment < MAX_OFFSET_MINUTES) { Text("۱ دقیقه دیرتر") }
-                        }
-                        if (adjustment != 0) TextButton(onClick = {
-                            offsets = offsets.toMutableList().also { it[index] = 0 }; message = ""
-                        }) { Text("حذف اصلاح این زمان") }
+                            }
+                        )
                     }
                 }
             }
-            if (offsets.any { it != 0 }) TextButton(onClick = { offsets = List(6) { 0 }; message = "" }) { Text("حذف همهٔ اصلاحات") }
-            Text("اصلاحات پس از «ذخیره تنظیمات» روی زمان‌های نمایش‌داده‌شده، اذان و یادآوری‌ها اعمال می‌شوند.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (offsets.any { it != 0 }) {
+                TextButton(onClick = { offsets = List(6) { 0 }; message = "" }) { Text("حذف همهٔ اصلاحات") }
+            }
         }
         Button(modifier = Modifier.fillMaxWidth(), onClick = {
             val value = PrayerSettings(location.trim(), coordinateNumber(lat), coordinateNumber(lon), zone.trim(), method, hanafi, automatic, offsets)
@@ -263,6 +242,65 @@ private fun PlaceEditor(viewModel: AdhkarViewModel, adding: Boolean, activeName:
             TextButton(onClick = { viewModel.cancelAddingPlace() }, modifier = Modifier.fillMaxWidth()) { Text("انصراف") }
         }
         if (message.isNotEmpty()) Text(message)
+    }
+}
+
+/** One compact correction row: name and today's time (corrected time when adjusted), then a − value + stepper. */
+@Composable
+private fun OffsetRow(
+    label: String,
+    adjustment: Int,
+    base: Date?,
+    hasPreview: Boolean,
+    formatter: SimpleDateFormat,
+    onChange: (Int) -> Unit
+) {
+    val colors = MaterialTheme.colorScheme
+    val changed = adjustment != 0
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 14.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            val time = when {
+                base != null && changed -> "${formatter.format(base)} ← ${formatter.format(Date(base.time + adjustment * 60_000L))}"
+                base != null -> formatter.format(base)
+                hasPreview -> "در دسترس نیست"
+                else -> null
+            }
+            time?.let {
+                Text(it.toPersianDigits(), style = MaterialTheme.typography.bodySmall,
+                    color = if (changed) colors.tertiary else colors.onSurfaceVariant)
+            }
+        }
+        IconButton(onClick = { onChange(adjustment - 1) }, enabled = adjustment > -MAX_OFFSET_MINUTES) {
+            Icon(Icons.Rounded.Remove, contentDescription = "$label یک دقیقه زودتر")
+        }
+        // The value doubles as a reset: tapping a non-zero correction clears it.
+        Surface(
+            shape = RoundedCornerShape(10.dp),
+            color = if (changed) colors.secondaryContainer else Color.Transparent,
+            modifier = Modifier.widthIn(min = 52.dp).then(
+                if (changed) Modifier.clickable(onClickLabel = "حذف اصلاح") { onChange(0) } else Modifier
+            )
+        ) {
+            Text(
+                text = when {
+                    adjustment > 0 -> "+${adjustment.toPersianDigits()}"
+                    adjustment < 0 -> "−${(-adjustment).toPersianDigits()}"
+                    else -> "۰"
+                },
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = if (changed) FontWeight.Bold else FontWeight.Normal,
+                color = if (changed) colors.onSecondaryContainer else colors.onSurfaceVariant
+            )
+        }
+        IconButton(onClick = { onChange(adjustment + 1) }, enabled = adjustment < MAX_OFFSET_MINUTES) {
+            Icon(Icons.Rounded.Add, contentDescription = "$label یک دقیقه دیرتر")
+        }
     }
 }
 

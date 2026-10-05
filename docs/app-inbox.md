@@ -11,3 +11,7 @@
 تاریخ پیام‌ها از بخش تاریخ میلادی `created_at` به جلالی تبدیل می‌شود و با نام فارسی ماه و اعداد فارسی، مانند `۲۶ شهریور ۱۴۰۴`، بدون ساعت یا روز هفته نمایش داده می‌شود. روز ثبت‌شدهٔ سرور حفظ می‌شود و با منطقهٔ زمانی دستگاه جابه‌جا نمی‌شود. تاریخ خالی یا نامعتبر با «تاریخ نامشخص» نمایش داده می‌شود.
 
 Messages are opened from the notifications icon at the left end of the home app bar (not the drawer). A badge shows the unread count (Persian digits, 99+ cap); it refreshes when Home is shown and updates as notices are loaded or marked read. The screen title is «پیام‌ها» in the app bar only.
+
+## Feedback requires sign-in
+
+«ارسال نظر و پیشنهاد» asks signed-out users to sign in first: a short explanation and «ورود به حساب», which opens the account screen. Signed-in users see «ارسال با نام …», and the app sends their sign-in token with `POST /api/app-feedback`. The admin panel's feedback list and the dashboard show the sender's name and email; older app versions without sign-in appear as «ناشناس». If the token has expired, the server answers 401 and the app asks the user to sign in again.

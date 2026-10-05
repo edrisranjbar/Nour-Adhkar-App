@@ -84,3 +84,5 @@ Users can keep up to 10 named places (for example «خانه», «مشهد», «
 - **Place name shown:** the widget header and the adhan notification title show the active place's name, for example «اذان ظهر · خانه». Before any place is saved, the widget keeps its setup prompt.
 - **Storage:** `prayer_places` (JSON) and `prayer_active_place`. The original `prayer_*` keys always mirror the active place, so the widget and schedulers read prayer settings unchanged.
 - **Migration:** on first launch after the update, an existing saved location becomes place #1, named after its city, with every value preserved. Places are not part of progress sync.
+
+The correction section is a compact list: one row per time with its name, today's time («۰۵:۱۲ ← ۰۵:۱۴» when corrected), and a «− value +» stepper in one-minute steps up to ±30. Tapping a non-zero value clears that correction, and «حذف همهٔ اصلاحات» clears all. One short line explains the section. Corrections still apply only after Save.

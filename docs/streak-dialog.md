@@ -63,3 +63,7 @@ The streak (`StreakEngine`, shared by Home, the drawer badge and this dialog thr
 - `DhikrCounterScreen` and Home build the week through the same `buildWeekActivity`, so the dialog can no longer show a different streak from Home.
 
 Tuning lives in `StreakEngine` (`MIN_ACTIVE_DAYS_BEFORE_FREEZE`, week start). `StreakEngineTest` covers the rules. Reminder schedules are unchanged.
+
+## Sound volume
+
+The celebration's sound effects and the checklist completion sound play on the media stream (`USAGE_GAME`). They follow the volume set with the phone's volume keys and are silent when it is at zero. They previously used the system-sounds volume, which many phones keep high and don't show on the volume keys.

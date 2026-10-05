@@ -37,12 +37,13 @@ object AppInboxApi {
         return UUID.randomUUID().toString().also { prefs.edit().putString("installation_id", it).apply() }
     }
 
-    private suspend fun request(path: String, method: String = "GET", body: JSONObject? = null): JSONObject = withContext(Dispatchers.IO) {
+    private suspend fun request(path: String, method: String = "GET", body: JSONObject? = null, token: String? = null): JSONObject = withContext(Dispatchers.IO) {
         val connection = (URL("$base/$path").openConnection() as HttpURLConnection).apply {
             requestMethod = method
             connectTimeout = 10000
             readTimeout = 10000
             setRequestProperty("Accept", "application/json")
+            token?.let { setRequestProperty("Authorization", "Bearer $it") }
             if (body != null) {
                 doOutput = true
                 setRequestProperty("Content-Type", "application/json; charset=utf-8")
@@ -55,8 +56,10 @@ object AppInboxApi {
         } finally { connection.disconnect() }
     }
 
-    suspend fun sendFeedback(type: String, message: String) {
-        request("app-feedback", "POST", JSONObject().put("type", type).put("message", message))
+    /** Sends feedback as the signed-in user, so the admin panel shows who wrote it. */
+    suspend fun sendFeedback(context: Context, type: String, message: String) {
+        request("app-feedback", "POST", JSONObject().put("type", type).put("message", message),
+            token = AccountRepository.token(context))
     }
 
     suspend fun notices(context: Context): List<AppNotice> {
