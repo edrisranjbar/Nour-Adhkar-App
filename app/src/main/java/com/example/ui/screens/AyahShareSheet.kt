@@ -122,12 +122,12 @@ fun AyahShareSheet(
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 SegmentedButton(
                     selected = !asImage, onClick = { asImage = false },
-                    shape = RoundedCornerShape(topStart = 50, topEnd = 0, bottomEnd = 0, bottomStart = 50),
+                    shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp),
                     icon = { Icon(Icons.Rounded.TextFields, contentDescription = null, modifier = Modifier.size(18.dp)) }
                 ) { Text("متن") }
                 SegmentedButton(
                     selected = asImage, onClick = { asImage = true }, enabled = !imageTooLong,
-                    shape = RoundedCornerShape(topStart = 0, topEnd = 50, bottomEnd = 50, bottomStart = 0),
+                    shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp),
                     icon = { Icon(Icons.Rounded.Image, contentDescription = null, modifier = Modifier.size(18.dp)) }
                 ) { Text("تصویر") }
             }
