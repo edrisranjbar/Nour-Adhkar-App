@@ -26,7 +26,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -123,12 +122,12 @@ fun AyahShareSheet(
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 SegmentedButton(
                     selected = !asImage, onClick = { asImage = false },
-                    shape = SegmentedButtonDefaults.itemShape(0, 2),
+                    shape = RoundedCornerShape(topStart = 50, bottomStart = 50),
                     icon = { Icon(Icons.Rounded.TextFields, contentDescription = null, modifier = Modifier.size(18.dp)) }
                 ) { Text("متن") }
                 SegmentedButton(
                     selected = asImage, onClick = { asImage = true }, enabled = !imageTooLong,
-                    shape = SegmentedButtonDefaults.itemShape(1, 2),
+                    shape = RoundedCornerShape(topEnd = 50, bottomEnd = 50),
                     icon = { Icon(Icons.Rounded.Image, contentDescription = null, modifier = Modifier.size(18.dp)) }
                 ) { Text("تصویر") }
             }
