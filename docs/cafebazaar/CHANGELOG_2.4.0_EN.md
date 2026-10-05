@@ -9,3 +9,6 @@
 - Clearer recitation download confirmation with the reciter, Surah, and file size.
 - Corrected the daily statistics chart so older days appear on the left.
 - Three additional adhan voices: Abdulbasit Abdusamad, Nasser Al Qatami, and Yasser Al-Dosari, with offline preview and playback.
+- Clearer profile sync button and more compact prayer-time correction controls.
+- Checklist and streak celebration sounds now follow the phone's media volume.
+- Feedback is sent under the signed-in user's name.
