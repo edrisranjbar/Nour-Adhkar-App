@@ -5,7 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -49,7 +49,7 @@ fun ProgressSyncCard() {
                 Text((if (arabic) "آخر مزامنة: " else "آخرین همگام‌سازی: ") + date, style = MaterialTheme.typography.bodySmall)
             }
             OutlinedButton(
-                modifier = Modifier.align(Alignment.Absolute.Left),
+                modifier = Modifier.align(AbsoluteAlignment.Left),
                 enabled = !state.busy,
                 onClick = { ProgressSyncRepository.sync(context) }
             ) {
