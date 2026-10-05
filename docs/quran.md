@@ -84,3 +84,18 @@ The reciter menu marks voices whose current surah is saved. Downloads are manage
 ## Search
 
 The search icon opens a spotlight-style overlay: a dimmed backdrop with a floating, auto-focused field. Results are grouped into matching surahs (by name or number; tapping jumps to the surah) and matching verses (at least two characters; up to 40, tapping opens the verse page). Tapping the backdrop or ✕ on an empty field closes it.
+
+## Share a verse
+
+Tapping a verse opens its sheet, which now has «اشتراک‌گذاری» next to the note button. The share sheet offers:
+
+- **Format:** «تصویر» (image) or «متن» (text).
+- **«همراه با ترجمه»:** adds the verse's translation in the reader's current translation. It's disabled when no translation is available.
+- **Live preview:** the exact image card, or the exact text that will be sent.
+
+**Image:** the existing 1080×1350 share card, with the reference («سوره …، آیه …») at the top, the verse in the Quranic face inside ﴿ ﴾, the translation beneath it, and the app name and store line at the bottom. Quran text is never cut off. If the translation doesn't fit, the image carries the verse only and the translation travels in the message text. If even the verse alone doesn't fit, the image option is disabled and the verse is shared as text. Image shares also include the full text as the caption.
+
+**Text:** the verse in ﴿ ﴾ using the Unicode (Tanzil) text, so it reads correctly in any app, then the reference, the optional translation with its credit, and the app footer.
+
+Sharing goes through the Android share chooser (WhatsApp, Telegram, Instagram, etc.).
+
