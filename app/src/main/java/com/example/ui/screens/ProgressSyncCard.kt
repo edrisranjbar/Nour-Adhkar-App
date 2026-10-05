@@ -55,7 +55,7 @@ fun ProgressSyncCard() {
             ) {
                 Icon(Icons.Outlined.Sync, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                 Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-                Text(if (arabic) "مزامنة الآن" else "همگام‌سازی اکنون")
+                Text(if (arabic) "مزامنة الآن" else "همام سازی")
             }
         }
     }
