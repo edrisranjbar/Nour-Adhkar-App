@@ -81,7 +81,13 @@ try {
                     $env:NOUR_BIN_KEY_PASSWORD = if ($env:KEY_PASSWORD) { $env:KEY_PASSWORD } else { $properties['keyPassword'] }
                     if (!$keyPath -or !$alias -or !$env:NOUR_BIN_STORE_PASSWORD -or !$env:NOUR_BIN_KEY_PASSWORD) { throw 'BIN signing credentials are incomplete.' }
                     & (Join-Path $JavaHome 'bin/java.exe') -jar $BundleSigner genbin --bundle $aab --bin $directory --ks $keyPath --ks-key-alias $alias --ks-pass env:NOUR_BIN_STORE_PASSWORD --key-pass env:NOUR_BIN_KEY_PASSWORD --v2-signing-enabled true --v3-signing-enabled false *> (Join-Path $directory 'bundlesigner.log')
-                    if ($LASTEXITCODE -ne 0 -or !(Get-ChildItem -LiteralPath $directory -Filter '*.bin')) { throw 'BIN generation failed.' }
+                    if ($LASTEXITCODE -ne 0) { throw 'BIN generation failed.' }
+                    $generatedBins = @(Get-ChildItem -LiteralPath $directory -Filter '*.bin' -File)
+                    if ($generatedBins.Count -ne 1) { throw 'Expected exactly one generated BIN.' }
+                    # Bundle Signer truncates dotted names; retain the full version in our artifact name.
+                    if ($generatedBins[0].Name -ne "$baseName.bin") {
+                        Rename-Item -LiteralPath $generatedBins[0].FullName -NewName "$baseName.bin"
+                    }
                 } finally {
                     $env:NOUR_BIN_STORE_PASSWORD = $previousStorePassword
                     $env:NOUR_BIN_KEY_PASSWORD = $previousKeyPassword
