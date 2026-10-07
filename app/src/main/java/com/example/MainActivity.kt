@@ -169,6 +169,7 @@ class MainActivity : ComponentActivity() {
                 if (onboardingComplete) {
                     AppMainScaffold(
                         viewModel = viewModel,
+                        onExitRequested = this@MainActivity::finish,
                         notificationCategory = notificationCategory,
                         onNotificationCategoryConsumed = { notificationCategory = null },
                         openChecklistFromWidget = openChecklistFromWidget,
@@ -229,6 +230,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppMainScaffold(
     viewModel: AdhkarViewModel,
+    onExitRequested: () -> Unit,
     notificationCategory: String? = null,
     onNotificationCategoryConsumed: () -> Unit = {},
     openChecklistFromWidget: Boolean = false,
@@ -270,7 +272,9 @@ fun AppMainScaffold(
     }
 
     // Back steps out of nested tabs to Home; on Home a second press within 2s exits.
-    var lastHomeBackAt by remember { mutableStateOf(0L) }
+    var lastHomeBackAt by remember(currentTab, selectedCategoryId, drawerState.isOpen) {
+        mutableStateOf<Long?>(null)
+    }
     BackHandler {
         when {
             drawerState.isOpen -> coroutineScope.launch { drawerState.close() }
@@ -279,11 +283,13 @@ fun AppMainScaffold(
             currentTab != "home" -> viewModel.selectTab("home")
             else -> {
                 val now = android.os.SystemClock.elapsedRealtime()
-                if (now - lastHomeBackAt < 2000L) {
-                    (context as? android.app.Activity)?.finish()
+                val previousBack = lastHomeBackAt
+                if (previousBack != null && now - previousBack < 2000L) {
+                    lastHomeBackAt = null
+                    onExitRequested()
                 } else {
                     lastHomeBackAt = now
-                    android.widget.Toast.makeText(context, "برای خروج دوباره بزنید", android.widget.Toast.LENGTH_SHORT).show()
+                    android.widget.Toast.makeText(context, language.text("برای خروج دوباره بزنید"), android.widget.Toast.LENGTH_SHORT).show()
                 }
             }
         }
