@@ -16,6 +16,8 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Button
@@ -336,6 +338,74 @@ fun AboutScreen(
                                     )
                                     Text(
                                         text = "edrisranjbar.dev@gmail.com",
+                                        fontSize = 11.sp,
+                                        color = NightBlue
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Website Button
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .clickable { uriHandler.openUri("https://adhkar.ir") }
+                                    .padding(vertical = 12.dp, horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Public,
+                                    contentDescription = "وب‌سایت",
+                                    tint = Color(0xFF607D8B),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "وب‌سایت اذکار نور",
+                                        fontSize = (13 * fontScale).sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = SandDark
+                                    )
+                                    Text(
+                                        text = "adhkar.ir",
+                                        fontSize = 11.sp,
+                                        color = NightBlue
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Instagram Button
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .clickable { uriHandler.openUri("https://instagram.com/nouradhkar") }
+                                    .padding(vertical = 12.dp, horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PhotoCamera,
+                                    contentDescription = "اینستاگرام",
+                                    tint = Color(0xFFC13584),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "اینستاگرام",
+                                        fontSize = (13 * fontScale).sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = SandDark
+                                    )
+                                    Text(
+                                        text = "@nouradhkar",
                                         fontSize = 11.sp,
                                         color = NightBlue
                                     )
