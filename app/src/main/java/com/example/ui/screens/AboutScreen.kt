@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
@@ -35,7 +36,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -416,10 +416,16 @@ private fun FeedbackSheet(onDismiss: () -> Unit, onSignIn: () -> Unit) {
                 return@Column
             }
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                SegmentedButton(selected = tab == 0, onClick = { tab = 0 }, shape = SegmentedButtonDefaults.itemShape(0, 2)) {
+                SegmentedButton(
+                    selected = tab == 0, onClick = { tab = 0 },
+                    shape = AbsoluteRoundedCornerShape(topRight = 24.dp, bottomRight = 24.dp)
+                ) {
                     Text("ارسال پیام")
                 }
-                SegmentedButton(selected = tab == 1, onClick = { tab = 1 }, shape = SegmentedButtonDefaults.itemShape(1, 2)) {
+                SegmentedButton(
+                    selected = tab == 1, onClick = { tab = 1 },
+                    shape = AbsoluteRoundedCornerShape(topLeft = 24.dp, bottomLeft = 24.dp)
+                ) {
                     Text(if (newReplies > 0 && tab != 1) "پیشنهادهای من (${newReplies.toPersianDigits()})" else "پیشنهادهای من")
                 }
             }
