@@ -1,4 +1,5 @@
 package com.example.ui.screens
+import com.example.share.AppLinks
 
 import android.content.Intent
 import androidx.compose.foundation.BorderStroke
@@ -238,9 +239,9 @@ fun AboutScreen(
                             .fillMaxWidth()
                             .clickable {
                                 val shareText = if (appLanguage == AppLanguage.ARABIC) {
-                                    "أذكار نور؛ رفيقك اليومي للذكر والدعاء والتذكير بالأعمال اليومية\nhttps://cafebazaar.ir/app/ir.adhkar.app"
+                                    "أذكار نور؛ رفيقك اليومي للذكر والدعاء والتذكير بالأعمال اليومية\n${AppLinks.STORE_WEB_URL}"
                                 } else {
-                                    "اذکار نور؛ همراه روزانه ذکر و نیایش، یادآوری اذکار و اعمال روزانه\nhttps://cafebazaar.ir/app/ir.adhkar.app"
+                                    "اذکار نور؛ همراه روزانه ذکر و نیایش، یادآوری اذکار و اعمال روزانه\n${AppLinks.STORE_WEB_URL}"
                                 }
                                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                     type = "text/plain"

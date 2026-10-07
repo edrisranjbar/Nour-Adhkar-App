@@ -57,11 +57,11 @@ Use the checked-in Gradle wrapper. Resolve installed paths before running; these
 $env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr'
 $env:GRADLE_USER_HOME = 'C:\Users\edi\.gradle'
 ${env:ORG_GRADLE_PROJECT_android.aapt2FromMavenOverride} = 'C:\Users\edi\AppData\Local\Android\Sdk\build-tools\36.0.0\aapt2.exe'
-.\gradlew.bat assembleDebug --project-cache-dir .gradle-card-design --no-configuration-cache
-.\gradlew.bat testDebugUnitTest --tests com.example.PrayerSettingsTest --project-cache-dir .gradle-card-design --no-configuration-cache
+.\gradlew.bat assembleBazaarDebug --project-cache-dir .gradle-card-design --no-configuration-cache
+.\gradlew.bat testBazaarDebugUnitTest --tests com.example.PrayerSettingsTest --project-cache-dir .gradle-card-design --no-configuration-cache
 ```
 
-- For a release update, build `assembleRelease` with the same environment and cache options. Signing is already configured through local ignored credentials; never print those credentials.
+- For a release update, build `assembleBazaarRelease` or `assembleMyketRelease` with the same environment and cache options. Signing is already configured through local ignored credentials; never print those credentials. See `docs/store-releases.md` and `scripts/Release-Stores.ps1` for both-store packaging and independent publication. Bazaar gets AAB/BIN; Myket gets APK/AAB, each with its changelogs.
 - The project-local `.gradle-user-home` previously failed with `Unexpected lock protocol ... Expected 3, found 0`. Using the standard user cache resolved it. Do not delete shared caches or terminate unrelated builds without investigating.
 - Pass the AAPT2 override through the environment as above; an unquoted dotted `-P` argument was misparsed by PowerShell.
 - Release lint previously failed resolving desktop-only Compose dependencies. Investigate rather than globally disabling lint. For an explicitly requested local phone build, a temporary command-only fallback used `-x lintVitalAnalyzeRelease -x lintVitalReportRelease -x lintVitalRelease`; disclose that lint was skipped and never report it as passing.
@@ -73,7 +73,7 @@ ${env:ORG_GRADLE_PROJECT_android.aapt2FromMavenOverride} = 'C:\Users\edi\AppData
 - The user wants updates to the existing «اذکار نور» app, not a second app. Release package: `ir.adhkar.app`; debug package: `ir.adhkar.app.debug`. Do not install the debug variant when asked to update the existing app.
 - Keep the permanent release signing key. Never expose, regenerate, rotate, or commit signing credentials/keystores. Verify package and signing compatibility when needed; Android must accept the update normally.
 - Discover the connected device with `adb devices -l`; do not assume a previously used serial is still the intended device.
-- Release APK: `app/build/outputs/apk/release/app-release.apk`.
+- Release APK: `app/build/outputs/apk/bazaar/release/app-bazaar-release.apk` (or `myket/release/app-myket-release.apk` for an explicitly requested Myket update). Use Bazaar by default for the existing phone workflow; both retain `ir.adhkar.app` and the same signing key.
 - Install with `adb -s <serial> install -r <apk>`, preserving data. Never uninstall, clear app data, or force a downgrade to bypass an installation problem without explicit approval.
 - Launch `ir.adhkar.app/com.example.MainActivity`, verify installation/update time and foreground activity, and inspect the affected screen. A successful build alone does not complete a phone-deployment request.
 - If Android blocks installation, report the exact error and ask the user to approve the phone prompt. Do not bypass device security settings silently.

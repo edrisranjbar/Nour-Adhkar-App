@@ -7,23 +7,22 @@ import android.graphics.Bitmap
 import androidx.core.content.FileProvider
 import com.example.ui.language.AppLanguage
 import com.example.ui.language.text
+import com.example.store.StoreConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
 /** Store links and feedback address shared by every outward-facing share and prompt. */
 object AppLinks {
-    const val BAZAAR_WEB_URL = "https://cafebazaar.ir/app/ir.adhkar.app"
-    const val BAZAAR_DETAILS_URI = "bazaar://details?id=ir.adhkar.app"
-    const val BAZAAR_PACKAGE = "com.farsitel.bazaar"
+    const val STORE_WEB_URL = StoreConfig.WEB_URL
     const val FEEDBACK_EMAIL = "edrisranjbar.dev@gmail.com"
 }
 
 /** Footer appended to shared text so recipients can find and install the app. */
 fun appShareFooter(language: AppLanguage): String =
     language.text("اذکار نور") + "\n" +
-        language.text("دریافت رایگان از کافه‌بازار:") + "\n" +
-        AppLinks.BAZAAR_WEB_URL
+        language.text("دریافت برنامه:") + "\n" +
+        AppLinks.STORE_WEB_URL
 
 fun shareAppText(context: Context, text: String, chooserTitle: String, subject: String? = null) {
     val intent = Intent(Intent.ACTION_SEND).apply {

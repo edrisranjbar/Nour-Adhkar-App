@@ -195,7 +195,7 @@ object ShareCardRenderer {
         canvas.drawText(spec.appName, rowLeft, nameBaseline, namePaint)
 
         val urlPaint = textPaint(regular, 30f, GOLD).apply { textAlign = Paint.Align.LEFT }
-        val url = AppLinks.BAZAAR_WEB_URL.removePrefix("https://")
+        val url = AppLinks.STORE_WEB_URL.removePrefix("https://")
         val urlWidth = rowLeft - SIDE - 32f
         if (urlPaint.measureText(url) > urlWidth) {
             urlPaint.textSize *= urlWidth / urlPaint.measureText(url)

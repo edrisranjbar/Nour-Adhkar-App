@@ -16,20 +16,22 @@ Java همراه Android Studio را تنظیم و خروجی‌ها را بسا�
 
 ```powershell
 $env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr'
-.\gradlew.bat clean testDebugUnitTest lintRelease bundleRelease assembleRelease
+.\gradlew.bat testBazaarDebugUnitTest lintBazaarRelease bundleBazaarRelease assembleBazaarRelease --project-cache-dir .gradle-card-design --no-configuration-cache
 ```
 
 اگر Maven مربوط به AAPT2 در دسترس نبود ولی Android SDK 36 نصب است:
 
 ```powershell
-.\gradlew.bat bundleRelease assembleRelease `
-  "-Pandroid.aapt2FromMavenOverride=$env:LOCALAPPDATA\Android\Sdk\build-tools\36.0.0\aapt2.exe"
+${env:ORG_GRADLE_PROJECT_android.aapt2FromMavenOverride} = "$env:LOCALAPPDATA\Android\Sdk\build-tools\36.0.0\aapt2.exe"
+.\gradlew.bat bundleBazaarRelease assembleBazaarRelease --project-cache-dir .gradle-card-design --no-configuration-cache
 ```
 
 خروجی‌های قابل بارگذاری:
 
-- App Bundle: `app/build/outputs/bundle/release/app-release.aab`
-- APK عمومی: `app/build/outputs/apk/release/app-release.apk`
+- App Bundle: `app/build/outputs/bundle/bazaarRelease/app-bazaar-release.aab`
+- APK عمومی: `app/build/outputs/apk/bazaar/release/app-bazaar-release.apk`
+
+برای آماده‌سازی AAB و BIN و تغییرات فارسی/انگلیسی در یک پوشهٔ انتشار، یا ساخت هم‌زمان خروجی مستقل مایکت، از [راهنمای انتشار فروشگاه‌ها](../store-releases.md) و `scripts/Release-Stores.ps1` استفاده کنید. خروجی مایکت را در بازار و خروجی بازار را در مایکت بارگذاری نکنید.
 
 ## ۳. آماده‌سازی پیشخان
 

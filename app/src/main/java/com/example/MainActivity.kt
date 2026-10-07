@@ -1,4 +1,5 @@
 package com.example
+import com.example.store.StoreIntents
 import com.example.ui.language.LocalAppLanguage
 import com.example.ui.language.text
 
@@ -306,19 +307,7 @@ fun AppMainScaffold(
                 update = update,
                 onDismiss = { availableUpdate = null },
                 onUpdate = {
-                    val bazaarIntent = Intent(
-                        Intent.ACTION_VIEW,
-                        Uri.parse("bazaar://details?id=ir.adhkar.app")
-                    )
-                    runCatching { context.startActivity(bazaarIntent) }.onFailure {
-                        context.startActivity(
-                            Intent(
-                                Intent.ACTION_VIEW,
-                                Uri.parse("https://cafebazaar.ir/app/ir.adhkar.app")
-                            )
-                        )
-                    }
-                    if (!update.isRequired) availableUpdate = null
+                    if (StoreIntents.openUpdate(context) && !update.isRequired) availableUpdate = null
                 }
             )
         }
@@ -749,7 +738,7 @@ private fun UpdateAvailableBottomSheet(
                     Text("به‌روزرسانی اجباری است", fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF071B31))
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "برای ادامه استفاده از برنامه، نسخه ${update.versionName} را از کافه‌بازار دریافت کنید.",
+                        "برای ادامه استفاده از برنامه، نسخه ${update.versionName} را از فروشگاه دریافت کنید.",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF29445F),
@@ -844,7 +833,7 @@ private fun UpdateAvailableBottomSheet(
                     )
                     Spacer(Modifier.height(7.dp))
                     Text(
-                        text = "نسخه ${update.versionName} را از کافه‌بازار دریافت کنید و از تازه‌ترین بهبودها بهره ببرید.",
+                        text = "نسخه ${update.versionName} را از فروشگاه دریافت کنید و از تازه‌ترین بهبودها بهره ببرید.",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF29445F),
