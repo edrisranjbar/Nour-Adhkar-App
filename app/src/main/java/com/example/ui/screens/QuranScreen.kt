@@ -204,6 +204,8 @@ fun QuranScreen(
     var notes by remember { mutableStateOf(prefs.getQuranNotes()) }
     var moreMenuOpen by remember { mutableStateOf(false) }
     var searchOpen by remember { mutableStateOf(false) }
+    // Search focus is temporary reading state, separate from the user's saved highlights.
+    var searchFocusedVerse by remember { mutableStateOf<QuranVerse?>(null) }
     var colorDialogOpen by remember { mutableStateOf(false) }
     var goToSurahSheetOpen by remember { mutableStateOf(false) }
     var goToPageDialogOpen by remember { mutableStateOf(false) }
@@ -292,6 +294,7 @@ fun QuranScreen(
 
     LaunchedEffect(requestedPage, pagerState) {
         requestedPage?.takeIf { it in 1..QuranRepository.PAGE_COUNT }?.let { page ->
+            searchFocusedVerse = null
             activeSurahNumber = null
             focusedSurahNumber = null
             pagerState.scrollToPage(page - 1)
@@ -302,6 +305,9 @@ fun QuranScreen(
     LaunchedEffect(pagerState, loadedCorpus) {
         snapshotFlow { pagerState.currentPage }
             .collect { page ->
+                if (searchFocusedVerse?.pageNumber?.let { it != page + 1 } == true) {
+                    searchFocusedVerse = null
+                }
                 prefs.setQuranLastReadPage(page + 1)
                 val surahsOnPage = loadedCorpus.pages[page].verses.map(QuranVerse::surahNumber).toSet()
                 val activeSurah = activeSurahNumber
@@ -489,6 +495,7 @@ fun QuranScreen(
                     highlights = highlights,
                     notes = notes,
                     playingVerseId = ayahState.verseId,
+                    searchFocusedVerseId = searchFocusedVerse?.takeIf { it.pageNumber == index + 1 }?.id,
                     focusedSurahNumber = focusedSurahNumber,
                     onOpenSurahPicker = { goToSurahSheetOpen = true },
                     onOpenPagePicker = {
@@ -527,6 +534,7 @@ fun QuranScreen(
             labels = labels,
             onDismiss = { goToSurahSheetOpen = false },
             onSurahSelected = { surah ->
+                searchFocusedVerse = null
                 activeSurahNumber = surah.number
                 goToSurahSheetOpen = false
                 scope.launch {
@@ -546,6 +554,7 @@ fun QuranScreen(
             normalize = { it.normalizeArabic() },
             onDismiss = { searchOpen = false },
             onSurahSelected = { surah ->
+                searchFocusedVerse = null
                 searchOpen = false
                 activeSurahNumber = surah.number
                 scope.launch {
@@ -556,7 +565,11 @@ fun QuranScreen(
             onVerseSelected = { verse ->
                 searchOpen = false
                 activeSurahNumber = verse.surahNumber
-                scope.launch { pagerState.scrollToPage(verse.pageNumber - 1) }
+                scope.launch {
+                    pagerState.scrollToPage(verse.pageNumber - 1)
+                    // Set focus after navigation so the previous page cannot clear the new result.
+                    searchFocusedVerse = verse
+                }
             }
         )
     }
@@ -580,6 +593,7 @@ fun QuranScreen(
                 TextButton(
                     enabled = requestedPage in 1..QuranRepository.PAGE_COUNT,
                     onClick = {
+                        searchFocusedVerse = null
                         activeSurahNumber = null
                         focusedSurahNumber = null
                         scope.launch { pagerState.scrollToPage(requestedPage - 1) }
@@ -961,6 +975,7 @@ private fun QuranPageView(
     highlights: Map<String, String>,
     notes: Map<String, String>,
     playingVerseId: String?,
+    searchFocusedVerseId: String?,
     focusedSurahNumber: Int?,
     onOpenSurahPicker: () -> Unit,
     onOpenPagePicker: () -> Unit,
@@ -1016,14 +1031,15 @@ private fun QuranPageView(
             val textMeasurer = rememberTextMeasurer()
             val density = LocalDensity.current
             val textAlign = if (page.number <= 2) TextAlign.Center else TextAlign.Justify
-            // Highlights only change span colors, so the page fit is measured without the reciting verse.
+            // Temporary focus changes only span colors; keep page fitting independent of it.
             val sectionTexts = remember(surahSections, highlights, notes, palette) {
                 surahSections.map { it.asMushafText(highlights, notes, palette, playingVerseId = null) }
             }
             val pageHasPlayingVerse = playingVerseId != null && playingVerseId in verseById
-            val displayTexts = remember(sectionTexts, pageHasPlayingVerse, playingVerseId) {
-                if (!pageHasPlayingVerse) sectionTexts
-                else surahSections.map { it.asMushafText(highlights, notes, palette, playingVerseId) }
+            val pageHasSearchFocus = searchFocusedVerseId != null && searchFocusedVerseId in verseById
+            val displayTexts = remember(sectionTexts, pageHasPlayingVerse, playingVerseId, searchFocusedVerseId) {
+                if (!pageHasPlayingVerse && !pageHasSearchFocus) sectionTexts
+                else surahSections.map { it.asMushafText(highlights, notes, palette, playingVerseId, searchFocusedVerseId) }
             }
             val openingBismillahs = surahSections.map { verses ->
                 verses.first().takeIf { it.verseNumber == 1 }?.let { it.bismillah.orEmpty() }
@@ -1300,13 +1316,15 @@ private fun List<QuranVerse>.asMushafText(
     highlights: Map<String, String>,
     notes: Map<String, String>,
     palette: QuranPalette,
-    playingVerseId: String?
+    playingVerseId: String?,
+    searchFocusedVerseId: String? = null
 ): AnnotatedString = buildAnnotatedString {
     forEach { verse ->
         pushStringAnnotation(tag = VERSE_TAG, annotation = verse.id)
         val highlight = highlightChoices.firstOrNull { it.id == highlights[verse.id] }?.color
-        // The reciting verse is tinted with the page accent, over any saved highlight.
+        // Search focus must remain visible even while this verse is being recited.
         val background = when {
+            verse.id == searchFocusedVerseId -> palette.accent.copy(alpha = 0.35f)
             verse.id == playingVerseId -> palette.accent.copy(alpha = 0.22f)
             highlight != null -> highlight.copy(alpha = 0.5f)
             else -> Color.Transparent
