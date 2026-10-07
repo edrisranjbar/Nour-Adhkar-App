@@ -6,3 +6,4 @@
 - 31 verse-by-verse reciters, including al-Husary (Muallim), al-Minshawi and Abdul Basit (Murattal and Mujawwad), Shahriar Parhizgar and Karim Mansoori.
 - Recently heard verses are kept for replay without internet.
 - Dari (Afghanistan) language option, with Afghan solar month names (Hamal to Hut) and common Dari wording.
+- Shorter morning and evening adhkar notifications that show the app's own icon.
