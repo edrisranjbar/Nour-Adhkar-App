@@ -63,6 +63,10 @@ If dependency access fails, `-GradleInitScripts` accepts existing workstation-sp
 
 Outputs are separate timestamped `.d` directories under `release/<store>-<version>-vc<code>/`. Both contain APK, AAB, FA/EN changelogs, Gradle log, signing report and SHA-256 hashes. Bazaar additionally contains its Bundle Signer BIN/log; Myket gets APK/AAB, without a Bazaar-specific BIN. Existing output directories are never reused or cleaned. The script verifies package/version and APK signatures, and checks that both APK certificates match when building both stores.
 
+## Running on the phone
+
+`run.cmd` (or `.\scripts\Run-Phone.ps1`) builds the signed `assembleBazaarRelease` APK, then installs it with `adb install -r` as an update of `ir.adhkar.app`, so data is kept, and launches `MainActivity`. Use `-Store myket` for the Myket flavor. `-Serial` is needed only when several devices are connected. The script picks the device before building, so a missing or unauthorized phone fails fast. It uses the ignored `.tooling/release-local.init.gradle` and `.tooling/release-mirror.init.gradle` when present (`-NoInitScripts` turns them off; `-GradleInitScripts` overrides them). It checks the APK's package name and signature. It reports the installed version, the update time and the foreground activity. It never uninstalls, clears data or downgrades. If Android refuses the update, the script stops with Android's message. `-SkipLint` applies the documented local lint fallback and warns that lint did not pass. The Gradle log is in `app/build/run-phone/gradle.log`. This is for phone testing only: release folders, changelogs and the BIN still come from `Release-Stores.ps1`.
+
 `Verify-StoreArtifact.ps1` scans APK/AAB DEX, manifests, resources and textual assets for the competing store's scheme, domain and package. It fails if the selected routing is absent. This is a packaging guard, not a replacement for device verification or store review.
 
 Explicit Gradle tasks:
