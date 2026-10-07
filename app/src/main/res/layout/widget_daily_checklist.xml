@@ -105,7 +105,7 @@
         android:background="@drawable/bg_widget_open_button"
         android:fontFamily="@font/vazirmatn_bold"
         android:gravity="center"
-        android:text="مشاهده همه اعمال  ←"
+        android:text="مشاهده همه اعمال"
         android:textColor="#FFFFFF"
         android:textSize="12sp"
         android:textStyle="bold" />
