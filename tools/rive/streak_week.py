@@ -42,7 +42,8 @@ WHITE = "#FFFFFF"
 POSES = {
     "missed":      ("#FFFFFF", 0.12, 0, 0, 0, 0, "#FFFFFF"),
     "done":        ("#2E7D32", 1.00, 0, 0, 1, 0, "#FFFFFF"),
-    "frozen":      ("#FFFFFF", 0.00, 0, 0, 1, 1, "#32AFE5"),
+    # No check on a frozen day: the shield kept the streak, the day was not completed.
+    "frozen":      ("#FFFFFF", 0.00, 0, 0, 0, 1, "#32AFE5"),
     "pending":     ("#FFFFFF", 0.00, 0, 0, 0, 0.55, "#24536B"),
     "today_empty": ("#37474F", 1.00, 1, 0, 0, 0, "#FFFFFF"),
     "today_done":  ("#FF9800", 1.00, 1, 0, 1, 0, "#FFFFFF"),
@@ -89,11 +90,6 @@ def build():
 
         ice_points = ((-10, -16), (4, -18), (15, -11), (18, 2), (12, 13),
                       (6, 12), (1, 18), (-5, 13), (-12, 15), (-17, 4), (-17, -7))
-        center = ab.add("Shape", f"iceCenter{i}", parent=flake)
-        ab.add("Ellipse", parent=center, ellipseWidth=21, ellipseHeight=21)
-        stroke(ab, center, "#D3F6FF", 1, 0.55)
-        cf = ab.add("Fill", parent=center)
-        ab.add("SolidColor", parent=cf, colorValue=argb("#137FAF", 0.55))
         polygon(f"iceEdge{i}", ice_points, "#9CE5FA", outline=True)
         polygon(f"iceLight{i}", ((-10, -16), (4, -18), (15, -11), (7, -9),
                 (-6, -11), (-13, 1), (-17, 4), (-17, -7)), "#B5EFFF", 0.85)

@@ -71,7 +71,7 @@ internal fun DayActivity.riveState(todayFilled: Boolean): Int = when {
 }
 
 /**
- * The streak dialog's week strip. The badges (check, faceted ice with a check, pending ice without a check, today
+ * The streak dialog's week strip. The badges (check, faceted ice for a covered day, muted ice while pending, today
  * ring, entrance and today's fill) are drawn by Rive. The day letters, the «امروز» caption and the
  * explanatory note stay Compose text so RTL, Arabic, font scaling and TalkBack keep working.
  *
