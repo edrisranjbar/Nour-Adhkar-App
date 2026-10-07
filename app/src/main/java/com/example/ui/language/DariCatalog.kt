@@ -5,7 +5,8 @@ package com.example.ui.language
  * solar month names (حمل … حوت), Gregorian month names, and a few everyday words.
  * Everything else is shared, so unmatched text passes through unchanged.
  *
- * Regexes avoid braces: Android's ICU parser rejects some forms the desktop JVM accepts.
+ * Regexes avoid braces and Unicode property classes: Android's ICU parser rejects some forms the
+ * desktop JVM accepts, so JVM unit tests alone cannot prove a pattern safe on device.
  */
 object DariCatalog {
     private val solarMonths = listOf(
@@ -30,9 +31,14 @@ object DariCatalog {
 
     private val literal: Map<String, String> = (solarMonths + gregorianMonths).toMap()
 
-    // `\pL` (any letter) needs no braces. ZWNJ is not a letter, so «گوشی‌تان» still matches.
-    private const val LETTER_BEFORE = "(?<!\\pL)"
-    private const val LETTER_AFTER = "(?!\\pL)"
+    // Arabic-script and Latin letters as plain ranges. Android's ICU rejects `\pL` (it crashed on
+    // device although desktop JVM tests passed), so no Unicode property syntax here. ZWNJ (U+200C)
+    // is outside these ranges, so «گوشی‌تان» still matches. The Arabic block's punctuation (، ؛ ؟ ۔)
+    // and digits are left out so «اسفند،» and «۵ مهر» still count as whole words.
+    private const val LETTER =
+        "[ؠ-ٟٮ-ۓە-ۯۺ-ۿݐ-ݿﭐ-﷿ﹰ-﻿A-Za-z]"
+    private const val LETTER_BEFORE = "(?<!$LETTER)"
+    private const val LETTER_AFTER = "(?!$LETTER)"
 
     private val replacements: List<Pair<Regex, String>> = buildList {
         solarMonths.forEach { (persian, dari) ->

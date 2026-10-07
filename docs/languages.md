@@ -14,7 +14,7 @@ Dari (`prs`, Android locale `fa-AF`) shares the Persian interface text, Persian 
 - **Gregorian months:** جنوری، فبروری، مارچ، اپریل، می، جون، جولای، اگست، سپتمبر، اکتوبر، نومبر، دسمبر. These are replaced only when the whole text is the month name, because «مه» is also a word.
 - **Wording:** «گوشی» becomes «موبایل», including with suffixes such as «گوشی‌تان».
 
-Replacements match whole words only and are idempotent, so text localized twice stays correct. Weekday and Hijri month names are the same in Dari. The regexes use brace-free `\pL` lookarounds for Android ICU. Text that bypasses `AppLanguage.text()` shows the shared Persian wording.
+Replacements match whole words only and are idempotent, so text localized twice stays correct. Weekday and Hijri month names are the same in Dari. The regexes use explicit Arabic-script/Latin letter ranges instead of `\pL`. Android ICU rejected `\pL`, so choosing Dari crashed on the device, even though desktop JVM tests passed. A test now blocks Unicode property syntax in `DariCatalog`. Text that bypasses `AppLanguage.text()` shows the shared Persian wording.
 
 Tests: `AppLanguageTest` verifies formatted text, digit conversion, default fallback, and sharing without Persian translation. Verify changing language, opening collections, and reopening the app on a device before claiming installed behavior.
 
