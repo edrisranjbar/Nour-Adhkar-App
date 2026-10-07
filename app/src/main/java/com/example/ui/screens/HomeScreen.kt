@@ -32,7 +32,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.Alarm
@@ -102,6 +101,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.example.streak.StreakEngine
 import com.example.streak.StreakState
+import com.example.ui.components.StreakFreezeBadge
 import com.example.ui.components.StreakCelebrationDialog
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -993,23 +993,27 @@ fun StreakCalendarCard(
                         Box(
                             modifier = Modifier
                                 .size(26.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    when {
-                                        day.isActive -> MaterialTheme.colorScheme.secondaryContainer
-                                        day.isToday -> MaterialTheme.colorScheme.tertiaryContainer
-                                        else -> MaterialTheme.colorScheme.surfaceVariant
-                                    }
-                                )
-                                .border(
-                                    width = if (day.isToday && !day.isActive) 1.5.dp else 1.dp,
-                                    color = when {
-                                        day.isActive -> Color(0xFF4CAF50) // active green
-                                        day.isFrozen || day.isFreezePending -> FreezeBlue
-                                        day.isToday -> SunGold // gold border for today
-                                        else -> SoftBorder.copy(alpha = 0.6f)
-                                    },
-                                    shape = CircleShape
+                                .then(
+                                    if (!day.isActive && (day.isFrozen || day.isFreezePending)) Modifier
+                                    else Modifier
+                                        .clip(CircleShape)
+                                        .background(
+                                            when {
+                                                day.isActive -> MaterialTheme.colorScheme.secondaryContainer
+                                                day.isToday -> MaterialTheme.colorScheme.tertiaryContainer
+                                                else -> MaterialTheme.colorScheme.surfaceVariant
+                                            }
+                                        )
+                                        .border(
+                                            width = if (day.isToday && !day.isActive) 1.5.dp else 1.dp,
+                                            color = when {
+                                                day.isActive -> Color(0xFF4CAF50) // active green
+                                                day.isFrozen || day.isFreezePending -> FreezeBlue
+                                                day.isToday -> SunGold // gold border for today
+                                                else -> SoftBorder.copy(alpha = 0.6f)
+                                            },
+                                            shape = CircleShape
+                                        )
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
@@ -1021,11 +1025,9 @@ fun StreakCalendarCard(
                                     modifier = Modifier.size(14.dp)
                                 )
                             } else if (day.isFrozen || day.isFreezePending) {
-                                Icon(
-                                    imageVector = Icons.Default.AcUnit,
-                                    contentDescription = if (day.isFrozen) "روز حفظ‌شده با سپر هفتگی" else "روز در انتظار سپر هفتگی",
-                                    tint = FreezeBlue,
-                                    modifier = Modifier.size(14.dp)
+                                StreakFreezeBadge(
+                                    pending = day.isFreezePending,
+                                    modifier = Modifier.size(26.dp)
                                 )
                             }
                         }

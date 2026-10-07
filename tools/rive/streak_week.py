@@ -18,7 +18,6 @@ the "امروز" caption stay in Compose as real text, aligned to the 48 px colu
 
 Usage: python3 tools/rive/streak_week.py [output.riv]
 """
-import math
 import os
 import sys
 
@@ -39,12 +38,12 @@ DAYS = 7
 STATES = ["missed", "done", "frozen", "pending", "today_empty", "today_done"]
 
 WHITE = "#FFFFFF"
-#            background,             bg alpha, ring, dot, check, flake, flake colour
+#            background,             bg alpha, ring, dot, check, ice, ice colour
 POSES = {
     "missed":      ("#FFFFFF", 0.12, 0, 0, 0, 0, "#FFFFFF"),
     "done":        ("#2E7D32", 1.00, 0, 0, 1, 0, "#FFFFFF"),
-    "frozen":      ("#1565C0", 1.00, 0, 0, 0, 1, "#FFFFFF"),
-    "pending":     ("#FFFFFF", 0.12, 0, 0, 0, 1, "#42A5F5"),
+    "frozen":      ("#FFFFFF", 0.00, 0, 0, 1, 1, "#32AFE5"),
+    "pending":     ("#FFFFFF", 0.00, 0, 0, 0, 0.55, "#24536B"),
     "today_empty": ("#37474F", 1.00, 1, 0, 0, 0, "#FFFFFF"),
     "today_done":  ("#FF9800", 1.00, 1, 0, 1, 0, "#FFFFFF"),
 }
@@ -68,20 +67,39 @@ def build():
     days = []
     for i in range(DAYS):
         node = ab.add("Node", f"day{i}", x=x_for(i, False), y=CY)
-        # Rive draws earlier objects on top: check, snowflake, dot, ring, then the disc.
+        # Rive draws earlier objects on top: check, faceted ice, dot, ring, then the disc.
         check = ab.add("Shape", f"check{i}", parent=node, opacity=0)
         path = ab.add("PointsPath", parent=check)
         for vx, vy in ((-6.0, 0.5), (-1.8, 5.0), (6.5, -4.5)):
             ab.add("StraightVertex", parent=path, vx=vx, vy=vy, radius=0)
         stroke(ab, check, WHITE, 3.4)
 
-        flake = ab.add("Shape", f"flake{i}", parent=node, opacity=0)
-        for deg in (90, 30, 150):
-            dx, dy = 6.5 * math.cos(math.radians(deg)), 6.5 * math.sin(math.radians(deg))
-            p = ab.add("PointsPath", parent=flake)
-            ab.add("StraightVertex", parent=p, vx=-dx, vy=-dy, radius=0)
-            ab.add("StraightVertex", parent=p, vx=dx, vy=dy, radius=0)
-        flake_color = stroke(ab, flake, WHITE, 2.4)
+        # Keep the existing pose-track keys, but draw an ice badge instead of a snowflake.
+        flake = ab.add("Node", f"ice{i}", parent=node, opacity=0)
+
+        def polygon(name, points, color, alpha=1.0, outline=False):
+            shape = ab.add("Shape", name, parent=flake)
+            path = ab.add("PointsPath", parent=shape, isClosed=True)
+            for vx, vy in points:
+                ab.add("StraightVertex", parent=path, vx=vx, vy=vy, radius=0)
+            if outline:
+                return stroke(ab, shape, color, 1.4, alpha)
+            fill = ab.add("Fill", parent=shape)
+            return ab.add("SolidColor", parent=fill, colorValue=argb(color, alpha))
+
+        ice_points = ((-10, -16), (4, -18), (15, -11), (18, 2), (12, 13),
+                      (6, 12), (1, 18), (-5, 13), (-12, 15), (-17, 4), (-17, -7))
+        center = ab.add("Shape", f"iceCenter{i}", parent=flake)
+        ab.add("Ellipse", parent=center, ellipseWidth=21, ellipseHeight=21)
+        stroke(ab, center, "#D3F6FF", 1, 0.55)
+        cf = ab.add("Fill", parent=center)
+        ab.add("SolidColor", parent=cf, colorValue=argb("#137FAF", 0.55))
+        polygon(f"iceEdge{i}", ice_points, "#9CE5FA", outline=True)
+        polygon(f"iceLight{i}", ((-10, -16), (4, -18), (15, -11), (7, -9),
+                (-6, -11), (-13, 1), (-17, 4), (-17, -7)), "#B5EFFF", 0.85)
+        polygon(f"iceShade{i}", ((18, 2), (12, 13), (6, 12), (1, 18), (-5, 13),
+                (-12, 15), (-17, 4), (-9, 7), (-3, 10), (8, 8)), "#087CB8", 0.65)
+        flake_color = polygon(f"iceBase{i}", ice_points, "#32AFE5")
 
         dot = ab.add("Shape", f"dot{i}", parent=node, opacity=1)
         ab.add("Ellipse", parent=dot, ellipseWidth=6, ellipseHeight=6)

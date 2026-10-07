@@ -44,7 +44,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.TextButton
@@ -334,12 +333,16 @@ fun StreakCelebrationDialog(
                                     Box(
                                         modifier = Modifier
                                             .size(28.dp)
-                                            .clip(CircleShape)
-                                            .background(fillColor)
-                                            .border(
-                                                width = if (day.isToday) 1.5.dp else 0.dp,
-                                                color = if (day.isToday) SunGold else Color.Transparent,
-                                                shape = CircleShape
+                                            .then(
+                                                if (!filled && (day.isFrozen || day.isFreezePending)) Modifier
+                                                else Modifier
+                                                    .clip(CircleShape)
+                                                    .background(fillColor)
+                                                    .border(
+                                                        width = if (day.isToday) 1.5.dp else 0.dp,
+                                                        color = if (day.isToday) SunGold else Color.Transparent,
+                                                        shape = CircleShape
+                                                    )
                                             ),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -358,11 +361,9 @@ fun StreakCelebrationDialog(
                                                     .scale(checkScale.value)
                                             )
                                         } else if (day.isFrozen || day.isFreezePending) {
-                                            Icon(
-                                                imageVector = Icons.Default.AcUnit,
-                                                contentDescription = if (day.isFrozen) "روز حفظ‌شده با سپر هفتگی" else "روز در انتظار سپر هفتگی",
-                                                tint = if (day.isFrozen) Color.White else FreezeBlue,
-                                                modifier = Modifier.size(15.dp)
+                                            StreakFreezeBadge(
+                                                pending = day.isFreezePending,
+                                                modifier = Modifier.size(28.dp)
                                             )
                                         }
                                     }
