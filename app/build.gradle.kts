@@ -75,6 +75,12 @@ android {
     }
   }
 
+  flavorDimensions += "store"
+  productFlavors {
+    create("bazaar") { dimension = "store" }
+    create("myket") { dimension = "store" }
+  }
+
   buildTypes {
     release {
       buildConfigField("boolean", "FORCE_UPDATE_PROMPT", "false")

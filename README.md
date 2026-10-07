@@ -49,22 +49,26 @@
 
 ```powershell
 $env:JAVA_HOME='C:\Program Files\Android\Android Studio\jbr'
-.\gradlew.bat assembleDebug
+.\gradlew.bat assembleBazaarDebug
 ```
 
 APK دیباگ در مسیر زیر ساخته می‌شود:
 
 ```text
-app/build/outputs/apk/debug/app-debug.apk
+app/build/outputs/apk/bazaar/debug/app-bazaar-debug.apk
 ```
 
 اجرای تست‌ها:
 
 ```powershell
-.\gradlew.bat testDebugUnitTest
+.\gradlew.bat testBazaarDebugUnitTest testMyketDebugUnitTest
 ```
 
 ## اطلاع‌رسانی نسخه جدید
+
+دو خروجی مستقل `bazaar` و `myket` با شناسهٔ بسته و کلید امضای یکسان داریم. برای نسخهٔ مایکت از `assembleMyketRelease` و `bundleMyketRelease` استفاده کنید. تمام پیوندهای امتیازدهی، به‌روزرسانی و اشتراک‌گذاری مطابق فروشگاه همان خروجی هستند. [راهنمای ساخت و انتشار در هر دو فروشگاه](docs/store-releases.md) شامل اسکریپت آماده‌سازی خروجی‌ها، آزمون جداسازی و روند انتشار است.
+
+توضیحات زیر مربوط به خروجی بازار است. خروجی مایکت فقط [`version-myket.json`](version-myket.json) شاخهٔ `main` را می‌خواند؛ اطلاعات آن را پس از تأیید همان نسخه در مایکت منتشر کنید. پنل مدیریت فعلی انتشار بازار را کنترل می‌کند.
 
 نسخه‌ها از پنل مدیریت (بخش «نسخه‌های برنامه» در `/admin/versions`) مدیریت می‌شوند: برای هر انتشار، نام نسخه، کد نسخه، تغییرات و تاریخ انتشار ثبت می‌شود و پس از تأیید کافه‌بازار، نسخه «منتشر» می‌شود. برنامه نشانی `https://api.adhkar.ir/api/app-version` را بررسی می‌کند که آخرین نسخهٔ منتشرشده را برمی‌گرداند؛ `minRequiredVersionCode` برابر بالاترین کد نسخهٔ منتشرشده‌ای است که «اجباری» علامت خورده باشد. از اجباری کردن به‌روزرسانی جز برای مشکلات جدی پرهیز کنید.
 

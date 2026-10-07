@@ -1,9 +1,6 @@
 package com.example.ui.components
 
-import android.content.ActivityNotFoundException
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -33,13 +30,13 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import com.example.share.AppLinks
+import com.example.store.StoreIntents
 import com.example.ui.language.LocalizedIcon as Icon
 import com.example.ui.language.LocalizedText as Text
 import kotlinx.coroutines.delay
 
 /**
- * Decides when to ask for a Cafe Bazaar rating. Only asks users with an active streak, at most
+ * Decides when to ask for a store rating. Only asks users with an active streak, at most
  * three times, a week apart, and never again once they chose to rate.
  */
 class RatingPromptStore(context: Context) {
@@ -70,17 +67,6 @@ class RatingPromptStore(context: Context) {
         const val KEY_DONE = "done"
         const val KEY_TIMES_ASKED = "times_asked"
         const val KEY_NEXT_ASK_AT = "next_ask_at"
-    }
-}
-
-/** Opens the Cafe Bazaar rating page, falling back to the web listing when Bazaar is missing. */
-fun openBazaarRating(context: Context) {
-    val rate = Intent(Intent.ACTION_EDIT, Uri.parse(AppLinks.BAZAAR_DETAILS_URI))
-        .setPackage(AppLinks.BAZAAR_PACKAGE)
-    try {
-        context.startActivity(rate)
-    } catch (_: ActivityNotFoundException) {
-        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(AppLinks.BAZAAR_WEB_URL))) }
     }
 }
 
@@ -117,7 +103,7 @@ private fun RatingStars() {
 }
 
 /**
- * Asks for a Cafe Bazaar rating: five gold stars, one button to rate and one to ask again later.
+ * Asks for a store rating: five gold stars, one button to rate and one to ask again later.
  * Feedback and suggestions live in the About screen.
  */
 @Composable
@@ -130,7 +116,7 @@ fun RatingPromptDialog(store: RatingPromptStore, onDismiss: () -> Unit) {
             title = { Text("از اذکار نور راضی هستید؟", textAlign = TextAlign.Center) },
             text = {
                 Text(
-                    "امتیاز و نظر شما در کافه‌بازار کمک می‌کند افراد بیشتری اذکار نور را پیدا کنند.",
+                    "امتیاز و نظر شما کمک می‌کند افراد بیشتری اذکار نور را پیدا کنند.",
                     textAlign = TextAlign.Center
                 )
             },
@@ -141,8 +127,7 @@ fun RatingPromptDialog(store: RatingPromptStore, onDismiss: () -> Unit) {
                 ) {
                     Button(
                         onClick = {
-                            store.markDone()
-                            openBazaarRating(context)
+                            if (StoreIntents.openRating(context)) store.markDone()
                             onDismiss()
                         },
                         modifier = Modifier.fillMaxWidth()

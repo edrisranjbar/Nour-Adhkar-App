@@ -1,4 +1,5 @@
 package com.example
+import com.example.store.StoreIntents
 import com.example.ui.language.LocalAppLanguage
 import com.example.ui.language.text
 
@@ -168,6 +169,7 @@ class MainActivity : ComponentActivity() {
                 if (onboardingComplete) {
                     AppMainScaffold(
                         viewModel = viewModel,
+                        onExitRequested = this@MainActivity::finish,
                         notificationCategory = notificationCategory,
                         onNotificationCategoryConsumed = { notificationCategory = null },
                         openChecklistFromWidget = openChecklistFromWidget,
@@ -228,6 +230,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppMainScaffold(
     viewModel: AdhkarViewModel,
+    onExitRequested: () -> Unit,
     notificationCategory: String? = null,
     onNotificationCategoryConsumed: () -> Unit = {},
     openChecklistFromWidget: Boolean = false,
@@ -269,7 +272,9 @@ fun AppMainScaffold(
     }
 
     // Back steps out of nested tabs to Home; on Home a second press within 2s exits.
-    var lastHomeBackAt by remember { mutableStateOf(0L) }
+    var lastHomeBackAt by remember(currentTab, selectedCategoryId, drawerState.isOpen) {
+        mutableStateOf<Long?>(null)
+    }
     BackHandler {
         when {
             drawerState.isOpen -> coroutineScope.launch { drawerState.close() }
@@ -278,11 +283,13 @@ fun AppMainScaffold(
             currentTab != "home" -> viewModel.selectTab("home")
             else -> {
                 val now = android.os.SystemClock.elapsedRealtime()
-                if (now - lastHomeBackAt < 2000L) {
-                    (context as? android.app.Activity)?.finish()
+                val previousBack = lastHomeBackAt
+                if (previousBack != null && now - previousBack < 2000L) {
+                    lastHomeBackAt = null
+                    onExitRequested()
                 } else {
                     lastHomeBackAt = now
-                    android.widget.Toast.makeText(context, "برای خروج دوباره بزنید", android.widget.Toast.LENGTH_SHORT).show()
+                    android.widget.Toast.makeText(context, language.text("برای خروج دوباره بزنید"), android.widget.Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -306,19 +313,7 @@ fun AppMainScaffold(
                 update = update,
                 onDismiss = { availableUpdate = null },
                 onUpdate = {
-                    val bazaarIntent = Intent(
-                        Intent.ACTION_VIEW,
-                        Uri.parse("bazaar://details?id=ir.adhkar.app")
-                    )
-                    runCatching { context.startActivity(bazaarIntent) }.onFailure {
-                        context.startActivity(
-                            Intent(
-                                Intent.ACTION_VIEW,
-                                Uri.parse("https://cafebazaar.ir/app/ir.adhkar.app")
-                            )
-                        )
-                    }
-                    if (!update.isRequired) availableUpdate = null
+                    if (StoreIntents.openUpdate(context) && !update.isRequired) availableUpdate = null
                 }
             )
         }
@@ -749,7 +744,7 @@ private fun UpdateAvailableBottomSheet(
                     Text("به‌روزرسانی اجباری است", fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF071B31))
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "برای ادامه استفاده از برنامه، نسخه ${update.versionName} را از کافه‌بازار دریافت کنید.",
+                        "برای ادامه استفاده از برنامه، نسخه ${update.versionName} را از فروشگاه دریافت کنید.",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF29445F),
@@ -844,7 +839,7 @@ private fun UpdateAvailableBottomSheet(
                     )
                     Spacer(Modifier.height(7.dp))
                     Text(
-                        text = "نسخه ${update.versionName} را از کافه‌بازار دریافت کنید و از تازه‌ترین بهبودها بهره ببرید.",
+                        text = "نسخه ${update.versionName} را از فروشگاه دریافت کنید و از تازه‌ترین بهبودها بهره ببرید.",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF29445F),

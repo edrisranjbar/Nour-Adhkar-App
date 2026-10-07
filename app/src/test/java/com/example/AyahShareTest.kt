@@ -3,6 +3,7 @@ package com.example
 import com.example.quran.QuranVerse
 import com.example.share.ayahShareCard
 import com.example.share.ayahShareText
+import com.example.store.StoreConfig
 import com.example.ui.language.AppLanguage
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -28,7 +29,7 @@ class AyahShareTest {
 
         val arabicOnly = ayahShareText(verse, null, "ترجمه فولادوند", AppLanguage.FARSI)
         assertFalse("ترجمه فولادوند" in arabicOnly)
-        assertTrue("کافه‌بازار" in arabicOnly)
+        assertTrue(StoreConfig.WEB_URL in arabicOnly)
     }
 
     @Test

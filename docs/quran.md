@@ -4,6 +4,8 @@
 
 نوار بالای خواننده جست‌وجوی متن یا نام سوره دارد. کاربر می‌تواند هم از منوی سه‌نقطه و هم با لمس نام سوره یا شماره صفحه در سربرگ مصحف، دو مسیر مستقل ناوبری را باز کند: فهرست جست‌وجوشوندهٔ ۱۱۴ سوره برای رفتن به آغاز یک سوره، و ورودی مستقیم صفحه برای رفتن به یکی از صفحه‌های ۱ تا ۶۰۴. انتخاب سوره، صفحهٔ آغاز آن را باز می‌کند و اگر سوره در میانهٔ صفحه شروع شود به عنوان همان سوره می‌رود. منوی سه‌نقطه همچنین انتخاب رنگ کاغذی، سپیا، سبز ملایم یا شب را ارائه می‌کند. لمس هر آیه، پنلی باز می‌کند که سربرگ آن شمارهٔ آیه (در یک دایره) و نام سوره را نشان می‌دهد؛ زیر آن کلید «ترجمه / تفسیر»، سپس ترجمهٔ همان آیه (به‌جای تکرار متن عربی) و در پایین هایلایت چهاررنگ (دایره‌های کوچک) و دکمهٔ افزودن یا ویرایش یادداشت قرار دارد. ترجمه بر اساس زبان برنامه انتخاب می‌شود (بخش «ترجمه» را ببینید). همهٔ هایلایت‌ها و یادداشت‌ها تنها روی دستگاه ذخیره می‌شوند.
 
+انتخاب یک آیه از نتایج جست‌وجو، صفحهٔ آن را باز می‌کند و تمام متن و شمارهٔ همان آیه را با رنگ تأکیدیِ متناسب با رنگ صفحه مشخص می‌کند. این نشانه تا خروج از صفحه باقی می‌ماند؛ انتخاب سوره یا رفتن مستقیم به صفحه نیز آن را پاک می‌کند. نتیجهٔ تازه جایگزین نتیجهٔ قبلی می‌شود، حتی اگر هر دو در یک صفحه باشند. این نشانه موقت است و هایلایت‌ها و یادداشت‌های ذخیره‌شده را تغییر نمی‌دهد؛ هنگام تلاوت همان آیه نیز قابل‌مشاهده می‌ماند و اندازه و چیدمان متن را تغییر نمی‌دهد.
+
 آغاز هر سوره با نام سوره روی تصویر PNG تزئینی متقارن `quran_surah_ornament.png` نمایش داده می‌شود؛ متن نام سوره به‌صورت زنده و وسط‌چین روی تصویر قرار می‌گیرد و بسم‌الله در خطی مستقل زیر آن است. متن آیات در صفحه‌های ۱ و ۲ برای هماهنگی با صفحه‌آرایی آغاز مصحف وسط‌چین است. رنگ هایلایت هر آیه، متن آیه و شمارهٔ همان آیه را با هم در بر می‌گیرد.
 متن آیات با اندازهٔ جمع‌وجور و فاصلهٔ خطی باز نمایش داده می‌شود تا حرکات و اعراب روی صفحهٔ تلفن خواناتر باشند. هر صفحهٔ مصحف یک صفحهٔ ثابت است و اسکرول نمی‌شود: اگر متن صفحه (همراه با سربرگ سوره و بسم‌الله) در ارتفاع موجود جا نشود، اندازهٔ همهٔ آن‌ها با هم به‌اندازهٔ لازم کوچک می‌شود و هرگز از اندازهٔ پیش‌فرض بزرگ‌تر نمی‌شود.
 
@@ -117,4 +119,4 @@ The share sheet offers:
 
 Sharing goes through the Android share chooser (WhatsApp, Telegram, Instagram, etc.).
 
-The shared image-card footer places the Nour Adhkar logo and app name on the physical right, and the Cafe Bazaar link on the physical left. It omits the download invitation to keep the image uncluttered. The link fits the remaining width without overlapping the branding. This footer is shared with the app's other image cards.
+The shared image-card footer places the Nour Adhkar logo and app name on the physical right, and the selected release store's link (Bazaar or Myket) on the physical left. It omits the download invitation to keep the image uncluttered. The link fits the remaining width without overlapping the branding. This footer is shared with the app's other image cards. See [store releases](store-releases.md) for routing and packaging.
