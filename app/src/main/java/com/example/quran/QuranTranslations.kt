@@ -33,6 +33,15 @@ enum class QuranTranslation(
         credit = "تفسیر نور، دکتر مصطفی خرمدل"
     ),
 
+    /** Muhammad Ibrahim Junagarhi, published on QuranEnc. Urdu default. */
+    URDU_JUNAGARHI(
+        id = "ur_junagarhi",
+        language = AppLanguage.URDU,
+        asset = "quran/translation-ur-junagarhi.txt",
+        title = "ترجمہ مولانا محمد جوناگڑھی (QuranEnc)",
+        credit = "اردو ترجمہ: مولانا محمد ابراہیم جوناگڑھی (QuranEnc)"
+    ),
+
     /** al-Tafsir al-Muyassar, King Fahd Glorious Quran Printing Complex. */
     ARABIC_MUYASSAR(
         id = "ar_muyassar",

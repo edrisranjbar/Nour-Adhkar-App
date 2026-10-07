@@ -78,6 +78,8 @@ private val SpotlightAccent = Color(0xFFC9A65A)
 internal fun QuranSpotlightSearch(
     corpus: QuranCorpus,
     arabic: Boolean,
+    /** Localizes Persian labels for non-Arabic languages (Dari, Urdu); identity for Farsi. */
+    localize: (String) -> String = { it },
     quranFont: FontFamily,
     searchVerses: (String) -> List<QuranVerse>,
     normalize: (String) -> String,
@@ -85,6 +87,7 @@ internal fun QuranSpotlightSearch(
     onSurahSelected: (QuranSurah) -> Unit,
     onVerseSelected: (QuranVerse) -> Unit
 ) {
+    val pick: (String, String) -> String = { arabicText, persian -> if (arabic) arabicText else localize(persian) }
     var query by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
     val appear = remember { MutableTransitionState(false).apply { targetState = true } }
@@ -136,8 +139,8 @@ internal fun QuranSpotlightSearch(
                     SpotlightField(
                         value = query,
                         onValueChange = { query = it },
-                        placeholder = if (arabic) "ابحث عن سورة أو آية…" else "جست‌وجوی سوره یا آیه…",
-                        clearLabel = if (arabic) "مسح" else "پاک کردن",
+                        placeholder = pick("ابحث عن سورة أو آية…", "جست‌وجوی سوره یا آیه…"),
+                        clearLabel = pick("مسح", "پاک کردن"),
                         focusRequester = focusRequester,
                         onClose = onDismiss
                     )
@@ -150,8 +153,8 @@ internal fun QuranSpotlightSearch(
                             if (surahMatches.isEmpty() && verseMatches.isEmpty()) {
                                 Text(
                                     if (trimmed.length < 2 && surahMatches.isEmpty()) {
-                                        if (arabic) "اكتب حرفين على الأقل" else "دست‌کم دو حرف بنویسید"
-                                    } else if (arabic) "لا توجد نتائج" else "نتیجه‌ای پیدا نشد",
+                                        pick("اكتب حرفين على الأقل", "دست‌کم دو حرف بنویسید")
+                                    } else pick("لا توجد نتائج", "نتیجه‌ای پیدا نشد"),
                                     modifier = Modifier.fillMaxWidth().padding(24.dp),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     style = MaterialTheme.typography.bodyMedium
@@ -162,21 +165,21 @@ internal fun QuranSpotlightSearch(
                                     contentPadding = PaddingValues(vertical = 8.dp)
                                 ) {
                                     if (surahMatches.isNotEmpty()) {
-                                        item { SectionLabel(if (arabic) "السور" else "سوره‌ها") }
+                                        item { SectionLabel(pick("السور", "سوره‌ها")) }
                                         items(surahMatches, key = { "s${it.number}" }) { surah ->
-                                            SurahResult(surah, arabic) { onSurahSelected(surah) }
+                                            SurahResult(surah, pick) { onSurahSelected(surah) }
                                         }
                                     }
                                     if (verseMatches.isNotEmpty()) {
                                         item {
                                             SectionLabel(
-                                                (if (arabic) "الآيات" else "آیه‌ها") +
+                                                pick("الآيات", "آیه‌ها") +
                                                     " · " + verseMatches.size.toPersianDigits() +
                                                     if (verseMatches.size >= 40) "+" else ""
                                             )
                                         }
                                         items(verseMatches, key = { "v${it.id}" }) { verse ->
-                                            VerseResult(verse, arabic, quranFont) { onVerseSelected(verse) }
+                                            VerseResult(verse, pick, quranFont) { onVerseSelected(verse) }
                                         }
                                     }
                                 }
@@ -248,7 +251,7 @@ private fun SectionLabel(text: String) {
 }
 
 @Composable
-private fun SurahResult(surah: QuranSurah, arabic: Boolean, onClick: () -> Unit) {
+private fun SurahResult(surah: QuranSurah, pick: (String, String) -> String, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -266,8 +269,10 @@ private fun SurahResult(surah: QuranSurah, arabic: Boolean, onClick: () -> Unit)
         Column(Modifier.weight(1f)) {
             Text(surah.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Text(
-                if (arabic) "${surah.verseCount.toPersianDigits()} آية · الصفحة ${surah.firstPage.toPersianDigits()}"
-                else "${surah.verseCount.toPersianDigits()} آیه · صفحه ${surah.firstPage.toPersianDigits()}",
+                pick(
+                    "${surah.verseCount.toPersianDigits()} آية · الصفحة ${surah.firstPage.toPersianDigits()}",
+                    "${surah.verseCount.toPersianDigits()} آیه · صفحه ${surah.firstPage.toPersianDigits()}"
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -277,7 +282,7 @@ private fun SurahResult(surah: QuranSurah, arabic: Boolean, onClick: () -> Unit)
 }
 
 @Composable
-private fun VerseResult(verse: QuranVerse, arabic: Boolean, quranFont: FontFamily, onClick: () -> Unit) {
+private fun VerseResult(verse: QuranVerse, pick: (String, String) -> String, quranFont: FontFamily, onClick: () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -285,9 +290,9 @@ private fun VerseResult(verse: QuranVerse, arabic: Boolean, quranFont: FontFamil
             .padding(horizontal = 20.dp, vertical = 12.dp)
     ) {
         Text(
-            (if (arabic) "سورة " else "سوره ") + verse.surahName + " · " +
-                (if (arabic) "آية " else "آیه ") + verse.verseNumber.toPersianDigits() + " · " +
-                (if (arabic) "ص " else "ص ") + verse.pageNumber.toPersianDigits(),
+            pick("سورة", "سوره") + " " + verse.surahName + " · " +
+                pick("آية", "آیه") + " " + verse.verseNumber.toPersianDigits() + " · " +
+                "ص " + verse.pageNumber.toPersianDigits(),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary
         )

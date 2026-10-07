@@ -6,6 +6,7 @@ import com.example.share.appShareFooter
 
 /** Source metadata only; never applied to the original Quran or adhkar text. */
 fun AppLanguage.reference(source: String): String {
+    if (this == AppLanguage.URDU) return urduReference(source)
     if (this != AppLanguage.ARABIC) return source
     var result = source
     val words = linkedMapOf(
@@ -28,6 +29,21 @@ fun AppLanguage.reference(source: String): String {
         "ذکر" to "ذكر", " و " to " و", "ی" to "ي", "ک" to "ك"
     )
     words.forEach { (fa, ar) -> result = result.replace(fa, ar) }
+    return text(result)
+}
+
+/** Hadith collection names read the same in Urdu; only the Persian phrasing and spelling differ. */
+private fun AppLanguage.urduReference(source: String): String {
+    var result = source
+    linkedMapOf(
+        "هنگام غلت‌زدن و بی‌قراری در شب" to "رات کو کروٹ بدلتے اور بے چینی کے وقت",
+        "هنگام بازگشت از سفر" to "سفر سے واپسی پر",
+        "هنگام پوشیدن لباس نو" to "نیا لباس پہنتے وقت",
+        "هنگام پوشیدن لباس" to "لباس پہنتے وقت", "هنگام ورود" to "داخل ہوتے وقت",
+        "ابن ماجه" to "ابن ماجہ", "سوره" to "سورہ", "آیه" to "آیت",
+        "بقره" to "بقرہ", "ابراهیم" to "ابراہیم", "فاتحه" to "فاتحہ", "مائده" to "مائدہ",
+        "کهف" to "کہف", "ممتحنه" to "ممتحنہ", "آل‌عمران" to "آلِ عمران"
+    ).forEach { (persian, urdu) -> result = result.replace(persian, urdu) }
     return text(result)
 }
 

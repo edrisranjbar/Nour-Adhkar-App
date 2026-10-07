@@ -14,6 +14,7 @@ import com.example.MainActivity
 import com.example.R
 import com.example.data.repository.PreferenceRepository
 import com.example.ui.language.AppLanguage
+import com.example.ui.language.text
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -49,7 +50,10 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             val prefs = PreferenceRepository(context)
             val settings = prefs.getPrayerSettings()
             val schedule = PrayerWidgetSchedule.calculate(settings, Date())
-            val arabic = prefs.getAppLanguage() == AppLanguage.ARABIC
+            val language = prefs.getAppLanguage()
+            val arabic = language == AppLanguage.ARABIC
+            // Arabic wording is written here; other languages localize the Persian source (Dari, Urdu).
+            fun pick(arabicText: String, persian: String) = if (arabic) arabicText else language.text(persian)
             val dark = prefs.isDarkModeEnabled()
             val foreground = Color.parseColor(if (dark) "#E2E3DF" else "#191C1A")
             val muted = Color.parseColor(if (dark) "#BDC9BF" else "#43493F")
@@ -60,7 +64,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             val formatter = SimpleDateFormat("HH:mm", Locale.US).apply { timeZone = TimeZone.getTimeZone(settings.zone) }
             fun time(date: Date?) = date?.let { digits(formatter.format(it)) } ?: "—"
             val labels = if (arabic) listOf("الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء")
-                else listOf("صبح", "طلوع", "ظهر", "عصر", "مغرب", "عشاء")
+                else listOf("صبح", "طلوع", "ظهر", "عصر", "مغرب", "عشاء").map { language.text(it) }
             val open = PendingIntent.getActivity(context, 9101,
                 Intent(context, MainActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -72,16 +76,19 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
                     setTextViewText(id, WidgetTypography.vazirmatn(context, value, bold))
                     setTextColor(id, color)
                 }
-                text(R.id.prayer_widget_title, if (arabic) "مواقيت الصلاة" else "اوقات شرعی", foreground, true)
+                text(R.id.prayer_widget_title, pick("مواقيت الصلاة", "اوقات شرعی"), foreground, true)
                 val placeName = if (settings.isValid()) prefs.getActivePlaceName() else null
-                text(R.id.prayer_widget_city, (placeName ?: settings.location).ifBlank { if (arabic) "تحديد الموقع" else "تعیین موقعیت" }, muted)
+                text(R.id.prayer_widget_city, (placeName ?: settings.location).ifBlank { pick("تحديد الموقع", "تعیین موقعیت") }, muted)
                 val next = schedule?.next
                 val nextLabel = next?.let { labels[schedule.today.indexOfFirst { row -> row.first == it.first }] }
                 val nextText = when {
-                    !settings.isValid() -> if (arabic) "اضغط لتحديد موقعك" else "برای تعیین موقعیت بزنید"
-                    next == null -> if (arabic) "المواقيت غير متاحة" else "اوقات در دسترس نیست"
-                    else -> (if (arabic) "التالي: " else "بعدی: ") + nextLabel +
-                        (if (schedule.tomorrow) (if (arabic) " غداً" else " فردا") else "") + " " + time(next.second)
+                    !settings.isValid() -> pick("اضغط لتحديد موقعك", "برای تعیین موقعیت بزنید")
+                    next == null -> pick("المواقيت غير متاحة", "اوقات در دسترس نیست")
+                    else -> {
+                        val tomorrow = if (schedule.tomorrow) " " + pick("غداً", "فردا") else ""
+                        val detail = "$nextLabel$tomorrow ${time(next.second)}"
+                        pick("التالي: $detail", "بعدی: $detail")
+                    }
                 }
                 text(R.id.prayer_widget_next, nextText, accent, true)
                 setViewVisibility(R.id.prayer_widget_grid, if (schedule == null) View.GONE else View.VISIBLE)

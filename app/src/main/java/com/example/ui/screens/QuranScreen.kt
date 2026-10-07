@@ -129,7 +129,6 @@ import com.example.ui.language.AppLanguage
 import com.example.media.QuranAyahPlayer
 import com.example.media.QuranAyahReciters
 import com.example.media.quranAyahReciter
-import com.example.ui.language.ArabicCatalog
 import com.example.quran.QuranKhatmGoal
 import com.example.quran.QuranKhatmPlan
 import com.example.ui.language.LocalAppLanguage
@@ -241,7 +240,7 @@ fun QuranScreen(
     }
     LaunchedEffect(ayahState.error) {
         ayahState.error?.let {
-            android.widget.Toast.makeText(context, if (language == AppLanguage.ARABIC) ArabicCatalog.translate(it) else it, android.widget.Toast.LENGTH_LONG).show()
+            android.widget.Toast.makeText(context, language.text(it), android.widget.Toast.LENGTH_LONG).show()
             QuranAyahPlayer.clearError()
         }
     }
@@ -354,7 +353,7 @@ fun QuranScreen(
                         IconButton(onClick = { reciterMenuOpen = true }) {
                             Icon(
                                 Icons.Default.RecordVoiceOver,
-                                contentDescription = if (language == AppLanguage.ARABIC) "اختيار القارئ" else "انتخاب قاری",
+                                contentDescription = if (language == AppLanguage.ARABIC) "اختيار القارئ" else language.text("انتخاب قاری"),
                                 tint = Color(0xFFF5EDE2)
                             )
                         }
@@ -549,6 +548,7 @@ fun QuranScreen(
         QuranSpotlightSearch(
             corpus = loadedCorpus,
             arabic = language == AppLanguage.ARABIC,
+            localize = { language.text(it) },
             quranFont = UthmanicHafs,
             searchVerses = { loadedCorpus.search(it) },
             normalize = { it.normalizeArabic() },
@@ -726,7 +726,7 @@ fun QuranScreen(
         AlertDialog(
             onDismissRequest = { cancelKhatmConfirmationOpen = false },
             title = { Text(khatmLabels.cancelGoal) },
-            text = { Text(if (language == AppLanguage.ARABIC) "سيتم حذف الخطة والسجل اليومي." else "برنامه و گزارش روزانه حذف می‌شوند.") },
+            text = { Text(if (language == AppLanguage.ARABIC) "سيتم حذف الخطة والسجل اليومي." else language.text("برنامه و گزارش روزانه حذف می‌شوند.")) },
             confirmButton = {
                 TextButton(onClick = {
                     khatmRepository.clearGoal()
@@ -746,10 +746,10 @@ fun QuranScreen(
     if (khatmCompletedDialogOpen) {
         AlertDialog(
             onDismissRequest = { khatmCompletedDialogOpen = false },
-            title = { Text(if (language == AppLanguage.ARABIC) "تم ختم القرآن" else "ختم قرآن کامل شد") },
-            text = { Text(if (language == AppLanguage.ARABIC) "تقبل الله تلاوتك وبارك لك فيها." else "تلاوت شما قبول باشد و خداوند به آن برکت دهد.") },
+            title = { Text(if (language == AppLanguage.ARABIC) "تم ختم القرآن" else language.text("ختم قرآن کامل شد")) },
+            text = { Text(if (language == AppLanguage.ARABIC) "تقبل الله تلاوتك وبارك لك فيها." else language.text("تلاوت شما قبول باشد و خداوند به آن برکت دهد.")) },
             confirmButton = {
-                TextButton(onClick = { khatmCompletedDialogOpen = false }) { Text(if (language == AppLanguage.ARABIC) "الحمد لله" else "الحمدلله") }
+                TextButton(onClick = { khatmCompletedDialogOpen = false }) { Text(if (language == AppLanguage.ARABIC) "الحمد لله" else language.text("الحمدلله")) }
             }
         )
     }
@@ -1684,37 +1684,40 @@ private fun QuranReaderColor.palette(): QuranPalette = when (this) {
 
 private class QuranLabels(private val language: AppLanguage) {
     private val arabic get() = language == AppLanguage.ARABIC
+    /** Arabic wording is written here; other languages localize the Persian source (Dari, Urdu). */
+    private fun pick(arabicText: String, persian: String) = if (arabic) arabicText else language.text(persian)
 
-    val search get() = if (arabic) "البحث في القرآن" else "جست‌وجو در قرآن"
-    val readerTitle get() = if (arabic) "القرآن الكريم" else "قرآن کریم"
-    val backToHome get() = if (arabic) "العودة إلى الرئيسية" else "بازگشت به خانه"
-    val clearSearch get() = if (arabic) "مسح البحث" else "پاک کردن جست‌وجو"
-    val pageColor get() = if (arabic) "لون الصفحة" else "رنگ صفحه"
-    val goToSurah get() = if (arabic) "الانتقال إلى سورة" else "رفتن به سوره"
-    val goToPage get() = if (arabic) "الانتقال إلى صفحة" else "رفتن به صفحه"
-    val chooseSurah get() = if (arabic) "اختر سورة" else "انتخاب سوره"
-    val searchSurah get() = if (arabic) "ابحث باسم السورة أو رقمها" else "جست‌وجوی نام یا شماره سوره"
-    val noSurahResults get() = if (arabic) "لم يتم العثور على سورة" else "سوره‌ای پیدا نشد"
-    val current get() = if (arabic) "الحالية" else "فعلی"
-    val pageRange get() = if (arabic) "رقم الصفحة (١–٦٠٤)" else "شماره صفحه (۱ تا ۶۰۴)"
-    val go get() = if (arabic) "انتقال" else "برو"
-    val more get() = if (arabic) "المزيد" else "بیشتر"
-    val noResults get() = if (arabic) "لا توجد نتائج" else "نتیجه‌ای پیدا نشد"
-    val page get() = if (arabic) "الصفحة" else "صفحه"
-    val surah get() = if (arabic) "سورة" else "سوره"
-    val verse get() = if (arabic) "آية" else "آیه"
-    val highlight get() = if (arabic) "تمييز الآية" else "هایلایت آیه"
-    val removeHighlight get() = if (arabic) "إزالة التمييز" else "حذف هایلایت"
+    val search get() = pick("البحث في القرآن", "جست‌وجو در قرآن")
+    val readerTitle get() = pick("القرآن الكريم", "قرآن کریم")
+    val backToHome get() = pick("العودة إلى الرئيسية", "بازگشت به خانه")
+    val clearSearch get() = pick("مسح البحث", "پاک کردن جست‌وجو")
+    val pageColor get() = pick("لون الصفحة", "رنگ صفحه")
+    val goToSurah get() = pick("الانتقال إلى سورة", "رفتن به سوره")
+    val goToPage get() = pick("الانتقال إلى صفحة", "رفتن به صفحه")
+    val chooseSurah get() = pick("اختر سورة", "انتخاب سوره")
+    val searchSurah get() = pick("ابحث باسم السورة أو رقمها", "جست‌وجوی نام یا شماره سوره")
+    val noSurahResults get() = pick("لم يتم العثور على سورة", "سوره‌ای پیدا نشد")
+    val current get() = pick("الحالية", "فعلی")
+    val pageRange get() = pick("رقم الصفحة (١–٦٠٤)", "شماره صفحه (۱ تا ۶۰۴)")
+    val go get() = pick("انتقال", "برو")
+    val more get() = pick("المزيد", "بیشتر")
+    val noResults get() = pick("لا توجد نتائج", "نتیجه‌ای پیدا نشد")
+    val page get() = pick("الصفحة", "صفحه")
+    val surah get() = pick("سورة", "سوره")
+    val verse get() = pick("آية", "آیه")
+    val highlight get() = pick("تمييز الآية", "هایلایت آیه")
+    val removeHighlight get() = pick("إزالة التمييز", "حذف هایلایت")
     // Arabic readers get al-Muyassar's plain meaning here, so "المعنى" rather than "الترجمة".
-    val translation get() = if (arabic) "المعنى" else "ترجمه"
-    val translationPicker get() = if (arabic) "ترجمة الآيات" else "ترجمهٔ آیات"
-    val tafsir get() = if (arabic) "التفسير" else "تفسیر"
-    val tafsirUnavailable get() = if (arabic) "لا يوجد تفسير لهذه الآية في هذا الكتاب." else "این تفسیر برای این آیه متنی ندارد."
+    val translation get() = pick("المعنى", "ترجمه")
+    val translationPicker get() = pick("ترجمة الآيات", "ترجمهٔ آیات")
+    val tafsir get() = pick("التفسير", "تفسیر")
+    val tafsirUnavailable get() = pick("لا يوجد تفسير لهذه الآية في هذا الكتاب.", "این تفسیر برای این آیه متنی ندارد.")
 
     private fun ayahRange(passage: TafsirPassage): String {
         val from = passage.fromAyah.toPersianDigits()
         val to = passage.toAyah.toPersianDigits()
         return when {
+            // Raw Persian here: the callers' pick() localizes the whole phrase, range included.
             passage.fromAyah == passage.toAyah -> if (arabic) "الآية $from" else "آیهٔ $from"
             arabic -> "الآيات $from–$to"
             else -> "آیه‌های $from تا $to"
@@ -1722,44 +1725,43 @@ private class QuranLabels(private val language: AppLanguage) {
     }
 
     fun tafsirOfRange(passage: TafsirPassage): String =
-        if (arabic) "تفسير ${ayahRange(passage)}" else "تفسیر ${ayahRange(passage)}"
+        pick("تفسير ${ayahRange(passage)}", "تفسیر ${ayahRange(passage)}")
 
-    fun tafsirOfPrevious(passage: TafsirPassage): String =
-        if (arabic) "لا يفرد هذا التفسير هذه الآية بكلام؛ هذا تفسير ${ayahRange(passage)}:"
-        else "این تفسیر برای این آیه متن جداگانه‌ای ندارد؛ تفسیر ${ayahRange(passage)}:"
+    fun tafsirOfPrevious(passage: TafsirPassage): String = pick(
+        "لا يفرد هذا التفسير هذه الآية بكلام؛ هذا تفسير ${ayahRange(passage)}:",
+        "این تفسیر برای این آیه متن جداگانه‌ای ندارد؛ تفسیر ${ayahRange(passage)}:"
+    )
 
-    val translationUnavailable get() = if (arabic) "المعنى غير متاح حاليًا." else "ترجمهٔ این آیه در دسترس نیست."
-    val addNote get() = if (arabic) "إضافة ملاحظة" else "افزودن یادداشت"
-    val shareVerse get() = if (arabic) "مشاركة الآية" else "اشتراک‌گذاری"
-    val editNote get() = if (arabic) "ویرایش یادداشت" else "ویرایش یادداشت"
-    val writeNote get() = if (arabic) "اكتب ملاحظتك" else "یادداشت خود را بنویسید"
-    val playFromHere get() = if (arabic) "التلاوة من هنا" else "پخش از این آیه"
-    val playPage get() = if (arabic) "تلاوة آية بآية من هذه الصفحة" else "پخش آیه‌به‌آیه از این صفحه"
-    val stopRecitation get() = if (arabic) "إيقاف التلاوة" else "توقف تلاوت"
-    val verseByVerseReciters get() = if (arabic) "التلاوة آية بآية" else "قاریان پخش آیه‌به‌آیه"
-    val previousVerse get() = if (arabic) "الآية السابقة" else "آیهٔ قبل"
-    val nextVerse get() = if (arabic) "الآية التالية" else "آیهٔ بعد"
-    val pause get() = if (arabic) "إيقاف مؤقت" else "توقف موقت"
-    val resume get() = if (arabic) "متابعة" else "ادامه"
-    val bismillah get() = if (arabic) "البسملة" else "بسم‌الله"
-    val save get() = if (arabic) "حفظ" else "ذخیره"
-    val cancel get() = if (arabic) "إلغاء" else "لغو"
+    val translationUnavailable get() = pick("المعنى غير متاح حاليًا.", "ترجمهٔ این آیه در دسترس نیست.")
+    val addNote get() = pick("إضافة ملاحظة", "افزودن یادداشت")
+    val shareVerse get() = pick("مشاركة الآية", "اشتراک‌گذاری")
+    val editNote get() = pick("ویرایش یادداشت", "ویرایش یادداشت")
+    val writeNote get() = pick("اكتب ملاحظتك", "یادداشت خود را بنویسید")
+    val playFromHere get() = pick("التلاوة من هنا", "پخش از این آیه")
+    val playPage get() = pick("تلاوة آية بآية من هذه الصفحة", "پخش آیه‌به‌آیه از این صفحه")
+    val stopRecitation get() = pick("إيقاف التلاوة", "توقف تلاوت")
+    val verseByVerseReciters get() = pick("التلاوة آية بآية", "قاریان پخش آیه‌به‌آیه")
+    val previousVerse get() = pick("الآية السابقة", "آیهٔ قبل")
+    val nextVerse get() = pick("الآية التالية", "آیهٔ بعد")
+    val pause get() = pick("إيقاف مؤقت", "توقف موقت")
+    val resume get() = pick("متابعة", "ادامه")
+    val bismillah get() = pick("البسملة", "بسم‌الله")
+    val save get() = pick("حفظ", "ذخیره")
+    val cancel get() = pick("إلغاء", "لغو")
 
     fun noteFor(verse: QuranVerse): String =
         "${surah} ${verse.surahName} · ${verse.verseNumber.toPersianDigits()}"
 
-    fun surahMeta(surah: QuranSurah): String =
-        if (arabic) {
-            "الصفحة ${surah.firstPage.toPersianDigits()} · ${surah.verseCount.toPersianDigits()} آية"
-        } else {
-            "صفحه ${surah.firstPage.toPersianDigits()} · ${surah.verseCount.toPersianDigits()} آیه"
-        }
+    fun surahMeta(surah: QuranSurah): String = pick(
+        "الصفحة ${surah.firstPage.toPersianDigits()} · ${surah.verseCount.toPersianDigits()} آية",
+        "صفحه ${surah.firstPage.toPersianDigits()} · ${surah.verseCount.toPersianDigits()} آیه"
+    )
 
     fun colorName(color: QuranReaderColor): String = when (color) {
-        QuranReaderColor.Paper -> if (arabic) "ورقي" else "کاغذی"
-        QuranReaderColor.Sepia -> if (arabic) "بني فاتح" else "سپیا"
-        QuranReaderColor.Sage -> if (arabic) "سبز ملایم" else "سبز ملایم"
-        QuranReaderColor.Night -> if (arabic) "ليلي" else "شب"
+        QuranReaderColor.Paper -> pick("ورقي", "کاغذی")
+        QuranReaderColor.Sepia -> pick("بني فاتح", "سپیا")
+        QuranReaderColor.Sage -> pick("سبز ملایم", "سبز ملایم")
+        QuranReaderColor.Night -> pick("ليلي", "شب")
     }
 }
 

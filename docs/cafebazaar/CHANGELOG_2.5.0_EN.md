@@ -7,3 +7,4 @@
 - Recently heard verses are kept for replay without internet.
 - Dari (Afghanistan) language option, with Afghan solar month names (Hamal to Hut) and common Dari wording.
 - Shorter morning and evening adhkar notifications that show the app's own icon.
+- Urdu language with a full Urdu interface and the Urdu Quran translation by Muhammad Junagarhi.

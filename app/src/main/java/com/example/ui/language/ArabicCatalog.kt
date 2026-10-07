@@ -2,7 +2,7 @@ package com.example.ui.language
 
 /** Presentation-only translations. Never translate database keys, IDs, or user input. */
 object ArabicCatalog {
-    private val entries = """
+    private val catalog = PhraseCatalog(localizeDigits = PhraseCatalog::arabicIndicDigits, source = """
 ارسال پیام|إرسال رسالة
 پیشنهادهای من|اقتراحاتي
 پیشنهادهای من ({0})|اقتراحاتي ({0})
@@ -737,38 +737,16 @@ GPS یا مکان‌یابی شبکه در دسترس نیست؛ تنظیمات 
 ویرایش تعداد|تعديل العدد
 تعداد روزه‌های فوت‌شده|عدد أيام الصيام الفائتة
 ثبت تعداد روزه‌های فوت‌شده|تسجيل عدد أيام الصيام الفائتة
-    """.trimIndent().lineSequence().filter { it.contains('|') }.map {
-        val (source, target) = it.split('|', limit = 2)
-        source to target
-    }.toList()
+    """)
 
-    private fun latinDigits(text: String) = text.map {
-        when (it) { in '۰'..'۹' -> '0' + (it - '۰'); in '٠'..'٩' -> '0' + (it - '٠'); else -> it }
-    }.joinToString("")
-    private fun arabicDigits(text: String) = latinDigits(text).map {
-        if (it in '0'..'9') '٠' + (it - '0') else it
-    }.joinToString("")
-    private val literal = entries.filterNot { it.first.contains("{0}") }.associate { latinDigits(it.first) to it.second }
-    private val patterns = entries.filter { it.first.contains("{0}") }.sortedByDescending { it.first.length }.map { (source, target) ->
-        val parts = latinDigits(source).split(Regex("\\{[0-9]+\\}"))
-        Regex(parts.joinToString("(.*?)") { Regex.escape(it) }, RegexOption.DOT_MATCHES_ALL) to target
-    }
+    val keys: Set<String> get() = catalog.keys
 
-    fun translate(text: String, depth: Int = 0): String {
-        val normalized = latinDigits(text)
-        literal[normalized]?.let { return arabicDigits(it) }
-        if (depth < 4) patterns.forEach { (pattern, target) ->
-            val match = pattern.matchEntire(normalized) ?: return@forEach
-            return arabicDigits(Regex("\\{([0-9]+)\\}").replace(target) {
-                translate(match.groupValues[it.groupValues[1].toInt() + 1], depth + 1)
-            })
-        }
-        return arabicDigits(text)
-    }
+    fun translate(text: String): String = catalog.translate(text)
 }
 
 fun AppLanguage.text(value: String): String = when (this) {
     AppLanguage.FARSI -> value
     AppLanguage.DARI -> DariCatalog.translate(value)
+    AppLanguage.URDU -> UrduCatalog.translate(value)
     AppLanguage.ARABIC -> ArabicCatalog.translate(value)
 }
