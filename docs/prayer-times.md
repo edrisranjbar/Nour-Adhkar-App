@@ -4,6 +4,16 @@
 
 The launcher offers a separate 2×2 «اوقات شرعی» widget. It uses the same saved location, timezone, calculation method, and Asr setting as the in-app card. Its compact three-row timetable shows Fajr, sunrise, Dhuhr, Asr, Maghrib, and Isha; the next-prayer line excludes sunrise and rolls over to tomorrow's Fajr after Isha. Times are formatted in the saved location's timezone. Missing or invalid location shows a setup prompt rather than sample times. Tapping the widget opens prayer settings. Existing launcher placements retain their previous grid size until the user resizes or re-adds the widget.
 
+**Resizing.** The widget is added at 2×2 and can be resized from one row tall up to wide and tall sizes. It switches between three shapes, each with matching text sizes:
+
+| Shape | Smallest size (dp) | Shows |
+|---|---|---|
+| Compact | 110 × 40 (one row) | Title · place on top, then the next prayer (with «فردا» after Isha) and its time in large type |
+| Grid | 110 × 110 (about 2×2) | Title and place on one line, the next-prayer line, then three rows of two times |
+| Wide | 250 × 110 (about 4×2) | Title/place beside the next prayer, then two rows of three times |
+
+Grid and Wide use 25% larger text at 140 × 190 and 250 × 170 dp and above. Table rows share the remaining height, so a taller widget spreads the times out instead of leaving a gap. The current prayer has a rounded highlight. On Android 12+ the provider sends all sizes as responsive `RemoteViews` and the launcher switches between them while resizing, with no app round-trip. On older Android the provider picks the size from the launcher's reported width/height in `onAppWidgetOptionsChanged`. All text uses Vazirmatn on Android 9+. On Android 7–8 the system font is used because widget text spans cannot carry a custom typeface there. The picker name and description are localized for Persian, Arabic and Urdu devices. Tests: `PrayerTimesWidgetProviderTest`.
+
 The widget follows the selected app language and light/dark preference. It refreshes when prayer settings, language, or theme change; on app resume, boot, app update, device time or timezone changes; on the launcher's periodic update; and around the next prayer or saved-location midnight through an inexact, non-wakeup alarm. This alarm updates the display only and is independent of adhan playback and reminder scheduling.
 
 Prayer settings are grouped into four outlined cards: adhan voice, enabled prayer alerts, location/timezone, and calculation method/Asr. Cards have 16 dp internal padding and control spacing, separated by 24 dp. Voice and prayer-alert choices still save immediately; location and calculation drafts use the full-width Save button. Asr uses a read-only dropdown with an arrow, independently of the calculation-method dropdown. Automatic and manual location modes share the same timezone group.

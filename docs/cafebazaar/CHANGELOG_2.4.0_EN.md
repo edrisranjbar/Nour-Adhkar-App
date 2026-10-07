@@ -7,6 +7,7 @@
 - Customizable quick access on the home screen.
 - Three new adhan voices: Abdulbasit Abdusamad, Nasser Al Qatami and Yasser Al-Dosari.
 - More reliable progress sync with your account.
+- A more readable, resizable prayer-times widget, from a single row to a wide view.
 - Shorter morning and evening adhkar notifications that show the app's own icon.
 - A new ice badge for days kept by the weekly streak shield.
 - View your submitted feedback with replies from the team.
