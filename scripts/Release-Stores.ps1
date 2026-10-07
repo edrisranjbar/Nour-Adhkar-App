@@ -4,7 +4,8 @@ param(
     [Parameter(Mandatory)][string]$ChangelogEn,
     [string]$JavaHome = 'C:\Program Files\Android\Android Studio\jbr',
     [string]$SdkBuildTools = "$env:LOCALAPPDATA\Android\Sdk\build-tools\36.0.0",
-    [string]$BundleSigner = '.tooling/bundlesigner-0.1.13.jar'
+    [string]$BundleSigner = '.tooling/bundlesigner-0.1.13.jar',
+    [string[]]$GradleInitScripts = @()
 )
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
@@ -17,6 +18,11 @@ foreach ($file in @((Join-Path $JavaHome 'bin/java.exe'), (Join-Path $SdkBuildTo
 $stores = if ($Store -eq 'both') { @('bazaar', 'myket') } else { @($Store) }
 Push-Location $repo
 try {
+    $initArguments = @()
+    foreach ($initScript in $GradleInitScripts) {
+        $initArguments += '--init-script'
+        $initArguments += (Resolve-Path -LiteralPath $initScript).Path
+    }
     & "$PSScriptRoot/Test-StoreIsolation.ps1"
     $gradle = Get-Content -LiteralPath 'app/build.gradle.kts' -Raw
     $version = [regex]::Match($gradle, 'versionName\s*=\s*"([^"]+)"').Groups[1].Value
@@ -38,7 +44,7 @@ try {
             $variant = (Get-Culture).TextInfo.ToTitleCase($channel)
             $directory = Join-Path $repo "release/$channel-$version-vc$code/$stamp.d"
             New-Item -ItemType Directory -Path $directory | Out-Null
-            & ./gradlew.bat "assemble${variant}Release" "bundle${variant}Release" "test${variant}DebugUnitTest" --project-cache-dir .gradle-card-design --no-configuration-cache *> (Join-Path $directory 'gradle.log')
+            & ./gradlew.bat "assemble${variant}Release" "bundle${variant}Release" "test${variant}DebugUnitTest" @initArguments --project-cache-dir .gradle-card-design --no-configuration-cache *> (Join-Path $directory 'gradle.log')
             if ($LASTEXITCODE -ne 0) { throw "Gradle failed. See $directory/gradle.log" }
             $baseName = "nour-adhkar-$channel-$version-vc$code"
             $apk = Join-Path $directory "$baseName.apk"
