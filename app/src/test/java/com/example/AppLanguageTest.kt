@@ -36,7 +36,14 @@ class AppLanguageTest {
         assertEquals("خداوند مهربان است", AppLanguage.DARI.text("خداوند مهربان است"))
         assertEquals("مه غلیظ", AppLanguage.DARI.text("مه غلیظ"))
         val once = AppLanguage.DARI.text("مناسبت‌های اردیبهشت، ۱۰ دی ۱۴۰۴، گوشی")
+        assertEquals("مناسبت‌های ثور، ۱۰ جدی ۱۴۰۴، موبایل", once)
         assertEquals(once, AppLanguage.DARI.text(once))
+    }
+    @Test fun dariPatternsAvoidSyntaxAndroidIcuRejects() {
+        // JVM regex accepted `\pL`, but Android's ICU threw PatternSyntaxException on device.
+        val source = java.io.File("src/main/java/com/example/ui/language/DariCatalog.kt").readText()
+        val code = source.lines().filterNot { it.trimStart().startsWith("//") || it.trimStart().startsWith("*") }
+        assertFalse(code.any { Regex("""\\\\[pP]""").containsMatchIn(it) })
     }
     @Test fun dariReadsPersianQuranContent() {
         assertEquals(

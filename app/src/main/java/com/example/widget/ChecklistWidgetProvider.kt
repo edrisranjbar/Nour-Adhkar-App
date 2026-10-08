@@ -43,7 +43,7 @@ class ChecklistWidgetProvider : AppWidgetProvider() {
                 WidgetTypography.vazirmatn(context, "${completed.size.toPersianDigits()} از ${total.toPersianDigits()}", bold = true)
             )
             setTextViewText(R.id.widget_empty_text, WidgetTypography.vazirmatn(context, "در حال آماده‌سازی فهرست…"))
-            setTextViewText(R.id.widget_open_button, WidgetTypography.vazirmatn(context, "مشاهده همه اعمال  ←", bold = true))
+            setTextViewText(R.id.widget_open_button, WidgetTypography.vazirmatn(context, "مشاهده همه اعمال", bold = true))
             setProgressBar(R.id.widget_progress, total, completed.size, false)
             setOnClickPendingIntent(R.id.widget_header, openChecklistIntent(context))
             setOnClickPendingIntent(R.id.widget_open_button, openChecklistIntent(context))

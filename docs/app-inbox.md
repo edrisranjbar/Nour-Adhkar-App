@@ -20,5 +20,5 @@ Messages are opened from the notifications icon at the left end of the home app 
 
 - **Admin panel:** under each in-app message from a signed-in sender, the feedback list has «پاسخ دادن» (a reply box you can later edit or clear) and a «♡ پسندیدن» toggle. Anonymous messages from older app versions say that a reply cannot reach the sender.
 - **App:** the feedback sheet has two tabs, «ارسال پیام» and «پیشنهادهای من». «پیشنهادهای من» loads the user's messages from `GET /api/app-feedback/mine` (sign-in required), newest first. Each one shows its type, date, «پسندیده شد» when liked, and the reply as «پاسخ تیم اذکار نور».
+- **RTL tabs:** «ارسال پیام» stays on the right and «پیشنهادهای من» on the left. Only the outer edges are rounded; the shared inner boundary is straight, using the same explicit physical-corner shapes as the verse-sharing selector. Tab selection, reply counts and message submission behavior are unchanged.
 - **New replies:** replies the user hasn't seen are marked «پاسخ تازه», and the About screen's feedback button shows «N پاسخ تازه». The sheet opens on «پیشنهادهای من» while one is waiting. Seen replies are remembered on the device, and editing a reply makes it new again.
-

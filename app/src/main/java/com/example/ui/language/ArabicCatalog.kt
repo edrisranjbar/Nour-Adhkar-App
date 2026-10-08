@@ -2,7 +2,7 @@ package com.example.ui.language
 
 /** Presentation-only translations. Never translate database keys, IDs, or user input. */
 object ArabicCatalog {
-    private val entries = """
+    private val catalog = PhraseCatalog(localizeDigits = PhraseCatalog::arabicIndicDigits, source = """
 ارسال پیام|إرسال رسالة
 پیشنهادهای من|اقتراحاتي
 پیشنهادهای من ({0})|اقتراحاتي ({0})
@@ -248,6 +248,10 @@ object ArabicCatalog {
 اصلاحات پس از «ذخیره تنظیمات» روی زمان‌های نمایش‌داده‌شده، اذان و یادآوری‌ها اعمال می‌شوند.|تُطبّق التصحيحات على الأوقات المعروضة والأذان والتذكيرات بعد الضغط على «حفظ الإعدادات».
 فضای کافی برای دانلود وجود ندارد. کمی فضا آزاد کنید.|لا توجد مساحة كافية للتنزيل. حرر بعض المساحة.
 این تلاوت برای بار اول به اینترنت نیاز دارد. اتصال را بررسی و دوباره تلاش کنید.|تحتاج هذه التلاوة إلى الإنترنت مرة واحدة. تحقق من الاتصال وحاول مجددًا.
+☀️ اذکار صبح|☀️ أذكار الصباح
+🌙 اذکار شام|🌙 أذكار المساء
+چند دقیقه با یاد خدا، روزتان را آغاز کنید.|ابدأ يومك بدقائق من ذكر الله.
+روزتان را با یاد خدا به پایان برسانید.|اختم يومك بذكر الله.
 فضای کافی برای پخش وجود ندارد. کمی فضا آزاد کنید.|لا توجد مساحة كافية للتشغيل. حرر بعض المساحة.
 پخش آیه انجام نشد. اتصال اینترنت را بررسی و دوباره تلاش کنید.|تعذر تشغيل الآية. تحقق من اتصال الإنترنت وحاول مجددًا.
 اذکار نور|أذكار نور
@@ -504,6 +508,9 @@ object ArabicCatalog {
 پست الکترونیکی|البريد الإلكتروني
 گیت‌هاب|GitHub
 مخزن متن‌باز پروژه در گیت‌هاب|مستودع المشروع المفتوح على GitHub
+وب‌سایت|الموقع الإلكتروني
+وب‌سایت اذکار نور|موقع أذكار نور
+اینستاگرام|إنستغرام
 ذکر بیدار شدن|ذكر الاستيقاظ
 دعای ورود به سرویس بهداشتی|دعاء دخول الخلاء
 دعای خروج از سرویس بهداشتی|دعاء الخروج من الخلاء
@@ -599,20 +606,12 @@ object ArabicCatalog {
 چک‌لیست امروز|أعمال اليوم
 قدم‌های کوچک، استمرار زیبا|خطوات صغيرة ومداومة جميلة
 در حال آماده‌سازی فهرست…|جارٍ تحضير القائمة…
-مشاهده همه اعمال  ←|عرض جميع الأعمال  ←
+مشاهده همه اعمال|عرض جميع الأعمال
 اذکار نور - یادآوری روزانه|أذكار نور - التذكير اليومي
 یادآوری اذکار صبحگاه، شامگاه و تلاوت سوره کهف در جمعه|تذكير بأذكار الصباح والمساء وسورة الكهف يوم الجمعة
-☀️ نسیم صبحگاه: یاد خدا|☀️ أذكار الصباح
-🌙 نور شامگاه: آرامش دل‌ها|🌙 أذكار المساء
 ✨ اذکار نور: آرامش روزانه|✨ أذكار نور: طمأنينة اليوم
-زمان قرائت اذکار مبارک صبحگاهی است.|حان وقت أذكار الصباح.
-زمان قرائت اذکار مبارک شامگاهی است.|حان وقت أذكار المساء.
 هم‌اکنون زمان تلاوت اذکار روزانه است.|حان وقت الأذكار اليومية.
-امروز خود را با تلاوت اذکار مبارک صبحگاه متبرک و نورانی کنید. زمان تلاوت فرا رسیده است:|ابدأ يومك بأذكار الصباح. حان وقت القراءة:
-غروبی سرشار از آرامش با یاد پروردگار مهربان. زمان قرائت اذکار مبارک شامگاه فرا رسیده است:|مساء مطمئن بذكر الله. حان وقت أذكار المساء:
 دل‌ها با یاد الهی به آرامش حقیقی می‌رسند. یادآوری تلاوت اذکار روزانه:|بذكر الله تطمئن القلوب. تذكير بالأذكار اليومية:
-روز خود را با یاد خدا و تلاوت اذکار صبحگاه نورانی کنید.|أنر يومك بذكر الله وأذكار الصباح.
-پایان روز را با یاد پروردگار به آرامش برسانید.|اختم يومك بطمأنينة ذكر الله.
 📖 جمعه با سوره کهف|📖 الجمعة مع سورة الكهف
 یادآوری تلاوت سوره مبارکه کهف|تذكير بقراءة سورة الكهف
 امروز جمعه است؛ فرصتی آرام برای تلاوت سوره مبارکه کهف. برای شروع، روی دکمه زیر بزنید.|اليوم الجمعة؛ فرصة لقراءة سورة الكهف. اضغط الزر أدناه للبدء.
@@ -741,38 +740,16 @@ GPS یا مکان‌یابی شبکه در دسترس نیست؛ تنظیمات 
 ویرایش تعداد|تعديل العدد
 تعداد روزه‌های فوت‌شده|عدد أيام الصيام الفائتة
 ثبت تعداد روزه‌های فوت‌شده|تسجيل عدد أيام الصيام الفائتة
-    """.trimIndent().lineSequence().filter { it.contains('|') }.map {
-        val (source, target) = it.split('|', limit = 2)
-        source to target
-    }.toList()
+    """)
 
-    private fun latinDigits(text: String) = text.map {
-        when (it) { in '۰'..'۹' -> '0' + (it - '۰'); in '٠'..'٩' -> '0' + (it - '٠'); else -> it }
-    }.joinToString("")
-    private fun arabicDigits(text: String) = latinDigits(text).map {
-        if (it in '0'..'9') '٠' + (it - '0') else it
-    }.joinToString("")
-    private val literal = entries.filterNot { it.first.contains("{0}") }.associate { latinDigits(it.first) to it.second }
-    private val patterns = entries.filter { it.first.contains("{0}") }.sortedByDescending { it.first.length }.map { (source, target) ->
-        val parts = latinDigits(source).split(Regex("\\{[0-9]+\\}"))
-        Regex(parts.joinToString("(.*?)") { Regex.escape(it) }, RegexOption.DOT_MATCHES_ALL) to target
-    }
+    val keys: Set<String> get() = catalog.keys
 
-    fun translate(text: String, depth: Int = 0): String {
-        val normalized = latinDigits(text)
-        literal[normalized]?.let { return arabicDigits(it) }
-        if (depth < 4) patterns.forEach { (pattern, target) ->
-            val match = pattern.matchEntire(normalized) ?: return@forEach
-            return arabicDigits(Regex("\\{([0-9]+)\\}").replace(target) {
-                translate(match.groupValues[it.groupValues[1].toInt() + 1], depth + 1)
-            })
-        }
-        return arabicDigits(text)
-    }
+    fun translate(text: String): String = catalog.translate(text)
 }
 
 fun AppLanguage.text(value: String): String = when (this) {
     AppLanguage.FARSI -> value
     AppLanguage.DARI -> DariCatalog.translate(value)
+    AppLanguage.URDU -> UrduCatalog.translate(value)
     AppLanguage.ARABIC -> ArabicCatalog.translate(value)
 }

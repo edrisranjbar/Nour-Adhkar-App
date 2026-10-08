@@ -1,8 +1,8 @@
 # Version 2.5.0 changes
 
-- Verse-by-verse Quran recitation in the reader: the verse being recited is highlighted and pages turn to follow along.
-- A "Play from this verse" button in each verse's panel.
-- A floating player that shows the surah, verse number and reciter, with previous/next verse, pause and close.
-- 31 verse-by-verse reciters, including al-Husary (Muallim), al-Minshawi and Abdul Basit (Murattal and Mujawwad), Shahriar Parhizgar and Karim Mansoori.
-- Recently heard verses are kept for replay without internet.
-- Dari (Afghanistan) language option, with Afghan solar month names (Hamal to Hut) and common Dari wording.
+- Verse-by-verse Quran playback with 31 reciters, verse highlighting, automatic page turns and offline replay of downloaded verses.
+- Dari and Urdu languages, including an Urdu Quran translation.
+- Selected Quran search results are highlighted on the page.
+- A clearer, resizable prayer-times widget and shorter morning/evening adhkar notifications.
+- Refined streak freeze artwork and feedback-button layouts.
+- Fixed double-back exit and improved the app interface.

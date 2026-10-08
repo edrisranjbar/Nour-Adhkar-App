@@ -1,0 +1,24 @@
+<!-- Wide shape (about 4x2 cells): title/city and the next prayer side by side, then two rows of
+     three times. Row 3 stays in the tree (GONE) so all shapes share the same view IDs. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+ android:id="@+id/prayer_widget_root" android:layout_width="match_parent" android:layout_height="match_parent"
+ android:orientation="vertical" android:layoutDirection="rtl" android:paddingHorizontal="14dp" android:paddingVertical="10dp"
+ android:background="@drawable/bg_prayer_widget">
+ <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
+  android:gravity="center_vertical" android:paddingBottom="6dp">
+  <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+   <TextView android:id="@+id/prayer_widget_title" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:text="@string/prayer_widget_name" android:textSize="14sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:textColor="#191C1A" />
+   <TextView android:id="@+id/prayer_widget_city" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:text="@string/prayer_widget_location" android:textSize="11sp" android:maxLines="1" android:ellipsize="end" android:textColor="#43493F" />
+  </LinearLayout>
+  <TextView android:id="@+id/prayer_widget_next" android:layout_width="wrap_content" android:layout_height="wrap_content"
+   android:layout_marginStart="8dp" android:maxLines="1" android:ellipsize="end" android:text="@string/prayer_widget_setup"
+   android:textSize="14sp" android:textStyle="bold" android:textColor="#3A6931" />
+ </LinearLayout>
+ <LinearLayout android:id="@+id/prayer_widget_grid" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="vertical">
+  <LinearLayout android:id="@+id/prayer_widget_row1" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" />
+  <LinearLayout android:id="@+id/prayer_widget_row2" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" />
+  <LinearLayout android:id="@+id/prayer_widget_row3" android:layout_width="match_parent" android:layout_height="0dp" android:visibility="gone" android:orientation="horizontal" />
+ </LinearLayout>
+</LinearLayout>

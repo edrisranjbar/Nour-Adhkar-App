@@ -613,8 +613,10 @@ fun HistoryItemCard(
 
 @Composable
 private fun formatTimestamp(timestamp: Long): String {
-    if (com.example.ui.language.LocalAppLanguage.current == com.example.ui.language.AppLanguage.ARABIC) {
-        return java.text.SimpleDateFormat("d MMMM yyyy - HH:mm", java.util.Locale("ar")).apply {
+    val language = com.example.ui.language.LocalAppLanguage.current
+    // Jalali dates are for Persian/Dari readers; Arabic and Urdu use their locale's Gregorian format.
+    if (!language.usesPersianContent) {
+        return java.text.SimpleDateFormat("d MMMM yyyy - HH:mm", java.util.Locale.forLanguageTag(language.localeTag)).apply {
             timeZone = java.util.TimeZone.getTimeZone("Asia/Tehran")
         }.format(java.util.Date(timestamp))
     }

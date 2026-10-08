@@ -49,9 +49,10 @@ class PrayerSettingsTest {
 
     @Test fun manualOffsetsShiftOnlyTheChosenTimeAndAreRangeChecked() {
         val day = utc("2026-09-04 12:00")
-        val base = settings.times(day).map { it.second!!.time }
-        val shifted = settings.copy(offsets = listOf(0, 0, 2, 0, 0, -3)).times(day).map { it.second!!.time }
-        assertEquals(listOf(0L, 0L, 120_000L, 0L, 0L, -180_000L), shifted.zip(base) { a, b -> a - b })
+        // Adhan retains incidental Calendar milliseconds; corrections and displayed times use minutes.
+        val base = settings.times(day).map { it.second!!.time / 60_000L }
+        val shifted = settings.copy(offsets = listOf(0, 0, 2, 0, 0, -3)).times(day).map { it.second!!.time / 60_000L }
+        assertEquals(listOf(0L, 0L, 2L, 0L, 0L, -3L), shifted.zip(base) { a, b -> a - b })
         assertFalse(settings.copy(offsets = listOf(0, 0, 31, 0, 0, 0)).isValid())
         assertFalse(settings.copy(offsets = listOf(0)).isValid())
     }

@@ -48,7 +48,7 @@ Contract (an editor-made replacement must keep it):
 
 The day letters are aligned to the artboard's seven equal columns, so the Rive view is always drawn at the 336:56 aspect ratio across the full width of the strip.
 
-Verification done without a device: the file was loaded with Rive's web runtime (`@rive-app/canvas` 2.43.1) in headless Chromium, which found the artboard, the nine inputs and the layers, rendered all six day states, mirrored the layout with `rtl = 1`, and played the `fillToday` fill. It was not run in the Android runtime (`rive-android` 11.8.0); check it on a device.
+Earlier asset verification (before the ice-badge refinement): the file was loaded with Rive's web runtime (`@rive-app/canvas` 2.43.1) in headless Chromium, which found the artboard, the nine inputs and the layers, rendered all six day states, mirrored the layout with `rtl = 1`, and played the `fillToday` fill. It was not run in the Android runtime (`rive-android` 11.8.0); check it on a device.
 
 ## Streak freeze (weekly grace day)
 
@@ -58,8 +58,8 @@ The streak (`StreakEngine`, shared by Home, the drawer badge and this dialog thr
 - Two missed days in a row always break the streak; freezes never chain.
 - Covered days keep the chain alive but **do not add to the count**. The count is always days of real activity.
 - Nothing is stored. The result depends only on which days were active, so it cannot be spent twice or drift. Achievements and the activity calendar still count real activity only, so a covered day never counts as an active day there.
-- If yesterday was missed and today has no activity yet, the streak is shown as saved but pending: the strip marks yesterday with a snowflake outline and Home/the dialog say to practise today. If today then passes without activity, the next day the streak is 0.
-- Covered days show a snowflake in the 7-day strip (Home card and dialog), and the dialog explains it in one line.
+- If yesterday was missed and today has no activity yet, the streak is shown as saved but pending: the strip marks yesterday with a muted ice badge without a checkmark and Home/the dialog say to practise today. If today then passes without activity, the next day the streak is 0.
+- Covered days show a faceted blue ice badge in the 7-day strip (Home card and dialog), and the dialog explains it in one line. The badge has no checkmark and no inner circle, because a covered day was kept by the shield, not completed. The illustrated silhouette, bright rim and shaded facets distinguish protection from an ordinary active day. Pending protection uses a muted version of the same ice badge. `StreakFreezeBadge` draws the Compose artwork; the Rive generator uses matching geometry for the animated strip. No emoji or font glyph is used.
 - `DhikrCounterScreen` and Home build the week through the same `buildWeekActivity`, so the dialog can no longer show a different streak from Home.
 
 Tuning lives in `StreakEngine` (`MIN_ACTIVE_DAYS_BEFORE_FREEZE`, week start). `StreakEngineTest` covers the rules. Reminder schedules are unchanged.
@@ -67,3 +67,5 @@ Tuning lives in `StreakEngine` (`MIN_ACTIVE_DAYS_BEFORE_FREEZE`, week start). `S
 ## Sound volume
 
 The celebration's sound effects and the checklist completion sound play on the media stream (`USAGE_GAME`). They follow the volume set with the phone's volume keys and are silent when it is at zero. They previously used the system-sounds volume, which many phones keep high and don't show on the volume keys.
+
+The ice-badge refinement has source and asset-generation checks only; Android compilation and on-device visual verification are pending a requested build.

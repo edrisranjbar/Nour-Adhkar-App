@@ -74,10 +74,13 @@ enum class QuranTafsir(
     );
 
     companion object {
-        /** Persian and Dari readers get the Persian tafsirs first, then the Arabic ones; Arabic readers get Arabic only. */
+        /**
+         * Persian and Dari readers get the Persian tafsirs first, then the Arabic ones. Arabic and Urdu
+         * readers get the Arabic ones (no Urdu tafsir is bundled yet).
+         */
         fun optionsFor(language: AppLanguage): List<QuranTafsir> = when (language) {
             AppLanguage.FARSI, AppLanguage.DARI -> entries.sortedBy { it.textLanguage != AppLanguage.FARSI }
-            AppLanguage.ARABIC -> entries.filter { it.textLanguage == AppLanguage.ARABIC }
+            AppLanguage.ARABIC, AppLanguage.URDU -> entries.filter { it.textLanguage == AppLanguage.ARABIC }
         }
 
         /** The saved choice if offered for [language], otherwise its first option. */

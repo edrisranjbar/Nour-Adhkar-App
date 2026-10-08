@@ -47,6 +47,7 @@ import com.example.quran.QuranKhatmPlan
 import com.example.quran.QuranKhatmStatus
 import com.example.quran.QuranRepository
 import com.example.ui.language.AppLanguage
+import com.example.ui.language.text
 import com.example.ui.util.formatPersianDate
 import com.example.ui.util.toPersianDigits
 import java.text.SimpleDateFormat
@@ -310,63 +311,63 @@ internal fun QuranKhatmDetailsSheet(
 
 internal class QuranKhatmLabels(private val language: AppLanguage) {
     private val arabic = language == AppLanguage.ARABIC
-    val menuTitle get() = if (arabic) "خطة ختم القرآن" else "برنامه ختم قرآن"
-    val createTitle get() = if (arabic) "إنشاء خطة ختم" else "ساخت برنامه ختم"
-    val editTitle get() = if (arabic) "تعديل خطة الختم" else "ویرایش برنامه ختم"
-    val setupDescription get() = if (arabic) "حدد المدة، وسنقسم الصفحات المتبقية إلى قراءة يومية مرنة." else "مدت را مشخص کنید؛ صفحات باقی‌مانده به قرائت روزانهٔ منعطف تقسیم می‌شوند."
-    val duration get() = if (arabic) "مدة الختم" else "مدت ختم"
-    val startingPoint get() = if (arabic) "ابدأ من الصفحة" else "نقطه شروع از صفحه"
-    val startPageHint get() = if (arabic) "أدخل رقم الصفحة فقط (۱ إلى ۶۰۴)" else "فقط عدد صفحه را وارد کنید (۱ تا ۶۰۴)"
-    val dailyReminder get() = if (arabic) "تذكير يومي" else "یادآوری روزانه"
-    val dailyReminderDescription get() = if (arabic) "يفتح القراءة التالية مباشرة" else "قرائت روزانهٔ بعدی را مستقیماً باز می‌کند"
-    val planGoal get() = if (arabic) "خطط للختم" else "برنامه‌ریزی ختم"
-    val saveChanges get() = if (arabic) "حفظ التغييرات" else "ذخیره تغییرات"
-    val goalTitle get() = if (arabic) "تقدم ختم القرآن" else "پیشرفت ختم قرآن"
-    val paused get() = if (arabic) "متوقفة" else "متوقف"
-    val today get() = if (arabic) "القراءة اليومية" else "قرائت روزانه"
-    val completed get() = if (arabic) "تم ختم القرآن، تقبل الله" else "ختم قرآن کامل شد؛ قبول باشد"
-    val continueReading get() = if (arabic) "متابعة التلاوة" else "ادامه تلاوت"
-    val dailyLog get() = if (arabic) "سجل القراءة اليومية" else "گزارش قرائت روزانه"
-    val noDailyLog get() = if (arabic) "لم تسجل تلاوة بعد." else "هنوز تلاوتی ثبت نشده است."
-    val editGoal get() = if (arabic) "تعديل" else "ویرایش"
-    val pause get() = if (arabic) "إيقاف مؤقت" else "توقف موقت"
-    val resume get() = if (arabic) "استئناف" else "ادامه برنامه"
-    val cancelGoal get() = if (arabic) "إلغاء الخطة" else "لغو برنامه"
+    /** Arabic wording is written here; other languages localize the Persian source (Dari, Urdu). */
+    private fun pick(arabicText: String, persian: String) = if (arabic) arabicText else language.text(persian)
+    val menuTitle get() = pick("خطة ختم القرآن", "برنامه ختم قرآن")
+    val createTitle get() = pick("إنشاء خطة ختم", "ساخت برنامه ختم")
+    val editTitle get() = pick("تعديل خطة الختم", "ویرایش برنامه ختم")
+    val setupDescription get() = pick("حدد المدة، وسنقسم الصفحات المتبقية إلى قراءة يومية مرنة.", "مدت را مشخص کنید؛ صفحات باقی‌مانده به قرائت روزانهٔ منعطف تقسیم می‌شوند.")
+    val duration get() = pick("مدة الختم", "مدت ختم")
+    val startingPoint get() = pick("ابدأ من الصفحة", "نقطه شروع از صفحه")
+    val startPageHint get() = pick("أدخل رقم الصفحة فقط (۱ إلى ۶۰۴)", "فقط عدد صفحه را وارد کنید (۱ تا ۶۰۴)")
+    val dailyReminder get() = pick("تذكير يومي", "یادآوری روزانه")
+    val dailyReminderDescription get() = pick("يفتح القراءة التالية مباشرة", "قرائت روزانهٔ بعدی را مستقیماً باز می‌کند")
+    val planGoal get() = pick("خطط للختم", "برنامه‌ریزی ختم")
+    val saveChanges get() = pick("حفظ التغييرات", "ذخیره تغییرات")
+    val goalTitle get() = pick("تقدم ختم القرآن", "پیشرفت ختم قرآن")
+    val paused get() = pick("متوقفة", "متوقف")
+    val today get() = pick("القراءة اليومية", "قرائت روزانه")
+    val completed get() = pick("تم ختم القرآن، تقبل الله", "ختم قرآن کامل شد؛ قبول باشد")
+    val continueReading get() = pick("متابعة التلاوة", "ادامه تلاوت")
+    val dailyLog get() = pick("سجل القراءة اليومية", "گزارش قرائت روزانه")
+    val noDailyLog get() = pick("لم تسجل تلاوة بعد.", "هنوز تلاوتی ثبت نشده است.")
+    val editGoal get() = pick("تعديل", "ویرایش")
+    val pause get() = pick("إيقاف مؤقت", "توقف موقت")
+    val resume get() = pick("استئناف", "ادامه برنامه")
+    val cancelGoal get() = pick("إلغاء الخطة", "لغو برنامه")
 
-    fun days(value: Int) = if (arabic) "$value أيام" else "${value.toPersianDigits()} روز"
-    fun fromCurrentPage(page: Int) = if (arabic) "من الصفحة $page" else "از صفحه ${page.toPersianDigits()}"
-    fun preview(pages: Int, startPage: Int) = if (arabic) {
-        "نحو $pages صفحات يومياً، بدءاً من الصفحة $startPage"
-    } else {
+    fun days(value: Int) = pick("$value أيام", "${value.toPersianDigits()} روز")
+    fun fromCurrentPage(page: Int) = pick("من الصفحة $page", "از صفحه ${page.toPersianDigits()}")
+    fun preview(pages: Int, startPage: Int) = pick(
+        "نحو $pages صفحات يومياً، بدءاً من الصفحة $startPage",
         "حدود ${pages.toPersianDigits()} صفحه در روز، از صفحه ${startPage.toPersianDigits()}"
-    }
-    fun reminderAt(time: String) = if (arabic) "وقت التذكير: $time" else "زمان یادآوری: ${time.toPersianDigits()}"
-    fun compactTitle(plan: QuranKhatmPlan) = if (arabic) {
-        "ختم القرآن · اليوم ${plan.dayNumber} من ${plan.targetDays}"
-    } else {
+    )
+    fun reminderAt(time: String) = pick("وقت التذكير: $time", "زمان یادآوری: ${time.toPersianDigits()}")
+    fun compactTitle(plan: QuranKhatmPlan) = pick(
+        "ختم القرآن · اليوم ${plan.dayNumber} من ${plan.targetDays}",
         "ختم قرآن · روز ${plan.dayNumber.toPersianDigits()} از ${plan.targetDays.toPersianDigits()}"
-    }
+    )
     fun percent(progress: Float) = "${(progress * 100).toInt().coerceIn(0, 100).toPersianDigits()}٪"
     fun status(status: QuranKhatmStatus) = when (status) {
-        QuranKhatmStatus.AHEAD -> if (arabic) "متقدم على الخطة" else "جلوتر از برنامه"
-        QuranKhatmStatus.ON_TRACK -> if (arabic) "حسب الخطة" else "مطابق برنامه"
-        QuranKhatmStatus.BEHIND -> if (arabic) "بحاجة إلى تعويض" else "نیاز به جبران"
-        QuranKhatmStatus.COMPLETE -> if (arabic) "اكتمل الختم" else "ختم کامل شده"
+        QuranKhatmStatus.AHEAD -> pick("متقدم على الخطة", "جلوتر از برنامه")
+        QuranKhatmStatus.ON_TRACK -> pick("حسب الخطة", "مطابق برنامه")
+        QuranKhatmStatus.BEHIND -> pick("بحاجة إلى تعويض", "نیاز به جبران")
+        QuranKhatmStatus.COMPLETE -> pick("اكتمل الختم", "ختم کامل شده")
     }
     fun completedPages(goal: QuranKhatmGoal): String {
         val completed = (goal.lastCompletedPage - goal.startPage + 1).coerceAtLeast(0)
         val total = QuranRepository.PAGE_COUNT - goal.startPage + 1
-        return if (arabic) "$completed من $total صفحة" else "${completed.toPersianDigits()} از ${total.toPersianDigits()} صفحه"
+        return pick("$completed من $total صفحة", "${completed.toPersianDigits()} از ${total.toPersianDigits()} صفحه")
     }
-    fun todayRange(plan: QuranKhatmPlan) = if (arabic) {
-        "الصفحات ${plan.targetStartPage}–${plan.targetEndPage}"
-    } else {
+    fun todayRange(plan: QuranKhatmPlan) = pick(
+        "الصفحات ${plan.targetStartPage}–${plan.targetEndPage}",
         "صفحات ${plan.targetStartPage.toPersianDigits()} تا ${plan.targetEndPage.toPersianDigits()}"
-    }
-    fun deadline(dayKey: Long) = if (arabic) "موعد الإتمام: ${date(dayKey)}" else "تاریخ پایان: ${date(dayKey)}"
-    fun recordThrough(page: Int) = if (arabic) "تسجيل حتى الصفحة $page" else "ثبت تلاوت تا صفحه ${page.toPersianDigits()}"
-    fun throughPage(page: Int) = if (arabic) "حتى الصفحة $page" else "تا صفحه ${page.toPersianDigits()}"
-    fun date(dayKey: Long): String = if (arabic) {
+    )
+    fun deadline(dayKey: Long) = pick("موعد الإتمام: ${date(dayKey)}", "تاریخ پایان: ${date(dayKey)}")
+    fun recordThrough(page: Int) = pick("تسجيل حتى الصفحة $page", "ثبت تلاوت تا صفحه ${page.toPersianDigits()}")
+    fun throughPage(page: Int) = pick("حتى الصفحة $page", "تا صفحه ${page.toPersianDigits()}")
+    // Jalali dates are for Persian/Dari readers; Arabic and Urdu readers get a numeric Gregorian date.
+    fun date(dayKey: Long): String = if (!language.usesPersianContent) {
         SimpleDateFormat("yyyy/MM/dd", Locale.US).format(Date(dayKey))
     } else {
         formatPersianDate(dayKey)

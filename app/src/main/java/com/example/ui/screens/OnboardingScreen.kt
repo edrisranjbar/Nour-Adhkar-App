@@ -376,6 +376,15 @@ private fun LanguagePage(
     )
     Spacer(Modifier.height(12.dp))
     LanguageOption(
+        iconText = "ار",
+        iconContentDescription = "اردو زبان کا نشان",
+        title = "اردو",
+        subtitle = "اردو انٹرفیس اور اردو ترجمۂ قرآن",
+        selected = language == AppLanguage.URDU,
+        onClick = { onLanguageChange(AppLanguage.URDU) }
+    )
+    Spacer(Modifier.height(12.dp))
+    LanguageOption(
         iconText = "ع",
         iconContentDescription = "رمز اللغة العربية",
         title = "العربية",

@@ -13,3 +13,6 @@
 - Checklist and streak celebration sounds now follow the phone's media volume.
 - Feedback is sent under the signed-in user's name.
 - Share Quran verses as an image or text, with or without translation.
+- Improved verse note button layout and share format ordering; image footers place the logo on the right and the app link on the left.
+- View your submitted feedback with likes and replies from the team.
+- Cleaner shared images with the extra download invitation removed.

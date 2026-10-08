@@ -9,12 +9,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Button
@@ -35,7 +38,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -150,10 +152,12 @@ fun AboutScreen(
                             // Beautifully written description directly from adhkar.ir/about concepts
                             Text(
                                 text = if (com.example.ui.language.LocalAppLanguage.current == com.example.ui.language.AppLanguage.ARABIC)
-                                    "أذكار نور مشروع مفتوح المصدر وغير ربحي يهدف إلى تيسير قراءة الأدعية والأذكار والتسبيح للمسلمين حول العالم.\n\nنؤمن بأن ذكر الله ينبغي أن يكون متاحًا للجميع في بيئة بسيطة وجميلة، بعيدًا عن الأهداف التجارية. جميع أقسام التطبيق مجانية بالكامل، بلا إعلانات أو تتبع، ومحتواه الأساسي متاح دون إنترنت.\n\nتسجيلات الأذكار بصوت مشاري راشد العفاسي من Makkah Live وInternet Archive، وتلاوات القرآن تُبث من mp3quran.net. نص القرآن من Tanzil Project (tanzil.net)، والتفسير الميسر من مجمع الملك فهد لطباعة المصحف الشريف، والترجمتان الفارسيتان لفريق IslamHouse.com (QuranEnc) و«تفسير نور» للدكتور مصطفى خرمدل. وتفاسير السعدي والمختصر وابن كثير والطبري والقرطبي والبغوي والجلالين من Quran.com وQUL (Tarteel)."
+                                    "أذكار نور مشروع مفتوح المصدر وغير ربحي يهدف إلى تيسير قراءة الأدعية والأذكار والتسبيح للمسلمين حول العالم.\n\nنؤمن بأن ذكر الله ينبغي أن يكون متاحًا للجميع في بيئة بسيطة وجميلة، بعيدًا عن الأهداف التجارية. جميع أقسام التطبيق مجانية بالكامل، بلا إعلانات أو تتبع، ومحتواه الأساسي متاح دون إنترنت.\n\nتسجيلات الأذكار بصوت مشاري راشد العفاسي من Makkah Live وInternet Archive، وتلاوات القرآن تُبث من mp3quran.net، والتلاوة آية بآية من EveryAyah.com. نص القرآن من Tanzil Project (tanzil.net)، والتفسير الميسر من مجمع الملك فهد لطباعة المصحف الشريف، والترجمتان الفارسيتان لفريق IslamHouse.com (QuranEnc) و«تفسير نور» للدكتور مصطفى خرمدل. وتفاسير السعدي والمختصر وابن كثير والطبري والقرطبي والبغوي والجلالين من Quran.com وQUL (Tarteel)."
+                                else if (com.example.ui.language.LocalAppLanguage.current == com.example.ui.language.AppLanguage.URDU)
+                                    "اذکار نور ایک اوپن سورس اور غیر منافع بخش منصوبہ ہے جس کا مقصد دنیا بھر کے مسلمانوں کے لیے دعاؤں، روزانہ اذکار اور تسبیحات کی ادائیگی کو آسان بنانا ہے۔\n\nہمارا یقین ہے کہ اللہ کا ذکر ایک سادہ، خوبصورت اور تجارتی مقاصد سے پاک ماحول میں سب کے لیے دستیاب ہونا چاہیے۔ ایپ کے تمام حصے مکمل طور پر مفت ہیں، اس میں کوئی اشتہار یا ٹریکنگ نہیں، اور اس کا بنیادی مواد انٹرنیٹ کے بغیر دستیاب ہے۔\n\nاذکار کی آڈیو مشاری راشد العفاسی کی آواز میں Makkah Live اور Internet Archive سے لی گئی ہے۔ قرآن کی تلاوتیں mp3quran.net سے اور آیت بہ آیت تلاوت EveryAyah.com سے چلتی ہے۔ قرآن کا متن Tanzil Project (tanzil.net) سے ہے۔ اردو ترجمہ مولانا محمد ابراہیم جوناگڑھی کا ہے (QuranEnc.com)، اور عربی تفاسیر — التفسیر المیسر (مجمع ملک فہد)، السعدی، المختصر، ابن کثیر، طبری، قرطبی، بغوی اور جلالین — Quran.com اور QUL (Tarteel) سے لی گئی ہیں۔"
                                 else "پروژه اذکار یک تلاش متن‌باز، عام‌المنفعه و غیرانتفاعی است که با هدف تسهیل قرائت ادعیه، اذکار روزانه و تسبیحات برای مسلمانان سراسر جهان شکل گرفته است.\n\n" +
                                         "ما معتقدیم یاد و ذکر پروردگار باید در بستری زلال، ساده، زیبا و به دور از هرگونه هیاهو یا اهداف تجاری در دسترس همگان باشد. از این رو، تمام بخش‌های این نرم‌افزار به صورت کاملاً رایگان ارائه شده، فاقد هرگونه تبلیغ یا ردیابی است و محتوای اصلی آن بدون اینترنت در دسترس می‌ماند تا آرامش خاطر شما حفظ شود.\n\n" +
-                                        "فایل‌های صوتی اذکار با صدای مشاری راشد العفاسی از Makkah Live و Internet Archive تهیه شده‌اند. تلاوت‌های قرآن از mp3quran.net پخش می‌شوند. متن قرآن از Tanzil Project (tanzil.net) است. ترجمه‌های فارسی آیات از گروه ترجمهٔ اسلام‌هاوس (QuranEnc.com) و «تفسیر نور» دکتر مصطفی خرمدل، و تفسیر عربی «التفسیر المیسر» از مجمع ملک فهد است. تفاسیر السعدی، المختصر، ابن‌کثیر، طبری، قرطبی، بغوی و جلالین (و ترجمهٔ فارسی المختصر و السعدی) از Quran.com و QUL (Tarteel) گرفته شده‌اند.",
+                                        "فایل‌های صوتی اذکار با صدای مشاری راشد العفاسی از Makkah Live و Internet Archive تهیه شده‌اند. تلاوت‌های قرآن از mp3quran.net و تلاوت آیه‌به‌آیه از EveryAyah.com پخش می‌شوند. متن قرآن از Tanzil Project (tanzil.net) است. ترجمه‌های فارسی آیات از گروه ترجمهٔ اسلام‌هاوس (QuranEnc.com) و «تفسیر نور» دکتر مصطفی خرمدل، و تفسیر عربی «التفسیر المیسر» از مجمع ملک فهد است. تفاسیر السعدی، المختصر، ابن‌کثیر، طبری، قرطبی، بغوی و جلالین (و ترجمهٔ فارسی المختصر و السعدی) از Quran.com و QUL (Tarteel) گرفته شده‌اند.",
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontSize = (13.5 * fontScale).sp,
                                     color = TextPersian,
@@ -240,6 +244,8 @@ fun AboutScreen(
                             .clickable {
                                 val shareText = if (appLanguage == AppLanguage.ARABIC) {
                                     "أذكار نور؛ رفيقك اليومي للذكر والدعاء والتذكير بالأعمال اليومية\n${AppLinks.STORE_WEB_URL}"
+                                } else if (appLanguage == AppLanguage.URDU) {
+                                    "اذکار نور؛ ذکر و دعا کا روزانہ ساتھی، اذکار اور روزانہ اعمال کی یاد دہانی\n${AppLinks.STORE_WEB_URL}"
                                 } else {
                                     "اذکار نور؛ همراه روزانه ذکر و نیایش، یادآوری اذکار و اعمال روزانه\n${AppLinks.STORE_WEB_URL}"
                                 }
@@ -340,6 +346,74 @@ fun AboutScreen(
 
                             Spacer(modifier = Modifier.height(10.dp))
 
+                            // Website Button
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .clickable { uriHandler.openUri("https://adhkar.ir") }
+                                    .padding(vertical = 12.dp, horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Public,
+                                    contentDescription = "وب‌سایت",
+                                    tint = Color(0xFF607D8B),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "وب‌سایت اذکار نور",
+                                        fontSize = (13 * fontScale).sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = SandDark
+                                    )
+                                    Text(
+                                        text = "adhkar.ir",
+                                        fontSize = 11.sp,
+                                        color = NightBlue
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Instagram Button
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .clickable { uriHandler.openUri("https://instagram.com/nouradhkar") }
+                                    .padding(vertical = 12.dp, horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PhotoCamera,
+                                    contentDescription = "اینستاگرام",
+                                    tint = Color(0xFFC13584),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "اینستاگرام",
+                                        fontSize = (13 * fontScale).sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = SandDark
+                                    )
+                                    Text(
+                                        text = "@nouradhkar",
+                                        fontSize = 11.sp,
+                                        color = NightBlue
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
                             // GitHub Repository Button
                             Row(
                                 modifier = Modifier
@@ -416,10 +490,16 @@ private fun FeedbackSheet(onDismiss: () -> Unit, onSignIn: () -> Unit) {
                 return@Column
             }
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                SegmentedButton(selected = tab == 0, onClick = { tab = 0 }, shape = SegmentedButtonDefaults.itemShape(0, 2)) {
+                SegmentedButton(
+                    selected = tab == 0, onClick = { tab = 0 },
+                    shape = AbsoluteRoundedCornerShape(topRight = 24.dp, bottomRight = 24.dp)
+                ) {
                     Text("ارسال پیام")
                 }
-                SegmentedButton(selected = tab == 1, onClick = { tab = 1 }, shape = SegmentedButtonDefaults.itemShape(1, 2)) {
+                SegmentedButton(
+                    selected = tab == 1, onClick = { tab = 1 },
+                    shape = AbsoluteRoundedCornerShape(topLeft = 24.dp, bottomLeft = 24.dp)
+                ) {
                     Text(if (newReplies > 0 && tab != 1) "پیشنهادهای من (${newReplies.toPersianDigits()})" else "پیشنهادهای من")
                 }
             }

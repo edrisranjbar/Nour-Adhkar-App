@@ -19,6 +19,9 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
 class PrayerTimesWidgetProviderTest {
+    // SDK 28 renders one layout chosen from the reported size (none here, so the 2x2 grid);
+    // Android 12+ hands the launcher responsive layouts instead.
+    @Config(sdk = [28])
     @Test fun widgetRendersSavedTimesAndReactsToSettingsAndLanguage() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val manager = Shadows.shadowOf(context.getSystemService(AppWidgetManager::class.java))
@@ -41,5 +44,24 @@ class PrayerTimesWidgetProviderTest {
         prefs.setAppLanguage(AppLanguage.ARABIC)
         assertEquals("مواقيت الصلاة", manager.getViewFor(id)
             .findViewById<TextView>(R.id.prayer_widget_title).text.toString())
+    }
+
+    @Test fun responsiveWidgetStillShowsTheNextPrayerOrSetupHint() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val manager = Shadows.shadowOf(context.getSystemService(AppWidgetManager::class.java))
+        val id = manager.createWidget(PrayerTimesWidgetProvider::class.java, R.layout.widget_prayer_times)
+        // Whichever responsive layout Robolectric applies, every shape has the next-prayer line.
+        assertTrue(manager.getViewFor(id).findViewById<TextView>(R.id.prayer_widget_next)
+            .text.contains("تعیین موقعیت"))
+    }
+
+    @Test fun sizeSelectsShapeAndTextScale() {
+        fun describe(width: Int, height: Int) = PrayerTimesWidgetProvider.describeSize(width, height)
+        assertEquals("GRID 1.0", describe(0, 0))          // size not reported yet
+        assertEquals("COMPACT 1.0", describe(300, 60))    // one row tall
+        assertEquals("GRID 1.0", describe(150, 150))      // 2x2
+        assertEquals("GRID 1.25", describe(160, 240))     // 2x3
+        assertEquals("WIDE 1.0", describe(300, 140))      // 4x2
+        assertEquals("WIDE 1.25", describe(320, 230))     // 4x3
     }
 }

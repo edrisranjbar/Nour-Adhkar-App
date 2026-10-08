@@ -1,0 +1,6 @@
+<resources>
+    <string name="prayer_widget_name">اوقاتِ نماز</string>
+    <string name="prayer_widget_description">محفوظ مقام کے مطابق نمازوں کے اوقات اور اگلی نماز</string>
+    <string name="prayer_widget_location">مقام مقرر کریں</string>
+    <string name="prayer_widget_setup">مقام مقرر کرنے کے لیے دبائیں</string>
+</resources>

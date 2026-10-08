@@ -20,6 +20,9 @@ class QuranTranslationsTest {
     fun appLanguageSelectsItsSunniTranslation() {
         assertEquals(QuranTranslation.PERSIAN_ISLAMHOUSE, QuranTranslation.forLanguage(AppLanguage.FARSI))
         assertEquals(QuranTranslation.ARABIC_MUYASSAR, QuranTranslation.forLanguage(AppLanguage.ARABIC))
+        assertEquals(QuranTranslation.URDU_JUNAGARHI, QuranTranslation.forLanguage(AppLanguage.URDU))
+        assertEquals(QuranTranslation.PERSIAN_ISLAMHOUSE, QuranTranslation.forLanguage(AppLanguage.DARI))
+        assertEquals(QuranTranslation.URDU_JUNAGARHI, QuranTranslation.forLanguage(AppLanguage.URDU, "fa_khorramdel"))
     }
 
     @Test
