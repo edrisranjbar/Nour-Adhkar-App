@@ -39,8 +39,8 @@ android {
     applicationId = "ir.adhkar.app"
     minSdk = 24
     targetSdk = 36
-        versionCode = 25
-        versionName = "2.6.0"
+        versionCode = 24
+        versionName = "2.5.0"
     // OAuth *Web* client id whose ID tokens the API accepts (GOOGLE_CLIENT_IDS on the backend).
     // Set googleWebClientId in local.properties or GOOGLE_WEB_CLIENT_ID in the environment.
     buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${googleWebClientId()}\"")
