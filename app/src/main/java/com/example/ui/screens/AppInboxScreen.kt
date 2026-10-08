@@ -3,6 +3,8 @@ package com.example.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -52,14 +54,22 @@ fun AppInboxScreen(innerPadding: PaddingValues) {
                     Text((if (notice.read) "" else "●  ") + notice.title, style = MaterialTheme.typography.titleMedium)
                     Text(notice.message, style = MaterialTheme.typography.bodyMedium)
                     Text(remember(notice.date) { formatInboxDate(notice.date) }, style = MaterialTheme.typography.labelSmall)
-                    if (!notice.read) TextButton(onClick = {
+                    if (!notice.read) OutlinedButton(onClick = {
                         scope.launch {
                             try {
                                 AppInboxApi.markRead(context, notice.id)
                                 notices = notices.map { if (it.id == notice.id) it.copy(read = true) else it }
                             } catch (e: Exception) { error = AppInboxApi.describe(e) }
                         }
-                    }) { Text("علامت‌گذاری به‌عنوان خوانده‌شده") }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.DoneAll,
+                            contentDescription = null,
+                            modifier = Modifier.size(ButtonDefaults.IconSize)
+                        )
+                        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                        Text("علامت‌گذاری به‌عنوان خوانده‌شده")
+                    }
                 }
             }
         }
