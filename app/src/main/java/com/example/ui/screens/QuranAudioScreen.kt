@@ -120,7 +120,7 @@ fun QuranAudioScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
     }
     fun openPicker(name: String) { query = ""; picker = name }
 
-    DisposableEffect(Unit) { onDispose { QuranAudioPlayer.stop() } }
+    // Leaving the screen keeps the recitation playing; QuranPlaybackService shows its notification.
     LaunchedEffect(playing) {
         while (playing) { QuranAudioPlayer.refreshPosition(); delay(500) }
     }

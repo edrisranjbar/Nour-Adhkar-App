@@ -79,7 +79,7 @@
 
 Times and numbers follow the app language's digits. Searchable bottom sheets select a Qari or any of the 114 Surahs, accepting Persian/Arabic digits and normalizing common Arabic/Persian spelling differences. The listening screen keeps its Qari in the `reciter` preference and also remembers its last Surah. Changing either selection stops the current session and waits for an explicit Play action rather than downloading automatically.
 
-The listening player provides pause/resume, a seek slider with elapsed/duration labels, ten-second skips, and previous/next Surah selection. Quran recitations play at their original speed; there is no speed control or playback-rate adjustment in the shared Quran player. A download icon marks saved Surahs in the selector. Loading, cancellation, mobile-data confirmation, retryable errors, and an empty search state are presented in the existing Persian/Arabic Material theme. Leaving the listening screen stops playback/downloads, matching the reader lifecycle; background playback is not provided.
+The listening player provides pause/resume, a seek slider with elapsed/duration labels, ten-second skips, and previous/next Surah selection. Quran recitations play at their original speed; there is no speed control or playback-rate adjustment in the shared Quran player. A download icon marks saved Surahs in the selector. Loading, cancellation, mobile-data confirmation, retryable errors, and an empty search state are presented in the existing Persian/Arabic Material theme. Leaving the listening screen keeps the recitation playing in the background (see «Background playback and audio focus» below).
 
 The shared catalog contains 50 curated complete Hafs recitations from the [MP3Quran public catalog](https://www.mp3quran.net/api/v3/reciters?language=ar), checked on 2026-10-03. This is a curated selection, not a popularity ranking supplied by the source. All 50 sources' Surah 001 and 114 URLs returned HTTP 200 in endpoint probes; this does not verify every individual recording. The original ten IDs and URLs remain unchanged so existing preferences and saved audio continue to work. Catalog compatibility is covered by `QuranRecitersTest`.
 
@@ -93,7 +93,7 @@ The listening screen's selector marks saved Surahs. Downloads are managed automa
 
 The reader recites ayah by ayah and follows along. The play button in the reader's top bar starts from the first verse of the visible page; «پخش از این آیه» in a verse's sheet starts from that verse. The reciting verse is tinted with the page accent color (over any saved highlight), and the reader turns to the next page when the recitation reaches it. A swipe away from the reciting page holds until the next verse begins. Playback continues across surahs until it is stopped or reaches the end of an-Nas. Before verse 1 of each surah except al-Fatiha and at-Tawbah, the Basmala (EveryAyah's 1:1 file) plays without a verse highlight.
 
-While a recitation is active, a floating player above the bottom navigation shows the surah, the verse (or «بسم‌الله»), and the Qari. It has previous/next verse, pause/resume, and close buttons. Transport controls keep their left-to-right media order in RTL. The page refits above the measured player height instead of hiding its last lines. The screen stays on while a recitation is active. Leaving the reader stops playback; there is no background playback.
+While a recitation is active, a floating player above the bottom navigation shows the surah, the verse (or «بسم‌الله»), and the Qari. It has previous/next verse, pause/resume, and close buttons. Transport controls keep their left-to-right media order in RTL. The page refits above the measured player height instead of hiding its last lines. The screen stays on while a recitation is active. Leaving the reader keeps the recitation playing in the background; returning shows the reciting verse again.
 
 The reader's Qari menu still links to «قرآن صوتی», then lists the 31 verse-by-verse voices in `QuranAyahReciters`. The choice is saved as `ayah_reciter` in the `quran_audio` preferences. Before a choice is saved, the reader uses the listening screen's Qari if it has an ayah recording, else Alafasy. IDs match the surah catalog for the same Qari. Changing the voice while reciting restarts the current verse in the new voice.
 
@@ -103,7 +103,28 @@ Sources (researched 2026-10-06):
 - **[QuranicAudio's EveryAyah mirror](https://mirrors.quranicaudio.com/everyayah/)** (fallback): the same folder names. Quran.com's verse API links to it. It serves 19 of the kept folders (`mirrored = true`) and is tried when EveryAyah fails.
 - Other sources were reviewed but not used. The Quran.com/Quran Foundation API (`verses.quran.com`) has 12 verse recitations that overlap EveryAyah. The Islamic Network CDN (`cdn.islamic.network/quran/audio/<bitrate>/<edition>/<global ayah>.mp3`, from alquran.cloud) has about 20 Arabic voices. MP3Quran's `ayat_timing` API offers verse timings for about 115 of its surah files. Those timings target `cdn.mp3quran.net` recordings rather than the `serverN` files this app downloads, so applying them to saved surahs was left as a possible follow-up.
 
-Each verse is downloaded once into `cacheDir/quran_ayah/<reciter>/<SSSAAA>.mp3`. A download is written to a `.part` file, length-checked, and atomically renamed. Then it plays locally while the next verse is prefetched. Replaying recently heard verses needs no network. Android may reclaim the cache. The app also trims the least recently played verses once the cache exceeds 200 MB. A cached file Android cannot play is deleted so that it downloads again. Verse files are small (roughly 40–800 KB), so verse playback streams on mobile data without the full-surah confirmation. Failures stop playback with a friendly Persian/Arabic message. The play order and catalog are covered by `QuranAyahPlayerTest`.
+Each verse is downloaded once into `cacheDir/quran_ayah/<reciter>/<SSSAAA>.mp3`. A download is written to a `.part` file, length-checked, and atomically renamed. Then it plays locally while the next verse is prefetched. Replaying recently heard verses needs no network. Android may reclaim the cache. The app also trims the least recently played verses once the cache exceeds 200 MB. A verse that fails to download is retried once after a second. A cached file Android cannot play is deleted, downloaded again and retried. If the verse still fails, it is skipped with a short notice («این آیه دریافت نشد؛ آیهٔ بعدی پخش می‌شود»). Three failures in a row (usually no connection) stop playback with the error message. Verse files are small (roughly 40–800 KB), so verse playback streams on mobile data without the full-surah confirmation. Repeated failures stop playback with a friendly message in the app language. The play order and catalog are covered by `QuranAyahPlayerTest`.
+
+## Background playback and audio focus
+
+Both Quran players (whole surah in «قرآن صوتی», verse by verse in the reader) keep playing after their screen closes. When either starts, `QuranPlaybackService` (a `mediaPlayback` foreground service, like the existing adhkar `AdhkarPlaybackService`) mirrors the active player's state:
+
+- **Notification:** a media-style notification shows the surah (and verse or «بسم‌الله»), the Qari, and the app logo. It has play/pause and close; verse mode also has previous/next verse. In verse mode, tapping it opens the reader at the reciting page.
+- **Lock screen and headsets:** a MediaSession serves the lock screen and headset buttons (play, pause, stop, next/previous verse).
+- **Screen off:** a partial wake lock, held only while audio plays or loads, keeps verse downloads going with the screen off. Both MediaPlayers also use a partial wake mode.
+- **Lifecycle:** the service stays in the foreground for the whole session, paused or playing. Resuming from the notification or after a call therefore never needs a background foreground-service start, which Android 12+ forbids. It leaves when playback is stopped, a surah finishes, or an error occurs. A short grace period ignores the stop-then-start of a verse change or reciter switch.
+- **One at a time:** starting a surah stops verse playback and vice versa.
+
+Audio focus (`QuranAudioFocus`) works like a normal media app:
+
+| Event | Behaviour |
+|---|---|
+| Another player takes focus | Pause, without resuming later |
+| A call or assistant takes focus temporarily | Pause, then resume when it ends, unless the user paused meanwhile |
+| A short sound (e.g. navigation) | Volume drops to 20%, then returns |
+| Headphones unplugged | Pause |
+
+Pausing verse playback also holds the next verse, so it doesn't start by itself. Tests: `QuranAudioFocusTest`.
 
 ## Search
 
