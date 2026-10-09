@@ -10,6 +10,13 @@ Quran prayers (`quran_prayers`) and Sunnah prayers (`sunnah_prayers`) with a tar
 
 The Home section «اذکار و دعاها» has a «بیشتر» action that opens the separate اذکار و ادعیه (`adhkar`) collection page, which uses the existing category tiles and selection behavior. Morning, evening, sleep, daily, Quran prayers, and Sunnah prayers remain on Home and are excluded from this grid. Sleep and daily adhkar appear side by side in equal-width illustrated cards beneath morning and evening. Sleep uses a night illustration and daily adhkar uses a daytime landscape. All other categories and the existing counter shortcut move from Home to this page. Streak, prayer times, emotional verse, checklist and activity sections are unchanged. Opening a collection does not change the active tab, so leaving it returns to the collections page.
 
+Two collections were added at user request:
+
+- **«دعای پس از اذان» (`after_adhan`, 3 items):** the reply to the muezzin at «حَيَّ عَلَى الصَّلَاةِ/الْفَلَاحِ» (Sahih Muslim 385), the testimony said on hearing the muezzin (Muslim 386), and the dua of al-wasila after the adhan (Sahih al-Bukhari 614).
+- **«دعای نماز جنازه» (`funeral_prayer`, 2 items):** «اللَّهُمَّ اغْفِرْ لَهُ وَارْحَمْهُ…» (Sahih Muslim 963) and «اللَّهُمَّ اغْفِرْ لِحَيِّنَا وَمَيِّتِنَا…» (Abu Dawud 3201, graded sahih by al-Albani; Tirmidhi 1024).
+
+The Arabic text and numbers were checked against the canonical collections (standard numbering; text from the fawazahmed0/hadith-api dataset) on 2026-10-09. The Muslim 963 text keeps the narration's «أَوْ مِنْ عَذَابِ النَّارِ». The salawat-after-adhan hadith was left out because its reference could not be verified the same way. Both collections appear on this page and in quick-access shortcuts. Home search results now open the collection they came from (looked up from `AdhkarData.categories`); previously only six titles were mapped and others opened the morning adhkar.
+
 The app-sharing action is available in «درباره برنامه» rather than the navigation drawer.
 
 The daily checklist home-screen widget shows today's tasks and progress. Tapping a task's row, status icon, or title toggles its completion for the current day, refreshes the list and progress, and uses the same saved checklist state as the in-app screen. The widget header and footer open the full checklist.

@@ -61,6 +61,8 @@ import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Campaign
+import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.WbSunny
@@ -1501,6 +1503,8 @@ fun CategoryTile(
                     "ramadan" -> Icons.Default.DarkMode
                     "sleep" -> Icons.Default.Bedtime
                     "istikhara" -> Icons.Default.Psychology
+                    "after_adhan" -> Icons.Default.Campaign
+                    "funeral_prayer" -> Icons.Default.VolunteerActivism
                     else -> Icons.Default.MenuBook
                 }
                 Box(
@@ -1592,16 +1596,9 @@ fun SearchResultsView(
         ) {
             item { searchHeader() }
             items(results) { (catTitle, dhikr) ->
-                val catId = when (catTitle) {
-                    "اذکار صبحگاه" -> "morning"
-                    "اذکار شامگاه" -> "evening"
-                    "اذکار روزانه" -> "daily"
-                    "اذکار ماه رمضان" -> "ramadan"
-                    "اذکار خواب" -> "sleep"
-                    "دعای خواب" -> "sleep"
-                    "دعای استخاره" -> "istikhara"
-                    else -> "morning"
-                }
+                // Every collection opens itself, not only the few that used to be listed here.
+                val catId = AdhkarData.categories.firstOrNull { it.title == catTitle }?.id
+                    ?: if (catTitle == "دعای خواب") "sleep" else "morning"
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
