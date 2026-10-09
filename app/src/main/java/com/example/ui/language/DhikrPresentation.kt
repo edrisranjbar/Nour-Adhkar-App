@@ -7,6 +7,7 @@ import com.example.share.appShareFooter
 /** Source metadata only; never applied to the original Quran or adhkar text. */
 fun AppLanguage.reference(source: String): String {
     if (this == AppLanguage.URDU) return urduReference(source)
+    if (this == AppLanguage.KURDISH) return kurdishReference(source)
     if (this != AppLanguage.ARABIC) return source
     var result = source
     val words = linkedMapOf(
@@ -46,6 +47,32 @@ private fun AppLanguage.urduReference(source: String): String {
     ).forEach { (persian, urdu) -> result = result.replace(persian, urdu) }
     return text(result)
 }
+
+/**
+ * Sorani spelling for citations such as «صحیح مسلم، حدیث ۷۱۳» or «سوره بقره، آیه ۲۸۶». Only
+ * `؛`-separated parts that start with a known citation word are rewritten; longer Persian notes
+ * about a dhikr's virtue are not translated and stay as written, so they never mix scripts.
+ */
+private fun AppLanguage.kurdishReference(source: String): String =
+    text(source.split("؛ ").joinToString("؛ ") { part ->
+        if (KURDISH_CITATION_WORDS.keys.any { part.startsWith(it) }) {
+            KURDISH_CITATION_WORDS.entries.fold(part) { acc, (persian, kurdish) -> acc.replace(persian, kurdish) }
+        } else part
+    })
+
+private val KURDISH_CITATION_WORDS = linkedMapOf(
+    "هنگام غلت‌زدن و بی‌قراری در شب" to "لە کاتی تلانەوە و بێ‌ئارامی لە شەودا",
+    "هنگام بازگشت از سفر" to "لە کاتی گەڕانەوە لە گەشت",
+    "هنگام پوشیدن لباس نو" to "لە کاتی لەبەرکردنی جلی نوێ",
+    "هنگام پوشیدن لباس" to "لە کاتی لەبەرکردنی جل", "هنگام ورود" to "لە کاتی چوونە ژوورەوە",
+    "هنگام خروج" to "لە کاتی هاتنەدەرەوە", "پیش از غذا" to "پێش خواردن",
+    "صحیح بخاری" to "سەحیحی بوخاری", "صحیح مسلم" to "سەحیحی موسلیم",
+    "سنن ابوداوود" to "سونەنی ئەبوداود", "سنن ترمذی" to "سونەنی تیرمیزی",
+    "حصن المسلم" to "حیسنی موسلیم", "حدیث" to "فەرموودەی", "ذکر" to "زیکری",
+    "سوره" to "سوورەتی", "آیات" to "ئایەتەکانی", "آیه" to "ئایەتی",
+    "بقره" to "بەقەرە", "آل‌عمران" to "ئال عیمران", "اعراف" to "ئەعراف", "ابراهیم" to "ئیبراهیم",
+    "کهف" to "کەهف", "رعد" to "ڕەعد", "یونس" to "یوونس", "یوسف" to "یووسف"
+)
 
 fun DhikrItem.shareText(language: AppLanguage): String = buildString {
     append(arabicText.trim())

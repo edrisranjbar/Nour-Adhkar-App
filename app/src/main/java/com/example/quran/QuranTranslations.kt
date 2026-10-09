@@ -42,6 +42,15 @@ enum class QuranTranslation(
         credit = "اردو ترجمہ: مولانا محمد ابراہیم جوناگڑھی (QuranEnc)"
     ),
 
+    /** Muhammad Saleh Bamoki, published on QuranEnc. Central Kurdish (Sorani) default. */
+    KURDISH_BAMOKI(
+        id = "ckb_bamoki",
+        language = AppLanguage.KURDISH,
+        asset = "quran/translation-ckb-bamoki.txt",
+        title = "وەرگێڕانی محەمەد ساڵح بامۆکی (QuranEnc)",
+        credit = "وەرگێڕانی کوردی: محەمەد ساڵح بامۆکی (QuranEnc)"
+    ),
+
     /** al-Tafsir al-Muyassar, King Fahd Glorious Quran Printing Complex. */
     ARABIC_MUYASSAR(
         id = "ar_muyassar",

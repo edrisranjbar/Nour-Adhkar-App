@@ -767,6 +767,7 @@ GPS یا مکان‌یابی شبکه در دسترس نیست؛ تنظیمات 
 fun AppLanguage.text(value: String): String = when (this) {
     AppLanguage.FARSI -> value
     AppLanguage.DARI -> DariCatalog.translate(value)
+    AppLanguage.KURDISH -> KurdishCatalog.translate(value)
     AppLanguage.URDU -> UrduCatalog.translate(value)
     AppLanguage.ARABIC -> ArabicCatalog.translate(value)
 }

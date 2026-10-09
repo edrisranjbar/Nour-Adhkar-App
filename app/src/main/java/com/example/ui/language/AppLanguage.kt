@@ -7,6 +7,8 @@ enum class AppLanguage(val code: String, val label: String, val localeTag: Strin
     FARSI("fa", "فارسی", "fa"),
     /** Afghan Dari: the Persian interface with Afghan month names and wording (see [DariCatalog]). */
     DARI("prs", "دری", "fa-AF"),
+    /** Central Kurdish (Sorani): its own interface catalog ([KurdishCatalog]) and Sorani Quran translation. */
+    KURDISH("ckb", "کوردی", "ckb-IR"),
     /** Urdu (Pakistan): its own interface catalog ([UrduCatalog]) and Urdu Quran translation. */
     URDU("ur", "اردو", "ur-PK"),
     ARABIC("ar", "العربية", "ar");
