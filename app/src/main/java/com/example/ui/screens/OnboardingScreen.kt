@@ -376,6 +376,15 @@ private fun LanguagePage(
     )
     Spacer(Modifier.height(12.dp))
     LanguageOption(
+        iconText = "کو",
+        iconContentDescription = "نیشانەی زمانی کوردی",
+        title = "کوردی",
+        subtitle = "ڕووکاری کوردیی سۆرانی و وەرگێڕانی کوردیی قورئان",
+        selected = language == AppLanguage.KURDISH,
+        onClick = { onLanguageChange(AppLanguage.KURDISH) }
+    )
+    Spacer(Modifier.height(12.dp))
+    LanguageOption(
         iconText = "ار",
         iconContentDescription = "اردو زبان کا نشان",
         title = "اردو",

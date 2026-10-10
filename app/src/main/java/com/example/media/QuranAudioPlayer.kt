@@ -31,6 +31,12 @@ object QuranAudioPlayer {
     @Volatile private var generation = 0L
     private var player: MediaPlayer? = null
     private var prepared = false
+    private var appContext: Context? = null
+    private val focus = QuranAudioFocus(
+        onPause = { pauseInternal() },
+        onResume = { resumeInternal() },
+        onVolume = { volume -> player?.setVolume(volume, volume) }
+    )
     private val _state = MutableStateFlow(QuranAudioState())
     val state: StateFlow<QuranAudioState> = _state.asStateFlow()
 
@@ -43,9 +49,13 @@ object QuranAudioPlayer {
             return
         }
         stop()
+        // One Quran recitation at a time: a surah replaces verse-by-verse playback.
+        QuranAyahPlayer.stop()
         val request = generation
         val app = context.applicationContext
+        appContext = app
         _state.value = QuranAudioState(surah = surah, reciterId = reciter.id, isLoading = true)
+        QuranPlaybackService.start(app)
         job = scope.launch {
             try {
                 val store = QuranAudioStore(app)
@@ -85,15 +95,24 @@ object QuranAudioPlayer {
                     .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                     .build()
             )
+            // Keeps the CPU awake while playing with the screen off (background playback).
+            appContext?.let { mp.setWakeMode(it, android.os.PowerManager.PARTIAL_WAKE_LOCK) }
             mp.setDataSource(path)
             mp.setOnPreparedListener {
                 if (player === it) {
                     prepared = true
-                    it.start()
-                    _state.value = _state.value.copy(isLoading = false, isPlaying = true, durationMs = it.duration)
+                    // Without audio focus (e.g. during a call) the surah is ready but waits for Play.
+                    val granted = appContext?.let(focus::request) ?: true
+                    if (granted) it.start()
+                    _state.value = _state.value.copy(isLoading = false, isPlaying = granted, durationMs = it.duration)
                 }
             }
-            mp.setOnCompletionListener { if (player === it) _state.value = _state.value.copy(isPlaying = false, positionMs = it.duration) }
+            mp.setOnCompletionListener {
+                if (player === it) {
+                    focus.abandon()
+                    _state.value = _state.value.copy(isPlaying = false, positionMs = it.duration)
+                }
+            }
             mp.setOnErrorListener { it, _, _ ->
                 if (player === it) {
                     release()
@@ -113,6 +132,7 @@ object QuranAudioPlayer {
         job?.cancel()
         job = null
         release()
+        focus.abandon()
         _state.value = QuranAudioState()
     }
 
@@ -123,14 +143,34 @@ object QuranAudioPlayer {
     fun togglePlayPause() {
         val mp = player ?: return
         if (!prepared) return
-        if (mp.isPlaying) {
-            mp.pause()
-            _state.value = _state.value.copy(isPlaying = false)
-        } else {
-            if (mp.currentPosition >= mp.duration - 300) mp.seekTo(0)
-            mp.start()
-            _state.value = _state.value.copy(isPlaying = true)
-        }
+        if (mp.isPlaying) pause() else resumeInternal()
+    }
+
+    /** A user pause (screen, notification, headset): playback won't resume by itself after a call. */
+    fun pause() {
+        focus.userPaused()
+        pauseInternal()
+    }
+
+    fun resume() = resumeInternal()
+
+    private fun pauseInternal() {
+        val mp = player ?: return
+        if (!prepared) return
+        if (mp.isPlaying) mp.pause()
+        _state.value = _state.value.copy(isPlaying = false)
+    }
+
+    private fun resumeInternal() {
+        val mp = player ?: return
+        if (!prepared || mp.isPlaying) return
+        val context = appContext ?: return
+        if (!focus.request(context)) return
+        if (mp.currentPosition >= mp.duration - 300) mp.seekTo(0)
+        mp.setVolume(1f, 1f)
+        mp.start()
+        _state.value = _state.value.copy(isPlaying = true)
+        QuranPlaybackService.start(context)
     }
 
     fun seekTo(position: Int) {

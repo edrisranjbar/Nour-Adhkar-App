@@ -167,5 +167,7 @@ private fun shortcutIcon(shortcut: HomeShortcut): ImageVector = when (shortcut.i
     "checkroom" -> Icons.Default.Checkroom
     "nightlight", "brightness_3" -> Icons.Default.Nightlight
     "psychology" -> Icons.Default.Psychology
+    "campaign" -> Icons.Default.Campaign
+    "volunteer_activism" -> Icons.Default.VolunteerActivism
     else -> Icons.Default.MenuBook
 }

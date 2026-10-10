@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,7 +36,9 @@ data class QuranAyahState(
     val track: QuranAyahTrack? = null,
     val isLoading: Boolean = false,
     val isPlaying: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    /** A one-off message (a skipped verse); the reader shows it once and clears it. */
+    val notice: String? = null
 ) {
     val active: Boolean get() = track != null
     /** The verse to highlight; none while the bismillah before a surah plays. */
@@ -65,15 +68,33 @@ class QuranAyahQueue(private val verseCounts: List<Int>) {
     }
 }
 
-/** Downloads each verse once into the trimmable cache and plays it locally, prefetching the next. */
+/**
+ * Downloads each verse once into the trimmable cache and plays it locally, prefetching the next.
+ * Holds audio focus like a normal media app, keeps playing in the background through
+ * [QuranPlaybackService], and skips a verse that still fails after one retry.
+ */
 object QuranAyahPlayer {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var job: Job? = null
     private var player: MediaPlayer? = null
+    private var prepared = false
+    /** Set by any pause (user or audio focus); the next verse waits instead of starting. */
+    private var pausedRequested = false
     private var reciter: QuranAyahReciter? = null
     private var queue: QuranAyahQueue? = null
+    private var appContext: Context? = null
+    private val focus = QuranAudioFocus(
+        onPause = { pauseInternal() },
+        onResume = { resumeInternal() },
+        onVolume = { volume -> player?.setVolume(volume, volume) }
+    )
     private val _state = MutableStateFlow(QuranAyahState())
     val state: StateFlow<QuranAyahState> = _state.asStateFlow()
+
+    private const val RETRY_DELAY_MS = 1_000L
+    /** Several missing verses in a row usually means no connection: stop with the error instead. */
+    private const val MAX_CONSECUTIVE_FAILURES = 3
+    const val SKIPPED_NOTICE = "این آیه دریافت نشد؛ آیهٔ بعدی پخش می‌شود."
 
     fun play(context: Context, voice: QuranAyahReciter, verseCounts: List<Int>, surah: Int, ayah: Int) {
         val order = QuranAyahQueue(verseCounts)
@@ -98,17 +119,24 @@ object QuranAyahPlayer {
     }
 
     fun togglePlayPause() {
-        val mp = player ?: return
-        runCatching {
-            if (mp.isPlaying) mp.pause() else mp.start()
-            _state.update { it.copy(isPlaying = mp.isPlaying) }
-        }
+        if (_state.value.track == null) return
+        if (_state.value.isPlaying) pause() else resumeInternal()
     }
+
+    /** A user pause (screen, notification, headset): playback won't resume by itself after a call. */
+    fun pause() {
+        focus.userPaused()
+        pauseInternal()
+    }
+
+    fun resume() = resumeInternal()
 
     fun stop() {
         job?.cancel()
         job = null
         release()
+        focus.abandon()
+        pausedRequested = false
         _state.value = QuranAyahState()
     }
 
@@ -116,38 +144,78 @@ object QuranAyahPlayer {
         if (_state.value.error != null) _state.value = QuranAyahState()
     }
 
+    fun clearNotice() {
+        if (_state.value.notice != null) _state.update { it.copy(notice = null) }
+    }
+
+    private fun pauseInternal() {
+        if (_state.value.track == null) return
+        pausedRequested = true
+        player?.let { mp -> runCatching { if (mp.isPlaying) mp.pause() } }
+        _state.update { it.copy(isPlaying = false) }
+    }
+
+    private fun resumeInternal() {
+        val context = appContext ?: return
+        if (_state.value.track == null) return
+        pausedRequested = false
+        val mp = player
+        // Between verses the next one starts by itself once it is ready.
+        if (mp == null || !prepared) return
+        if (runCatching { mp.isPlaying }.getOrDefault(false)) return
+        if (!focus.request(context)) {
+            pausedRequested = true
+            return
+        }
+        runCatching { mp.setVolume(1f, 1f); mp.start() }
+        _state.update { it.copy(isPlaying = true) }
+    }
+
     private fun start(app: Context, voice: QuranAyahReciter, order: QuranAyahQueue, from: QuranAyahTrack) {
         stop()
+        // One Quran recitation at a time: verse-by-verse replaces a surah recitation.
+        QuranAudioPlayer.stop()
+        appContext = app
         reciter = voice
         queue = order
         val cache = QuranAyahCache(app)
         _state.value = QuranAyahState(reciterId = voice.id, track = from, isLoading = true)
+        QuranPlaybackService.start(app)
         job = scope.launch {
             var track: QuranAyahTrack? = from
             var prefetched: Deferred<File?>? = null
+            var failures = 0
             try {
                 while (track != null) {
                     val current: QuranAyahTrack = track
-                    // A failed prefetch is retried in the foreground, where its error is reported.
-                    val ready = prefetched?.await() ?: withContext(Dispatchers.IO) { cache.cached(voice, current) }
-                    if (ready == null) _state.update { it.copy(track = current, isLoading = true, isPlaying = false) }
-                    val file = ready ?: withContext(Dispatchers.IO) { cache.fetch(voice, current) }
                     val upcoming = order.next(current)
+                    // A failed prefetch is retried here, in the foreground.
+                    var file = prefetched?.await() ?: withContext(Dispatchers.IO) { cache.cached(voice, current) }
+                    if (file == null) {
+                        _state.update { it.copy(track = current, isLoading = true, isPlaying = false) }
+                        file = fetchWithRetry(cache, voice, current)
+                    }
                     prefetched = upcoming?.let { async(Dispatchers.IO) { runCatching { cache.fetch(voice, it) }.getOrNull() } }
-                    try {
-                        playFile(file) { _state.update { it.copy(track = current, isLoading = false, isPlaying = true) } }
-                    } catch (error: IOException) {
-                        file.delete() // A cached file Android cannot play is downloaded again next time.
-                        throw error
+                    val played = file != null && playWithRetry(file, cache, voice, current) { started ->
+                        _state.update { it.copy(track = current, isLoading = false, isPlaying = started) }
+                    }
+                    if (played) {
+                        failures = 0
+                    } else {
+                        failures++
+                        if (failures >= MAX_CONSECUTIVE_FAILURES) throw IOException("verses unavailable")
+                        if (upcoming != null) _state.update { it.copy(notice = SKIPPED_NOTICE) }
                     }
                     track = upcoming
                 }
                 release()
+                focus.abandon()
                 _state.value = QuranAyahState()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
                 release()
+                focus.abandon()
                 _state.value = QuranAyahState(
                     reciterId = voice.id,
                     error = if (error is AudioStorageFullException) "فضای کافی برای پخش وجود ندارد. کمی فضا آزاد کنید."
@@ -157,7 +225,45 @@ object QuranAyahPlayer {
         }
     }
 
-    private suspend fun playFile(file: File, onStarted: () -> Unit): Unit = suspendCancellableCoroutine { continuation ->
+    /** Downloads a verse, trying once more after a short pause; null when it stays unavailable. */
+    private suspend fun fetchWithRetry(cache: QuranAyahCache, voice: QuranAyahReciter, track: QuranAyahTrack): File? {
+        repeat(2) { attempt ->
+            try {
+                return withContext(Dispatchers.IO) { cache.fetch(voice, track) }
+            } catch (storage: AudioStorageFullException) {
+                throw storage
+            } catch (ignored: IOException) {
+                if (attempt == 0) delay(RETRY_DELAY_MS)
+            }
+        }
+        return null
+    }
+
+    /** A file Android cannot play is deleted and downloaded once more before the verse is skipped. */
+    private suspend fun playWithRetry(
+        file: File,
+        cache: QuranAyahCache,
+        voice: QuranAyahReciter,
+        track: QuranAyahTrack,
+        onReady: (started: Boolean) -> Unit
+    ): Boolean {
+        try {
+            playFile(file, onReady)
+            return true
+        } catch (ignored: IOException) {
+            file.delete()
+        }
+        val again = fetchWithRetry(cache, voice, track) ?: return false
+        return try {
+            playFile(again, onReady)
+            true
+        } catch (ignored: IOException) {
+            again.delete()
+            false
+        }
+    }
+
+    private suspend fun playFile(file: File, onReady: (started: Boolean) -> Unit): Unit = suspendCancellableCoroutine { continuation ->
         release()
         val mp = MediaPlayer()
         player = mp
@@ -169,11 +275,16 @@ object QuranAyahPlayer {
                     .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                     .build()
             )
+            // Keeps the CPU awake while a verse plays with the screen off.
+            appContext?.let { mp.setWakeMode(it, android.os.PowerManager.PARTIAL_WAKE_LOCK) }
             mp.setDataSource(file.absolutePath)
             mp.setOnPreparedListener {
                 if (player === it && continuation.isActive) {
-                    it.start()
-                    onStarted()
+                    prepared = true
+                    // A pause (or no audio focus) holds the verse ready until Play.
+                    val start = !pausedRequested && (appContext?.let(focus::request) ?: true)
+                    if (start) it.start() else pausedRequested = true
+                    onReady(start)
                 }
             }
             mp.setOnCompletionListener { if (player === it && continuation.isActive) continuation.resume(Unit) }
@@ -188,6 +299,7 @@ object QuranAyahPlayer {
     }
 
     private fun release() {
+        prepared = false
         player?.let { runCatching { it.stop() }; it.release() }
         player = null
     }

@@ -231,7 +231,13 @@ fun QuranScreen(
     }
     var reciterMenuOpen by remember { mutableStateOf(false) }
     val ayahState by QuranAyahPlayer.state.collectAsState()
-    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { QuranAyahPlayer.stop() } }
+    // Leaving the reader keeps the recitation playing; QuranPlaybackService shows its notification.
+    LaunchedEffect(ayahState.notice) {
+        ayahState.notice?.let {
+            android.widget.Toast.makeText(context, language.text(it), android.widget.Toast.LENGTH_SHORT).show()
+            QuranAyahPlayer.clearNotice()
+        }
+    }
     // Keep the page visible while following a recitation.
     val view = androidx.compose.ui.platform.LocalView.current
     androidx.compose.runtime.DisposableEffect(ayahState.active) {

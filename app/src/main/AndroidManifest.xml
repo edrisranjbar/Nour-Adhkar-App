@@ -101,6 +101,11 @@
             android:name=".media.AdhkarPlaybackService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
+        <!-- Background Quran recitation (surah or verse by verse); mirrors QuranAudioPlayer/QuranAyahPlayer. -->
+        <service
+            android:name=".media.QuranPlaybackService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

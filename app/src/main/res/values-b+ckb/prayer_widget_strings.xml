@@ -1,0 +1,6 @@
+<resources>
+    <string name="prayer_widget_name">کاتەکانی نوێژ</string>
+    <string name="prayer_widget_description">کاتی نوێژەکان و نوێژی داهاتوو بەپێی شوێنی پاشەکەوتکراو</string>
+    <string name="prayer_widget_location">دیاریکردنی شوێن</string>
+    <string name="prayer_widget_setup">بۆ دیاریکردنی شوێن دابگرە</string>
+</resources>

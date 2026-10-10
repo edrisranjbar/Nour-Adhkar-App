@@ -41,7 +41,7 @@ Myket's checked-in `version-myket.json` initially has `published: false`, an emp
 {
   "store": "myket",
   "published": true,
-  "versionName": "2.5.0",
+  "versionName": "3.0.0",
   "versionCode": 24,
   "minRequiredVersionCode": 0
 }

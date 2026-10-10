@@ -1,6 +1,6 @@
 # App languages
 
-General settings and onboarding offer فارسی / دری / اردو / العربية. Farsi remains the default, independently of the device language. The `app_language` preference persists the selection, and a StateFlow updates the interface immediately. Both interfaces remain RTL. A locale-specific context also localizes Android dialogs and resource strings without changing prayer calculations, saved method identifiers, timezone IDs, or reminder schedules.
+General settings and onboarding offer فارسی / دری / کوردی / اردو / العربية. Farsi remains the default, independently of the device language. The `app_language` preference persists the selection, and a StateFlow updates the interface immediately. Both interfaces remain RTL. A locale-specific context also localizes Android dialogs and resource strings without changing prayer calculations, saved method identifiers, timezone IDs, or reminder schedules.
 
 The shared presentation components localize existing interface labels through the offline Arabic catalog. Formatted strings match complete templates with explicit placeholders; model IDs and stored values are not translated. Arabic mode uses Arabic digits and Arabic timezone labels. Article content has explicit Arabic variants with the same IDs. Custom entered content remains stored unchanged.
 
@@ -15,6 +15,19 @@ Dari (`prs`, Android locale `fa-AF`) shares the Persian interface text, Persian 
 - **Wording:** «گوشی» becomes «موبایل», including with suffixes such as «گوشی‌تان».
 
 Replacements match whole words only and are idempotent, so text localized twice stays correct. Weekday and Hijri month names are the same in Dari. The regexes use explicit Arabic-script/Latin letter ranges instead of `\pL`. Android ICU rejected `\pL`, so choosing Dari crashed on the device, even though desktop JVM tests passed. A test now blocks Unicode property syntax in `DariCatalog`. Text that bypasses `AppLanguage.text()` shows the shared Persian wording.
+
+## Kurdish (Sorani)
+
+Kurdish (`ckb`, Android locale `ckb-IR`) is Central Kurdish (Sorani) in Arabic script, as read in Iranian and Iraqi Kurdistan. Like Urdu, it is a separate language with its own complete catalog, `KurdishCatalog`, keyed by the same Persian source text and run on the shared `PhraseCatalog` engine. `KurdishCatalogTest` fails if any Arabic catalog key is missing or a template loses a placeholder.
+
+- **Digits:** Persian digits (U+06F0…), as written in Iranian Kurdistan.
+- **Months:** a standalone solar month label uses its Kurdish name (خاکەلێوە، گوڵان، جۆزەردان … ڕەشەمە); dates and calculations do not change. Unlike Dari, month names inside a formatted date are not yet replaced.
+- **Adhkar meanings:** adhkar show the original Arabic without the Persian meaning, as in Urdu and Arabic mode. No Kurdish adhkar meanings are bundled, and religious text is not machine-translated.
+- **Citations:** short citations (`صحیح مسلم، حدیث ۷۱۳`, `سوره بقره، آیه ۲۸۶`) use Sorani spelling. Longer Persian notes about a dhikr's virtue stay in Persian rather than being partly converted.
+- **Quran:** Muhammad Saleh Bamoki's Sorani translation from QuranEnc (`ckb_bamoki`; see `docs/quran.md`). Tafsir options are the Arabic tafsirs.
+- **Dates:** like Urdu, the khatm deadline, sync time and tasbih history use the device's Gregorian format; the calendar screen still shows the Jalali calendar first.
+- **Widget picker:** `values-b+ckb` gives the prayer widget's name and description in Kurdish when the device itself is in Kurdish.
+- **Review:** the interface text was written without a native-speaker review. Have a Sorani speaker check it before treating it as final.
 
 ## Urdu (Pakistan)
 

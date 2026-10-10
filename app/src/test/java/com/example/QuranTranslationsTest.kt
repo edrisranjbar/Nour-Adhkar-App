@@ -23,6 +23,8 @@ class QuranTranslationsTest {
         assertEquals(QuranTranslation.URDU_JUNAGARHI, QuranTranslation.forLanguage(AppLanguage.URDU))
         assertEquals(QuranTranslation.PERSIAN_ISLAMHOUSE, QuranTranslation.forLanguage(AppLanguage.DARI))
         assertEquals(QuranTranslation.URDU_JUNAGARHI, QuranTranslation.forLanguage(AppLanguage.URDU, "fa_khorramdel"))
+        assertEquals(QuranTranslation.KURDISH_BAMOKI, QuranTranslation.forLanguage(AppLanguage.KURDISH))
+        assertEquals(QuranTranslation.KURDISH_BAMOKI, QuranTranslation.forLanguage(AppLanguage.KURDISH, "ur_junagarhi"))
     }
 
     @Test
