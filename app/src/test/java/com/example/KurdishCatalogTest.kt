@@ -49,4 +49,22 @@ class KurdishCatalogTest {
         assertEquals(AppLanguage.KURDISH, AppLanguage.fromCode("ckb"))
         assertEquals(QuranTafsir.optionsFor(AppLanguage.ARABIC), QuranTafsir.optionsFor(AppLanguage.KURDISH))
     }
+
+    @Test fun monthNamesInsideDatesUseKurdishNames() {
+        assertEquals("۵ ڕەزبەر ۱۴۰۵", AppLanguage.KURDISH.text("۵ مهر ۱۴۰۵"))
+        assertEquals("۱۰ بەفرانبار ۱۴۰۴", AppLanguage.KURDISH.text("۱۰ دی ۱۴۰۴"))
+        assertEquals("۱۴ زولقەعدە ۱۴۴۷", AppLanguage.KURDISH.text("۱۴ ذی‌القعده ۱۴۴۷"))
+        assertEquals("۵ مارس ۲۰۲۶", AppLanguage.KURDISH.text("۵ مارس ۲۰۲۶"))
+        assertEquals("۵ مەی ۲۰۲۶", AppLanguage.KURDISH.text("۵ مه ۲۰۲۶"))
+    }
+
+    @Test fun ordinaryWordsThatAreAlsoMonthsAreLeftAlone() {
+        assertEquals("با مهر و محبت", AppLanguage.KURDISH.text("با مهر و محبت"))
+        assertEquals("مه غلیظ", AppLanguage.KURDISH.text("مه غلیظ"))
+    }
+
+    @Test fun dateMonthReplacementIsIdempotent() {
+        val once = AppLanguage.KURDISH.text("۵ مهر ۱۴۰۵، ۱۰ دی ۱۴۰۴")
+        assertEquals(once, AppLanguage.KURDISH.text(once))
+    }
 }
