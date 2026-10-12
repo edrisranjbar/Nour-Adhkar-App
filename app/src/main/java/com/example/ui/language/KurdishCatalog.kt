@@ -863,5 +863,41 @@ GPS یا مکان‌یابی شبکه در دسترس نیست؛ تنظیمات 
 
     val keys: Set<String> get() = catalog.keys
 
-    fun translate(text: String): String = catalog.translate(text)
+    /**
+     * Month names inside a formatted date («۵ مهر ۱۴۰۵», «۱۴ ذی‌القعده ۱۴۴۷», «۵ مارس ۲۰۲۶»). A bare
+     * month label is already covered by the catalog; this converts the name when it sits beside a
+     * number or is the whole text. «مهر», «تیر», «دی» and «مه» are also ordinary words, so they are
+     * replaced only beside a number. Kurdish names never match these patterns, so it is idempotent.
+     */
+    private val dateMonths = listOf(
+        "فروردین" to "خاکەلێوە", "اردیبهشت" to "گوڵان", "خرداد" to "جۆزەردان", "تیر" to "پووشپەڕ",
+        "مرداد" to "گەلاوێژ", "شهریور" to "خەرمانان", "مهر" to "ڕەزبەر", "آبان" to "گەڵاڕێزان",
+        "آذر" to "سەرماوەز", "دی" to "بەفرانبار", "بهمن" to "ڕێبەندان", "اسفند" to "ڕەشەمە",
+        "محرم" to "موحەڕڕەم", "صفر" to "سەفەر", "ربیع‌الاول" to "ڕەبیعولئەووەڵ",
+        "ربیع‌الثانی" to "ڕەبیعولئاخیر", "جمادی‌الاول" to "جومادەلئوولا",
+        "جمادی‌الثانی" to "جومادەلئاخیرە", "رجب" to "ڕەجەب", "شعبان" to "شەعبان",
+        "رمضان" to "ڕەمەزان", "شوال" to "شەووال", "ذی‌القعده" to "زولقەعدە", "ذی‌الحجه" to "زولحیججە",
+        "ژانویه" to "ژانویە", "فوریه" to "فێبریوەری", "مارس" to "مارس", "آوریل" to "ئەپریل",
+        "مه" to "مەی", "ژوئن" to "جوون", "ژوئیه" to "جولای", "اوت" to "ئۆگەست",
+        "سپتامبر" to "سێپتەمبەر", "اکتبر" to "ئۆکتۆبەر", "نوامبر" to "نۆڤەمبەر", "دسامبر" to "دیسەمبەر"
+    )
+    private val ambiguousMonths = setOf("مهر", "تیر", "دی", "مه", "صفر", "رجب")
+
+    // Plain letter ranges, not Unicode property classes: Android's ICU parser rejects those (see DariCatalog).
+    private const val LETTER =
+        "[ؠ-ٟٮ-ۓە-ۯۺ-ۿݐ-ݿﭐ-﷿ﹰ-﻿A-Za-z]"
+    private const val NUMBER = "[0-9۰-۹٠-٩]"
+
+    private val dateReplacements: List<Pair<Regex, String>> = dateMonths.map { (persian, kurdish) ->
+        val whole = "(?<!$LETTER)$persian(?!$LETTER)"
+        val pattern = if (persian in ambiguousMonths) {
+            "(?<=$NUMBER )$persian(?!$LETTER)|(?<!$LETTER)$persian(?= $NUMBER)"
+        } else whole
+        Regex(pattern) to kurdish
+    }
+
+    fun translate(text: String): String {
+        val translated = catalog.translate(text)
+        return dateReplacements.fold(translated) { current, (pattern, kurdish) -> pattern.replace(current, kurdish) }
+    }
 }
