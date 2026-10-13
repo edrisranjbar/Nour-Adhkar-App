@@ -25,7 +25,7 @@ class ChecklistWidgetProvider : AppWidgetProvider() {
             if (DailyChecklistData.items.none { it.id == itemId }) return
             val prefs = PreferenceRepository(context)
             val completed = prefs.getDailyChecklistCompletedIds()
-            prefs.setDailyChecklistItemCompleted(todayKey(), itemId, itemId !in completed)
+            prefs.setChecklistItemWithActivity(todayKey(), itemId, itemId !in completed)
             updateAll(context)
         } else if (intent.action == ACTION_REFRESH_WIDGET || intent.action == Intent.ACTION_MY_PACKAGE_REPLACED) {
             updateAll(context)

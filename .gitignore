@@ -28,3 +28,11 @@ release-signing.properties
 
 # Generated Cafe Bazaar release deliverables
 /release/
+
+# Scratch files from device and build debugging
+/.tmp-*
+/.device-*
+/build-*.log
+/*-build-*.log
+/.android/*.lock
+/.android/*-window.xml

@@ -47,6 +47,14 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val viewModel: AdhkarViewModel = viewModel()
+            val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+            androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+                val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                    if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) viewModel.reloadWidgetChangedState()
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+            }
             LaunchedEffect(openPrayersFromWidget) {
                 if (openPrayersFromWidget) {
                     viewModel.openPrayerSettings()

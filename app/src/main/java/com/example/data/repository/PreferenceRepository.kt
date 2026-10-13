@@ -285,8 +285,42 @@ class PreferenceRepository(context: Context) {
         prefs.getStringSet("activity_day_keys", emptySet()).orEmpty().mapNotNull(String::toLongOrNull).toSet()
 
     fun markActivityToday(): Set<Long> {
-        val updated = getActivityDayKeys().toMutableSet().apply { add(currentDayKey()) }
+        val today = currentDayKey()
+        val updated = getActivityDayKeys().toMutableSet().apply { add(today) }
         prefs.edit().putStringSet("activity_day_keys", updated.map(Long::toString).toSet()).apply()
+        // Other real activity now backs the day, so unchecking checklist items must not clear it.
+        setChecklistOnlyDays(getChecklistOnlyDays() - today)
+        return updated
+    }
+
+    /** Days whose only activity mark came from the checklist, so unchecking everything can undo it. */
+    private fun getChecklistOnlyDays(): Set<Long> =
+        prefs.getStringSet("checklist_only_activity_days", emptySet()).orEmpty().mapNotNull(String::toLongOrNull).toSet()
+
+    private fun setChecklistOnlyDays(days: Set<Long>) {
+        prefs.edit().putStringSet("checklist_only_activity_days", days.map(Long::toString).toSet()).apply()
+    }
+
+    /**
+     * Checks or unchecks a checklist item for [dayKey] and keeps today's streak activity in step.
+     * The first checked item makes the day active; removing the last one takes that mark back unless
+     * something else (a dhikr, a tasbih session, a made-up fast) also made the day active.
+     * Shared by the app and the home-screen widget.
+     */
+    fun setChecklistItemWithActivity(dayKey: Long, itemId: String, completed: Boolean): Set<String> {
+        val updated = setDailyChecklistItemCompleted(dayKey, itemId, completed)
+        if (dayKey != currentDayKey()) return updated
+        val today = dayKey
+        val keys = getActivityDayKeys()
+        if (completed) {
+            if (today !in keys) {
+                markActivityToday()
+                setChecklistOnlyDays(getChecklistOnlyDays() + today)
+            }
+        } else if (updated.isEmpty() && today in getChecklistOnlyDays()) {
+            prefs.edit().putStringSet("activity_day_keys", (keys - today).map(Long::toString).toSet()).apply()
+            setChecklistOnlyDays(getChecklistOnlyDays() - today)
+        }
         return updated
     }
 
