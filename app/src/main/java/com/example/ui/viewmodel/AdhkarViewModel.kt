@@ -555,17 +555,22 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
 
     fun setDailyChecklistItemCompleted(itemId: String, completed: Boolean) {
         _dailyChecklistCompletedIds.value =
-            prefs.setDailyChecklistItemCompleted(
+            prefs.setChecklistItemWithActivity(
                 dayKey = currentChecklistDayKey(),
                 itemId = itemId,
                 completed = completed
             )
         _checklistCompletionCounts.value = prefs.getChecklistCompletionCounts(30)
+        _activityDayKeys.value = prefs.getActivityDayKeys()
         ChecklistWidgetProvider.updateAll(getApplication())
-        if (completed) {
-            _activityDayKeys.value = prefs.markActivityToday()
-            if (_soundEnabled.value) checklistCompletionSound.play()
-        }
+        if (completed && _soundEnabled.value) checklistCompletionSound.play()
+    }
+
+    /** Re-reads state the home-screen widget may have changed while the app was in the background. */
+    fun reloadWidgetChangedState() {
+        _dailyChecklistCompletedIds.value = prefs.getDailyChecklistCompletedIds()
+        _checklistCompletionCounts.value = prefs.getChecklistCompletionCounts(30)
+        _activityDayKeys.value = prefs.getActivityDayKeys()
     }
 
     private fun currentChecklistDayKey(): Long = Calendar.getInstance().apply {
