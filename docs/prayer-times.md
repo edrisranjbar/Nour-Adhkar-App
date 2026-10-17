@@ -1,5 +1,9 @@
 # Prayer times and settings
 
+## Compose compatibility
+
+The place editor's suggested names use `FlowRow`. Compile and runtime Compose versions must stay aligned: compiling Foundation 1.7.0 against a packaged 1.9.0 runtime caused a `NoSuchMethodError` when adding a place. The shared Compose BOM is 2025.08.00 so both paths select Foundation 1.9.0. When changing Compose or its transitive dependencies, inspect both variant classpaths; a successful compile alone does not detect this runtime linkage failure.
+
 ## Home screen widget
 
 The launcher offers a separate 2×2 «اوقات شرعی» widget. It uses the same saved location, timezone, calculation method, and Asr setting as the in-app card. Its compact three-row timetable shows Fajr, sunrise, Dhuhr, Asr, Maghrib, and Isha; the next-prayer line excludes sunrise and rolls over to tomorrow's Fajr after Isha. Times are formatted in the saved location's timezone. Missing or invalid location shows a setup prompt rather than sample times. Tapping the widget opens prayer settings. Existing launcher placements retain their previous grid size until the user resizes or re-adds the widget.
