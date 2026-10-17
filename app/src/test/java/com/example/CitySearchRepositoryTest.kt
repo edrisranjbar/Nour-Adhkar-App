@@ -1,6 +1,9 @@
 package com.example
 
 import com.example.data.repository.CitySearchRepository
+import com.example.data.repository.OfflineCitySearch
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -10,6 +13,24 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
 class CitySearchRepositoryTest {
+    @Test fun bundledCitiesFindShirazInPersianAndEnglishWithoutNetwork() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        for (query in listOf("شیراز", "شيراز", "Shiraz", "شیراز، ایران")) {
+            val city = OfflineCitySearch.search(context, query, "fa-IR").first()
+            assertTrue(city.label.contains("شیراز"))
+            assertEquals(29.61031, city.latitude, 0.00001)
+            assertEquals(52.53113, city.longitude, 0.00001)
+        }
+    }
+
+    @Test fun bundledCitiesIncludeQeshmAndGlobalCountryQualifiedSearch() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        assertTrue(OfflineCitySearch.search(context, "قشم", "fa").first().label.contains("قشم"))
+        val paris = OfflineCitySearch.search(context, "Paris, FR", "en").first()
+        assertTrue(paris.label.contains("France"))
+        assertEquals(48.85341, paris.latitude, 0.1)
+    }
+
     @Test fun preservesCityCoordinatesAndDisambiguatesWithRegionAndCountry() {
         val result = CitySearchRepository.parse("""{"results":[
             {"name":"شیراز","admin1":"فارس","country":"ایران","latitude":29.6103,"longitude":52.5311}

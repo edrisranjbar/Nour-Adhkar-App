@@ -28,7 +28,7 @@ fun CityLocationSearch(
     val language = LocalAppLanguage.current
     var request by remember { mutableStateOf<String?>(null) }
     var results by remember { mutableStateOf<List<CitySearchResult>>(emptyList()) }
-    var fallback by remember { mutableStateOf(false) }
+    var source by remember { mutableStateOf<String?>(null) }
     var searching by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(request, language) {
@@ -39,7 +39,7 @@ fun CityLocationSearch(
         try {
             val found = CitySearchRepository.search(context.applicationContext, name, language.localeTag)
             results = found.cities
-            fallback = found.fallback
+            source = found.source
             if (results.isEmpty()) error = "شهری پیدا نشد؛ نام شهر و کشور را وارد کنید."
         } catch (cancelled: CancellationException) {
             throw cancelled
@@ -82,7 +82,7 @@ fun CityLocationSearch(
                     error = null
                 }) { Text(label) }
             }
-            if (fallback) Text("Open-Meteo / GeoNames", style = MaterialTheme.typography.labelSmall)
+            source?.let { Text(it, style = MaterialTheme.typography.labelSmall) }
         }
         error?.let { Text(it, color = MaterialTheme.colorScheme.error,
             style = MaterialTheme.typography.bodySmall) }

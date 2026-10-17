@@ -19,12 +19,14 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 internal data class CitySearchResult(val label: String, val latitude: Double, val longitude: Double)
-internal data class CitySearchResults(val cities: List<CitySearchResult>, val fallback: Boolean = false)
+internal data class CitySearchResults(val cities: List<CitySearchResult>, val source: String? = null)
 
 internal object CitySearchRepository {
     private val legacyExecutor = Executors.newFixedThreadPool(2)
 
     suspend fun search(context: Context, query: String, language: String): CitySearchResults {
+        val offline = withContext(Dispatchers.IO) { OfflineCitySearch.search(context, query, language) }
+        if (offline.isNotEmpty()) return CitySearchResults(offline, source = "GeoNames")
         val native = try {
             nativeSearch(context, query, language)
         } catch (cancelled: CancellationException) {
@@ -41,7 +43,7 @@ internal object CitySearchRepository {
                 connection.setRequestProperty("Accept", "application/json")
                 check(connection.responseCode == HttpURLConnection.HTTP_OK) { "City search unavailable" }
                 val cities = connection.inputStream.bufferedReader(Charsets.UTF_8).use { parse(it.readText()) }
-                CitySearchResults(cities, fallback = true)
+                CitySearchResults(cities, source = "Open-Meteo / GeoNames")
             } finally {
                 connection.disconnect()
             }
