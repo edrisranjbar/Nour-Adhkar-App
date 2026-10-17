@@ -43,11 +43,11 @@ object AppAdhkarRepository {
     }
 
     /** Background refresh at app start; never throws and skips the network when checked recently. */
-    suspend fun refresh(context: Context) = withContext(Dispatchers.IO) {
+    suspend fun refresh(context: Context): Unit = withContext(Dispatchers.IO) {
         loadCached(context)
         val prefs = prefs(context)
         if (System.currentTimeMillis() - prefs.getLong(KEY_CHECKED_AT, 0L) < REFRESH_MILLIS) return@withContext
-        runCatching {
+        runCatching<Unit> {
             val connection = (URL(URL_ADHKAR).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 15000
                 readTimeout = 20000
@@ -68,7 +68,7 @@ object AppAdhkarRepository {
                             .apply()
                         AdhkarData.applyAdminCollections(collections)
                     }
-                    // Other responses keep the cache and retry on a later start.
+                    else -> Unit // keep the cache; retried on a later start
                 }
             } finally {
                 connection.disconnect()
