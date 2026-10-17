@@ -39,7 +39,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        notificationCategory = intent.getStringExtra(AdhkarNotificationManager.EXTRA_OPEN_CATEGORY)
+        // Admin-panel adhkar from the last background refresh, before any screen reads the collections.
+        com.example.data.repository.AppAdhkarRepository.loadCached(this)
+        notificationCategory =intent.getStringExtra(AdhkarNotificationManager.EXTRA_OPEN_CATEGORY)
         openChecklistFromWidget = intent.getBooleanExtra(ChecklistWidgetProvider.EXTRA_OPEN_CHECKLIST, false)
         openPrayersFromWidget = intent.getBooleanExtra(com.example.widget.PrayerTimesWidgetProvider.EXTRA_OPEN_PRAYERS, false)
         openQuranPage = intent.getIntExtra(AdhkarNotificationManager.EXTRA_OPEN_QURAN_PAGE, 0).takeIf { it in 1..604 }

@@ -6,7 +6,9 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
-import android.os.CancellationSignal
+import android.location.LocationListener
+import android.os.Bundle
+import android.os.Looper
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,9 +26,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlin.coroutines.resume
+import com.example.prayer.awaitLocationResult
 
 @Composable
 fun DetectPrayerLocationButton(
@@ -58,7 +59,7 @@ fun DetectPrayerLocationButton(
                 if (providers.isEmpty()) {
                     latestError("GPS یا مکان‌یابی شبکه در دسترس نیست؛ تنظیمات مکان گوشی را بررسی کنید.")
                 } else {
-                    val result = withTimeoutOrNull(25_000) { currentLocation(context, manager, providers) }
+                    val result = withTimeoutOrNull(60_000) { currentLocation(manager, providers) }
                     if (result != null) latestLocation(result)
                     else latestError("موقعیت دریافت نشد. در فضای باز دوباره تلاش کنید یا نام شهر را دستی وارد کنید.")
                 }
@@ -75,19 +76,22 @@ fun DetectPrayerLocationButton(
         if (result.values.any { it }) detect()
         else latestError("مجوز مکان داده نشد. آن را در تنظیمات گوشی فعال کنید یا نام شهر را دستی وارد کنید.")
     }
+    fun detectWithPermission() {
+        val granted = listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+            .any { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
+        if (granted) detect()
+        else permissions.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+    }
     val locationSettings = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         val manager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        if (LocationManagerCompat.isLocationEnabled(manager)) detect()
+        if (LocationManagerCompat.isLocationEnabled(manager)) detectWithPermission()
         else latestError("برای دریافت موقعیت، GPS یا مکان‌یابی گوشی را روشن کنید.")
     }
     val requestLocation: () -> Unit = {
-        val granted = listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-            .any { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
         val manager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         if (!LocationManagerCompat.isLocationEnabled(manager)) {
             locationSettings.launch(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
-        } else if (granted) detect()
-        else permissions.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+        } else detectWithPermission()
     }
     if (iconOnly) {
         IconButton(onClick = requestLocation, enabled = !locating) {
@@ -104,25 +108,22 @@ fun DetectPrayerLocationButton(
 
 // Only active while the user requests a fix; all providers stop on success,
 // timeout, or leaving the screen. No background location permission is needed.
-private suspend fun currentLocation(context: Context, manager: LocationManager, providers: List<String>): Location? {
-    val signals = providers.map { CancellationSignal() }
-    try {
-        return suspendCancellableCoroutine { continuation ->
-            continuation.invokeOnCancellation { signals.forEach { it.cancel() } }
-            var remaining = providers.size
-            providers.forEachIndexed { index, provider ->
-                if (!continuation.isActive) return@forEachIndexed
-                try {
-                    LocationManagerCompat.getCurrentLocation(manager, provider, signals[index], ContextCompat.getMainExecutor(context)) { location ->
-                        remaining--
-                        if (continuation.isActive && (location != null || remaining == 0)) continuation.resume(location)
-                    }
-                } catch (denied: SecurityException) {
-                    if (continuation.isActive) continuation.resumeWith(Result.failure(denied))
-                }
-            }
+@Suppress("MissingPermission", "DEPRECATION") // Foreground permissions checked immediately before requesting.
+private suspend fun currentLocation(manager: LocationManager, providers: List<String>): Location? =
+    awaitLocationResult(providers) { provider, deliver ->
+        val listener = object : LocationListener {
+            override fun onLocationChanged(location: Location) { deliver(location) }
+            override fun onProviderDisabled(provider: String) { deliver(null) }
+            override fun onProviderEnabled(provider: String) = Unit
+            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
         }
-    } finally {
-        signals.forEach { it.cancel() }
+        // Keep listening until the shared timeout: one-shot requests can expire before a cold GPS fix.
+        try {
+            manager.requestLocationUpdates(provider, 0L, 0f, listener, Looper.getMainLooper())
+        } catch (failure: Exception) {
+            manager.removeUpdates(listener)
+            throw failure
+        }
+        val cancel: () -> Unit = { manager.removeUpdates(listener) }
+        cancel
     }
-}

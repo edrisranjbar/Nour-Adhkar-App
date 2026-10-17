@@ -103,6 +103,8 @@ fun AppMainScaffold(
 
     // Warm the articles cache so «مقالات» opens instantly, even the first time.
     LaunchedEffect(Unit) { com.example.data.repository.ArticlesRepository.prefetch(context) }
+    // New adhkar from the admin panel; checked in the background at most every few hours.
+    LaunchedEffect(Unit) { com.example.data.repository.AppAdhkarRepository.refresh(context) }
 
     LaunchedEffect(Unit) {
         availableUpdate = if (BuildConfig.FORCE_UPDATE_PROMPT) {

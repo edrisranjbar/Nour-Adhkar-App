@@ -141,7 +141,10 @@ fun HomeQuickAccess(viewModel: AdhkarViewModel, fontScale: Float, onOpenPage: (S
 
 private fun shortcutSearch(value: String) = value.trim().replace('ي', 'ی').replace('ك', 'ک').replace("‌", "").replace(" ", "")
 
-private fun shortcutIcon(shortcut: HomeShortcut): ImageVector = when (shortcut.icon) {
+private fun shortcutIcon(shortcut: HomeShortcut): ImageVector = iconForName(shortcut.icon)
+
+/** Icon for a stored icon name, as used by shortcuts and admin-panel collections. */
+internal fun iconForName(name: String): ImageVector = when (name) {
     "audio" -> Icons.Default.Headphones
     "tasbih" -> Icons.Default.Grain
     "checklist" -> Icons.Default.Checklist

@@ -19,7 +19,8 @@ class AdhkarRepository(
     private val tasbihSessionDao: TasbihSessionDao
 ) {
     private val progressMutex = Mutex()
-    private val groupedHistoryTitles = AdhkarData.categories.associate { it.id to it.title } + mapOf(
+    // Read on use: admin-panel collections can arrive after the repository is created.
+    private val groupedHistoryTitles get() = AdhkarData.categories.associate { it.id to it.title } + mapOf(
         "sleep" to "اذکار خواب"
     )
 

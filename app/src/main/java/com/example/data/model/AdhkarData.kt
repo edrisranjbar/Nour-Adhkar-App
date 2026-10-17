@@ -1,8 +1,11 @@
 package com.example.data.model
 
+import androidx.compose.runtime.mutableStateOf
+
 object AdhkarData {
 
-    val categories = listOf(
+    /** Collections bundled with the app; [categories] adds those published from the admin panel. */
+    private val builtInCategories = listOf(
         Category("morning", "اذکار صبحگاه", "روز خود را با یاد خدا و برکت معنوی آغاز کنید", "wb_sunny", 22),
         Category("evening", "اذکار شامگاه", "پایان هر روز را با یاد پروردگار به آرامش برسانید", "nights_stay", 21),
         Category("daily", "اذکار روزانه", "ذکرهای ساده و پرفضیلت برای همراهی در طول روز", "today", 10),
@@ -308,7 +311,7 @@ object AdhkarData {
             "سوره زمر، آیه ۶۶", "از شکرگزاران باش، در آسانی و سختی.")
     )
 
-    val adhkarList = mapOf(
+    private val builtInAdhkar = mapOf(
         "morning" to listOf(
             DhikrItem(
                 1,
@@ -1132,4 +1135,19 @@ object AdhkarData {
                 1, "سوره نوح، آیه ۲۸")
         )
     )
+
+    /**
+     * Built-in content merged with the admin panel's ([com.example.data.repository.AppAdhkarRepository]).
+     * Compose state, so screens that read [categories] or [adhkarList] recompose when a background
+     * refresh brings new adhkar.
+     */
+    private val merged = mutableStateOf(MergedAdhkar(builtInCategories, builtInAdhkar))
+
+    val categories: List<Category> get() = merged.value.categories
+    val adhkarList: Map<String, List<DhikrItem>> get() = merged.value.adhkar
+
+    /** Replaces the admin-panel part of the content; an empty list restores the built-in content. */
+    fun applyAdminCollections(collections: List<AdminCollection>) {
+        merged.value = mergeAdminCollections(builtInCategories, builtInAdhkar, collections)
+    }
 }

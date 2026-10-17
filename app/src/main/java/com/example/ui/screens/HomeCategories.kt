@@ -216,7 +216,7 @@ fun CategoryTile(
                     "istikhara" -> Icons.Default.Psychology
                     "after_adhan" -> Icons.Default.Campaign
                     "funeral_prayer" -> Icons.Default.VolunteerActivism
-                    else -> Icons.Default.MenuBook
+                    else -> iconForName(cat.iconName)
                 }
                 Box(
                     modifier = Modifier

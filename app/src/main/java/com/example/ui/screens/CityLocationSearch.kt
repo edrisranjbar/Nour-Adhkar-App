@@ -1,7 +1,7 @@
 package com.example.ui.screens
 
-import android.location.Address
-import android.location.Geocoder
+import com.example.data.repository.CitySearchRepository
+import com.example.data.repository.CitySearchResult
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -17,9 +17,6 @@ import com.example.ui.language.LocalAppLanguage
 import com.example.ui.language.LocalizedIcon as Icon
 import com.example.ui.language.LocalizedText as Text
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.util.Locale
 
 @Composable
 fun CityLocationSearch(
@@ -30,7 +27,8 @@ fun CityLocationSearch(
     val context = LocalContext.current
     val language = LocalAppLanguage.current
     var request by remember { mutableStateOf<String?>(null) }
-    var results by remember { mutableStateOf<List<Address>>(emptyList()) }
+    var results by remember { mutableStateOf<List<CitySearchResult>>(emptyList()) }
+    var fallback by remember { mutableStateOf(false) }
     var searching by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(request, language) {
@@ -39,14 +37,9 @@ fun CityLocationSearch(
         error = null
         results = emptyList()
         try {
-            results = withContext(Dispatchers.IO) {
-                check(Geocoder.isPresent()) { "Geocoder unavailable" }
-                @Suppress("DEPRECATION")
-                Geocoder(context, Locale.forLanguageTag(language.localeTag))
-                    .getFromLocationName(name, 8).orEmpty()
-                    .filter { it.hasLatitude() && it.hasLongitude() }
-                    .distinctBy { Triple(it.locality, it.latitude, it.longitude) }
-            }
+            val found = CitySearchRepository.search(context.applicationContext, name, language.localeTag)
+            results = found.cities
+            fallback = found.fallback
             if (results.isEmpty()) error = "شهری پیدا نشد؛ نام شهر و کشور را وارد کنید."
         } catch (cancelled: CancellationException) {
             throw cancelled
@@ -82,15 +75,14 @@ fun CityLocationSearch(
         if (results.isNotEmpty()) {
             Text("شهر موردنظر را انتخاب کنید", style = MaterialTheme.typography.bodySmall)
             results.forEach { address ->
-                val name = address.locality ?: address.subAdminArea ?: address.featureName ?: query
-                val label = listOfNotNull(name, address.adminArea, address.countryName)
-                    .filter { it.isNotBlank() }.distinct().joinToString("، ")
+                val label = address.label
                 OutlinedButton(modifier = Modifier.fillMaxWidth(), onClick = {
                     onSelected(label, address.latitude, address.longitude)
                     results = emptyList()
                     error = null
                 }) { Text(label) }
             }
+            if (fallback) Text("Open-Meteo / GeoNames", style = MaterialTheme.typography.labelSmall)
         }
         error?.let { Text(it, color = MaterialTheme.colorScheme.error,
             style = MaterialTheme.typography.bodySmall) }

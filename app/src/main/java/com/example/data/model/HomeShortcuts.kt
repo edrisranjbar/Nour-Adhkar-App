@@ -20,10 +20,11 @@ object HomeShortcuts {
         HomeShortcut("prayer_settings", "تنظیمات اوقات شرعی", "prayer"),
         HomeShortcut("settings", "تنظیمات", "settings")
     )
-    val collections = AdhkarData.categories.filter { it.isEnabled }.map {
+    // Read on use: collections from the admin panel can arrive after start.
+    val collections: List<HomeShortcut> get() = AdhkarData.categories.filter { it.isEnabled }.map {
         HomeShortcut("collection:${it.id}", it.title, it.iconName, categoryId = it.id)
     }
-    val all = pages + collections
+    val all: List<HomeShortcut> get() = pages + collections
     val defaults = listOf("quran_audio", "tasbih", "calendar", "collection:after_salah")
     fun normalize(ids: List<String>): List<String> = ids.filter { id -> all.any { it.id == id } }.distinct()
 }
