@@ -351,6 +351,24 @@ private enum class AudioStatus { PLAYING, LOADING, READY }
 
 private fun QuranReciter.displayName(language: AppLanguage) = if (language == AppLanguage.ARABIC) arName else faName
 
+/** «سورهٔ بقره» in Persian and Dari, «سورة البقرة» in Arabic; the number only until the catalog loads. */
+private fun surahLabel(surah: QuranSurah?, number: Int, language: AppLanguage): String = when {
+    surah == null -> language.text("سورهٔ ${number.toPersianDigits()}")
+    language == AppLanguage.ARABIC -> "سورة ${surah.name}"
+    language.usesPersianContent -> "سورهٔ ${persianSurahName(surah.name)}"
+    else -> language.text("سورهٔ ${surah.name}")
+}
+
+/**
+ * The common Persian form of a surah's Arabic name: without the article, with Persian letters
+ * («البقرة» → «بقره», «الأعلى» → «اعلی», «آل عمران» unchanged).
+ */
+internal fun persianSurahName(arabic: String): String {
+    val name = if (arabic.startsWith("ال") && arabic.length > 3) arabic.drop(2) else arabic
+    return name.replace('ة', 'ه').replace('ي', 'ی').replace('ى', 'ی').replace('ك', 'ک')
+        .replace('أ', 'ا').replace('إ', 'ا')
+}
+
 /**
  * The player: the surah on the same ornament and Uthmanic face as the Quran reader's surah headers,
  * followed by [controls]. Tapping the surah opens its picker.
@@ -378,33 +396,9 @@ private fun PlayerCard(
         Column(
             Modifier.background(Brush.verticalGradient(0f to colors.secondaryContainer, 0.55f to colors.surface))
         ) {
-            // A minimum-height header so the card does not jump when the status appears or clears.
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = 44.dp).padding(start = 16.dp, end = 16.dp, top = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                AnimatedContent(targetState = status, transitionSpec = { fadeIn() togetherWith fadeOut() }, label = "pill") {
-                    if (it == AudioStatus.READY) Spacer(Modifier.size(1.dp)) else StatusPill(it, reduceMotion, accent)
-                }
-                if (isSaved) {
-                    Surface(shape = RoundedCornerShape(50), color = accent.color.copy(alpha = 0.12f)) {
-                        Row(
-                            Modifier.padding(horizontal = 10.dp, vertical = 5.dp).semantics(mergeDescendants = true) {},
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(Icons.Default.DownloadDone, null, Modifier.size(14.dp), tint = accent.color)
-                            Text(language.text("تلاوت ذخیره شده"), style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold, color = accent.color)
-                        }
-                    }
-                }
-            }
-
             Column(
                 Modifier.fillMaxWidth().clickable(onClickLabel = language.text("انتخاب سوره"), onClick = onChooseSurah)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(Modifier.fillMaxWidth().height((92 * fontScale.coerceAtMost(1.3f)).dp), contentAlignment = Alignment.Center) {
@@ -431,12 +425,36 @@ private fun PlayerCard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = language.text("سورهٔ ${surahNumber.toPersianDigits()}") +
+                        text = surahLabel(surah, surahNumber, language) +
                             (surah?.let { " · " + language.text("${it.verseCount.toPersianDigits()} آیه · صفحه ${it.firstPage.toPersianDigits()}") } ?: ""),
                         style = MaterialTheme.typography.bodyMedium,
                         color = colors.onSurfaceVariant
                     )
                     Icon(Icons.Default.ExpandMore, null, Modifier.size(18.dp), tint = colors.onSurfaceVariant)
+                }
+            }
+            // Status and offline chips sit in a fixed-height row under the surah, so the card keeps
+            // its size when they appear or clear and has no empty header when idle.
+            Row(
+                Modifier.fillMaxWidth().height(32.dp).padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+            ) {
+                AnimatedContent(targetState = status, transitionSpec = { fadeIn() togetherWith fadeOut() }, label = "pill") {
+                    if (it != AudioStatus.READY) StatusPill(it, reduceMotion, accent)
+                }
+                if (isSaved) {
+                    Surface(shape = RoundedCornerShape(50), color = accent.color.copy(alpha = 0.12f)) {
+                        Row(
+                            Modifier.padding(horizontal = 10.dp, vertical = 5.dp).semantics(mergeDescendants = true) {},
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(Icons.Default.DownloadDone, null, Modifier.size(14.dp), tint = accent.color)
+                            Text(language.text("تلاوت ذخیره شده"), style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold, color = accent.color)
+                        }
+                    }
                 }
             }
             controls()
