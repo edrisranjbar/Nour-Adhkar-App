@@ -351,6 +351,24 @@ private enum class AudioStatus { PLAYING, LOADING, READY }
 
 private fun QuranReciter.displayName(language: AppLanguage) = if (language == AppLanguage.ARABIC) arName else faName
 
+/** «سورهٔ بقره» in Persian and Dari, «سورة البقرة» in Arabic; the number only until the catalog loads. */
+private fun surahLabel(surah: QuranSurah?, number: Int, language: AppLanguage): String = when {
+    surah == null -> language.text("سورهٔ ${number.toPersianDigits()}")
+    language == AppLanguage.ARABIC -> "سورة ${surah.name}"
+    language.usesPersianContent -> "سورهٔ ${persianSurahName(surah.name)}"
+    else -> language.text("سورهٔ ${surah.name}")
+}
+
+/**
+ * The common Persian form of a surah's Arabic name: without the article, with Persian letters
+ * («البقرة» → «بقره», «الأعلى» → «اعلی», «آل عمران» unchanged).
+ */
+internal fun persianSurahName(arabic: String): String {
+    val name = if (arabic.startsWith("ال") && arabic.length > 3) arabic.drop(2) else arabic
+    return name.replace('ة', 'ه').replace('ي', 'ی').replace('ى', 'ی').replace('ك', 'ک')
+        .replace('أ', 'ا').replace('إ', 'ا')
+}
+
 /**
  * The player: the surah on the same ornament and Uthmanic face as the Quran reader's surah headers,
  * followed by [controls]. Tapping the surah opens its picker.
@@ -407,7 +425,7 @@ private fun PlayerCard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = language.text("سورهٔ ${surahNumber.toPersianDigits()}") +
+                        text = surahLabel(surah, surahNumber, language) +
                             (surah?.let { " · " + language.text("${it.verseCount.toPersianDigits()} آیه · صفحه ${it.firstPage.toPersianDigits()}") } ?: ""),
                         style = MaterialTheme.typography.bodyMedium,
                         color = colors.onSurfaceVariant
