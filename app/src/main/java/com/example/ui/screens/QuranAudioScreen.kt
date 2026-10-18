@@ -57,7 +57,6 @@ import com.example.ui.language.AppLanguage
 import com.example.ui.language.LocalAppLanguage
 import com.example.ui.language.text
 import com.example.ui.theme.SoftBorder
-import com.example.ui.theme.SunGold
 import com.example.ui.theme.UthmanicHafs
 import com.example.ui.util.toPersianDigits
 import com.example.ui.viewmodel.AdhkarViewModel
@@ -65,13 +64,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
-/** The app's green accent, as used by the prayer card and streaks, readable in both themes. */
+/** The app's green accent (the theme's tertiary role), with a content colour readable on it in both themes. */
 private data class AudioAccent(val color: Color, val onColor: Color)
 
 @Composable
 private fun audioAccent(): AudioAccent {
-    val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-    return if (dark) AudioAccent(Color(0xFFA3D899), Color(0xFF1A1D1B)) else AudioAccent(SunGold, Color.White)
+    val colors = MaterialTheme.colorScheme
+    val dark = colors.surface.luminance() < 0.5f
+    return AudioAccent(colors.tertiary, if (dark) colors.surface else Color.White)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -133,10 +133,10 @@ fun QuranAudioScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        NowPlayingCard(
+        val controlsEnabled = current && duration > 0 && !loading
+        PlayerCard(
             surah = surah,
             surahNumber = surahNumber,
-            reciterName = reciterName,
             status = when {
                 playing -> AudioStatus.PLAYING
                 loading -> AudioStatus.LOADING
@@ -145,71 +145,70 @@ fun QuranAudioScreen(viewModel: AdhkarViewModel, innerPadding: PaddingValues) {
             isSaved = surahNumber in saved,
             reduceMotion = reduceMotion,
             fontScale = fontScale,
-            onChooseSurah = { openPicker("surah") },
-            onChooseReciter = { openPicker("reciter") }
-        )
-
-        // Media transport keeps its left-to-right order in RTL, per Material guidance.
-        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-            Column(Modifier.fillMaxWidth()) {
-                Slider(
-                    modifier = Modifier.semantics { contentDescription = language.text("موقعیت پخش") },
-                    value = (dragging ?: position.toFloat()).coerceIn(0f, duration.coerceAtLeast(1).toFloat()),
-                    onValueChange = { dragging = it },
-                    onValueChangeFinished = { dragging?.let { QuranAudioPlayer.seekTo(it.toInt()) }; dragging = null },
-                    valueRange = 0f..duration.coerceAtLeast(1).toFloat(),
-                    enabled = current && duration > 0 && !loading,
-                    colors = SliderDefaults.colors(
-                        thumbColor = accent.color,
-                        activeTrackColor = accent.color,
-                        inactiveTrackColor = accent.color.copy(alpha = 0.18f)
+            onChooseSurah = { openPicker("surah") }
+        ) {
+            // Media transport keeps its left-to-right order in RTL, per Material guidance.
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+                    Slider(
+                        modifier = Modifier.semantics { contentDescription = language.text("موقعیت پخش") },
+                        value = (dragging ?: position.toFloat()).coerceIn(0f, duration.coerceAtLeast(1).toFloat()),
+                        onValueChange = { dragging = it },
+                        onValueChangeFinished = { dragging?.let { QuranAudioPlayer.seekTo(it.toInt()) }; dragging = null },
+                        valueRange = 0f..duration.coerceAtLeast(1).toFloat(),
+                        enabled = controlsEnabled,
+                        colors = SliderDefaults.colors(
+                            thumbColor = accent.color,
+                            activeTrackColor = accent.color,
+                            inactiveTrackColor = accent.color.copy(alpha = 0.18f),
+                            disabledThumbColor = colors.outlineVariant,
+                            disabledInactiveTrackColor = colors.outlineVariant.copy(alpha = 0.6f)
+                        )
                     )
-                )
-                Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(language.text(audioTime((dragging ?: position.toFloat()).toInt())),
-                        style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant)
-                    Text(language.text(audioTime(duration)),
-                        style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant)
-                }
-                Row(
-                    Modifier.fillMaxWidth().padding(top = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { selectSurah(surahNumber - 1) }, enabled = surahNumber > 1) {
-                        Icon(Icons.Default.SkipPrevious, language.text("سورهٔ قبل"))
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(language.text(audioTime((dragging ?: position.toFloat()).toInt())),
+                            style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant)
+                        Text(language.text(audioTime(duration)),
+                            style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant)
                     }
-                    FilledTonalIconButton(
-                        onClick = { QuranAudioPlayer.skip(-10_000) },
-                        enabled = current && duration > 0 && !loading,
-                        modifier = Modifier.size(52.dp)
-                    ) { Icon(Icons.Default.Replay10, language.text("۱۰ ثانیه عقب")) }
-                    PlayButton(
-                        playing = playing,
-                        loading = loading,
-                        downloadPercent = if (downloading) state.downloadPercent else null,
-                        enabled = surah != null,
-                        accent = accent,
-                        onClick = {
-                            when {
-                                // While fetching, the button cancels; otherwise it plays or pauses.
-                                loading -> QuranAudioPlayer.stop()
-                                current && state.error == null && duration > 0 -> QuranAudioPlayer.togglePlayPause()
-                                else -> QuranAudioPlayer.play(context, reciter, surahNumber)
-                            }
+                    Row(
+                        Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TransportButton(Icons.Default.SkipPrevious, language.text("سورهٔ قبل"), surahNumber > 1) {
+                            selectSurah(surahNumber - 1)
                         }
-                    )
-                    FilledTonalIconButton(
-                        onClick = { QuranAudioPlayer.skip(10_000) },
-                        enabled = current && duration > 0 && !loading,
-                        modifier = Modifier.size(52.dp)
-                    ) { Icon(Icons.Default.Forward10, language.text("۱۰ ثانیه جلو")) }
-                    IconButton(onClick = { selectSurah(surahNumber + 1) }, enabled = surahNumber < 114) {
-                        Icon(Icons.Default.SkipNext, language.text("سورهٔ بعد"))
+                        TransportButton(Icons.Default.Replay10, language.text("۱۰ ثانیه عقب"), controlsEnabled) {
+                            QuranAudioPlayer.skip(-10_000)
+                        }
+                        PlayButton(
+                            playing = playing,
+                            loading = loading,
+                            downloadPercent = if (downloading) state.downloadPercent else null,
+                            enabled = surah != null,
+                            accent = accent,
+                            onClick = {
+                                when {
+                                    // While fetching, the button cancels; otherwise it plays or pauses.
+                                    loading -> QuranAudioPlayer.stop()
+                                    current && state.error == null && duration > 0 -> QuranAudioPlayer.togglePlayPause()
+                                    else -> QuranAudioPlayer.play(context, reciter, surahNumber)
+                                }
+                            }
+                        )
+                        TransportButton(Icons.Default.Forward10, language.text("۱۰ ثانیه جلو"), controlsEnabled) {
+                            QuranAudioPlayer.skip(10_000)
+                        }
+                        TransportButton(Icons.Default.SkipNext, language.text("سورهٔ بعد"), surahNumber < 114) {
+                            selectSurah(surahNumber + 1)
+                        }
                     }
                 }
             }
         }
+
+        ReciterCard(reciterName = reciterName, fontScale = fontScale, onClick = { openPicker("reciter") })
 
         // One status line under the controls: an error, download progress, or the offline hint.
         val statusKey = when {
@@ -353,20 +352,19 @@ private enum class AudioStatus { PLAYING, LOADING, READY }
 private fun QuranReciter.displayName(language: AppLanguage) = if (language == AppLanguage.ARABIC) arName else faName
 
 /**
- * The surah on the same ornament and Uthmanic face as the Quran reader's surah headers, with the
- * Qari beneath. Both halves open their pickers.
+ * The player: the surah on the same ornament and Uthmanic face as the Quran reader's surah headers,
+ * followed by [controls]. Tapping the surah opens its picker.
  */
 @Composable
-private fun NowPlayingCard(
+private fun PlayerCard(
     surah: QuranSurah?,
     surahNumber: Int,
-    reciterName: String,
     status: AudioStatus,
     isSaved: Boolean,
     reduceMotion: Boolean,
     fontScale: Float,
     onChooseSurah: () -> Unit,
-    onChooseReciter: () -> Unit
+    controls: @Composable () -> Unit
 ) {
     val language = LocalAppLanguage.current
     val colors = MaterialTheme.colorScheme
@@ -378,29 +376,35 @@ private fun NowPlayingCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            Modifier.background(Brush.verticalGradient(listOf(colors.secondaryContainer, colors.surface)))
+            Modifier.background(Brush.verticalGradient(0f to colors.secondaryContainer, 0.55f to colors.surface))
         ) {
+            // A minimum-height header so the card does not jump when the status appears or clears.
             Row(
-                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 14.dp),
+                Modifier.fillMaxWidth().heightIn(min = 44.dp).padding(start = 16.dp, end = 16.dp, top = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                StatusPill(status, reduceMotion, accent)
+                AnimatedContent(targetState = status, transitionSpec = { fadeIn() togetherWith fadeOut() }, label = "pill") {
+                    if (it == AudioStatus.READY) Spacer(Modifier.size(1.dp)) else StatusPill(it, reduceMotion, accent)
+                }
                 if (isSaved) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.semantics(mergeDescendants = true) {}
-                    ) {
-                        Icon(Icons.Default.DownloadDone, null, Modifier.size(16.dp), tint = accent.color)
-                        Text(language.text("تلاوت ذخیره شده"), style = MaterialTheme.typography.labelMedium, color = accent.color)
+                    Surface(shape = RoundedCornerShape(50), color = accent.color.copy(alpha = 0.12f)) {
+                        Row(
+                            Modifier.padding(horizontal = 10.dp, vertical = 5.dp).semantics(mergeDescendants = true) {},
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(Icons.Default.DownloadDone, null, Modifier.size(14.dp), tint = accent.color)
+                            Text(language.text("تلاوت ذخیره شده"), style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold, color = accent.color)
+                        }
                     }
                 }
             }
 
             Column(
                 Modifier.fillMaxWidth().clickable(onClickLabel = language.text("انتخاب سوره"), onClick = onChooseSurah)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(Modifier.fillMaxWidth().height((92 * fontScale.coerceAtMost(1.3f)).dp), contentAlignment = Alignment.Center) {
@@ -435,34 +439,63 @@ private fun NowPlayingCard(
                     Icon(Icons.Default.ExpandMore, null, Modifier.size(18.dp), tint = colors.onSurfaceVariant)
                 }
             }
+            controls()
+        }
+    }
+}
 
-            HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = SoftBorder)
-
-            Row(
-                Modifier.fillMaxWidth().clickable(onClickLabel = language.text("انتخاب قاری"), onClick = onChooseReciter)
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                ReciterAvatar(reciterName, 48.dp)
-                Column(Modifier.weight(1f)) {
-                    Text(reciterName, fontSize = (17 * fontScale).sp, fontWeight = FontWeight.Bold,
-                        color = colors.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(language.text("حفص از عاصم"), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
-                }
-                Surface(shape = RoundedCornerShape(50), color = accent.color.copy(alpha = 0.12f)) {
-                    Row(
-                        Modifier.padding(start = 12.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        Text(language.text("تغییر"), style = MaterialTheme.typography.labelLarge, color = accent.color)
-                        Icon(Icons.Default.ExpandMore, null, Modifier.size(18.dp), tint = accent.color)
-                    }
+/** The Qari, in the same card style as the player; tapping it opens the Qari picker. */
+@Composable
+private fun ReciterCard(reciterName: String, fontScale: Float, onClick: () -> Unit) {
+    val language = LocalAppLanguage.current
+    val colors = MaterialTheme.colorScheme
+    val accent = audioAccent()
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, SoftBorder),
+        color = colors.surface,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            ReciterAvatar(reciterName, 48.dp)
+            Column(Modifier.weight(1f)) {
+                Text(reciterName, fontSize = (17 * fontScale).sp, fontWeight = FontWeight.Bold,
+                    color = colors.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(language.text("حفص از عاصم"), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+            }
+            Surface(shape = RoundedCornerShape(50), color = accent.color.copy(alpha = 0.12f)) {
+                Row(
+                    Modifier.padding(start = 12.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(language.text("تغییر"), style = MaterialTheme.typography.labelLarge, color = accent.color)
+                    Icon(Icons.Default.ExpandMore, null, Modifier.size(18.dp), tint = accent.color)
                 }
             }
         }
     }
+}
+
+/** A secondary transport control: one plain, consistent style around the filled play button. */
+@Composable
+private fun TransportButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    IconButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.size(52.dp),
+        colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
+    ) { Icon(icon, label, Modifier.size(28.dp)) }
 }
 
 @Composable
@@ -528,7 +561,7 @@ private fun PlayButton(
     onClick: () -> Unit
 ) {
     val language = LocalAppLanguage.current
-    Box(Modifier.size(88.dp), contentAlignment = Alignment.Center) {
+    Box(Modifier.size(84.dp), contentAlignment = Alignment.Center) {
         if (loading) {
             if (downloadPercent != null) {
                 CircularProgressIndicator(
@@ -546,7 +579,7 @@ private fun PlayButton(
         FilledIconButton(
             onClick = onClick,
             enabled = enabled,
-            modifier = Modifier.size(72.dp),
+            modifier = Modifier.size(68.dp),
             colors = IconButtonDefaults.filledIconButtonColors(containerColor = accent.color, contentColor = accent.onColor)
         ) {
             Icon(
