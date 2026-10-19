@@ -42,7 +42,7 @@ Myket's checked-in `version-myket.json` initially has `published: false`, an emp
   "store": "myket",
   "published": true,
   "versionName": "3.0.0",
-  "versionCode": 24,
+  "versionCode": 25,
   "minRequiredVersionCode": 0
 }
 ```
@@ -51,7 +51,11 @@ Commit this metadata through develop and merge the PR into main after store appr
 
 ## Building and packaging
 
-Only build/run when requested. No version bump or store upload is performed by these scripts. Prepare changelogs matching the current version, then:
+Only build/run when requested. No version bump or store upload is performed by these scripts.
+
+Before packaging a new update, inspect the published version codes in both store consoles and set `versionCode` above the highest published code. Changing `versionName` alone is insufficient. Version 3.0.0 uses code 25 because Myket has already published 2.5.0 with code 24.
+
+Prepare changelogs matching the current version, then:
 
 ```powershell
 .\scripts\Release-Stores.ps1 -Store both -ChangelogFa .\path\changelog-fa.md -ChangelogEn .\path\changelog-en.md
@@ -83,4 +87,4 @@ APK paths are `app/build/outputs/apk/<store>/release/app-<store>-release.apk`; A
 
 Implementation-time checks cover diff whitespace, PowerShell parsing, source separation, and synthetic artifact-scanner acceptance/rejection. Run `scripts/Test-StoreIsolation.ps1` for these source/fixture checks without Gradle; the release script also runs it before building. Unit tests are authored for intent contracts, same-store fallback, blocked/unavailable handlers, independent publication, required updates, invalid metadata and shared verse text.
 
-Android compilation, unit-test execution, actual artifact inspection and device verification remain pending until a build is requested. Before distribution, build both flavors with tests/lint; inspect each artifact; install each as an update using the permanent signing identity; verify rating, optional/required update and shares in Persian/Arabic, both with the selected store installed and absent. Check Myket rating against an approved listing. Do not uninstall or clear app data to switch variants. Upload each artifact only to its corresponding store, then update that store's publication metadata after approval.
+Requested release runs record Android compilation, unit tests, release vital lint, artifact routing, package/version checks, APK signatures and checksums in each `.d` output directory. Check that run's final Gradle result and signing reports before claiming success. These checks do not prove device behavior or store acceptance. Device verification requires a separate explicit install/run request: install each variant as an update using the permanent signing identity; verify rating, optional/required update and shares in Persian/Arabic, both with the selected store installed and absent. Check Myket rating against an approved listing. Do not uninstall or clear app data to switch variants. Upload each artifact only to its corresponding store, then update that store's publication metadata after approval.
