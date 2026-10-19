@@ -42,7 +42,7 @@ Myket's checked-in `version-myket.json` initially has `published: false`, an emp
   "store": "myket",
   "published": true,
   "versionName": "3.0.0",
-  "versionCode": 24,
+  "versionCode": 25,
   "minRequiredVersionCode": 0
 }
 ```
@@ -51,7 +51,11 @@ Commit this metadata through develop and merge the PR into main after store appr
 
 ## Building and packaging
 
-Only build/run when requested. No version bump or store upload is performed by these scripts. Prepare changelogs matching the current version, then:
+Only build/run when requested. No version bump or store upload is performed by these scripts.
+
+Before packaging a new update, inspect the published version codes in both store consoles and set `versionCode` above the highest published code. Changing `versionName` alone is insufficient. Version 3.0.0 uses code 25 because Myket has already published 2.5.0 with code 24.
+
+Prepare changelogs matching the current version, then:
 
 ```powershell
 .\scripts\Release-Stores.ps1 -Store both -ChangelogFa .\path\changelog-fa.md -ChangelogEn .\path\changelog-en.md
