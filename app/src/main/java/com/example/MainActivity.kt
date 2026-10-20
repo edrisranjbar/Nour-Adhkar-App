@@ -107,6 +107,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /** While an adhan plays, a volume key stops it instead of changing the volume (issue #71). */
+    override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+        val volumeKey = keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN
+        if (volumeKey && com.example.prayer.AdhanAlertService.playing) {
+            com.example.prayer.AdhanAlertService.stop(this)
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
     override fun onResume() {
         super.onResume()
         com.example.data.repository.ProgressSyncRepository.onForeground(this, true)
