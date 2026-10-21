@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- The logo's own brown, so the adaptive icon's mask never shows a second colour around it. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <gradient
-        android:angle="315"
-        android:startColor="#FDFBF7"
-        android:endColor="#EAE4D8"
-        android:type="linear" />
+    <solid android:color="#A79277" />
 </shape>

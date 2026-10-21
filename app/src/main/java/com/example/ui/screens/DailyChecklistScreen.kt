@@ -46,11 +46,19 @@ internal val obligatoryChecklistItems = listOf(
     DailyChecklistItem("salah_isha", "نماز عشاء")
 )
 
+/** The confirmed sunnah prayers around the obligatory ones, one row each so each can be ticked. */
+private val rawatibChecklistItems = listOf(
+    DailyChecklistItem("rawatib_fajr", "سنت قبل از نماز صبح"),
+    DailyChecklistItem("rawatib_dhuhr_before", "سنت قبل از نماز ظهر"),
+    DailyChecklistItem("rawatib_dhuhr_after", "سنت بعد از نماز ظهر"),
+    DailyChecklistItem("rawatib_maghrib", "سنت بعد از نماز مغرب"),
+    DailyChecklistItem("rawatib_isha", "سنت بعد از نماز عشاء")
+)
+
 private val recommendedChecklistItems = listOf(
     DailyChecklistItem("morning_adhkar", "اذکار صبحگاه"),
     DailyChecklistItem("quran", "تلاوت قرآن"),
     DailyChecklistItem("duha", "نماز ضحی"),
-    DailyChecklistItem("rawatib", "نمازهای سنت رواتب"),
     DailyChecklistItem("charity", "صدقه"),
     DailyChecklistItem("istighfar", "استغفار"),
     DailyChecklistItem("salawat", "صلوات بر پیامبر (ص)"),
@@ -61,6 +69,7 @@ private val recommendedChecklistItems = listOf(
 
 private val dailyChecklistSections = listOf(
     DailyChecklistSection("فرائض روزانه", obligatoryChecklistItems),
+    DailyChecklistSection("سنت‌های رواتب", rawatibChecklistItems),
     DailyChecklistSection("اعمال مستحب روزانه", recommendedChecklistItems)
 )
 

@@ -1,8 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    The 108dp adaptive canvas is masked to a circle, squircle or rounded square by the launcher;
+    only the central 66dp circle is guaranteed to stay visible. The «نور» letters reach 58% of the
+    logo's width from its centre, so at 52dp they stay within ~30dp of the centre and are never
+    cropped.
+
+    The first item gives the layer its full 108dp intrinsic size. Without it the layer reports the
+    letters' size, and launchers that draw the foreground at its intrinsic size scaled up to the
+    canvas (Xiaomi HyperOS) blow the letters up past the mask, which is what cropped them before.
+    The letters are drawn alone (ic_launcher_letters) on the logo's brown, so no edge shows.
+-->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:width="66dp"
-        android:height="66dp"
-        android:drawable="@drawable/ic_nour_adhkar_logo"
+        android:width="108dp"
+        android:height="108dp"
+        android:drawable="@drawable/ic_launcher_background" />
+    <item
+        android:width="52dp"
+        android:height="52dp"
+        android:drawable="@drawable/ic_launcher_letters"
         android:gravity="center" />
 </layer-list>
