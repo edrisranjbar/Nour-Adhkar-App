@@ -45,6 +45,7 @@ class MainActivity : ComponentActivity() {
         openChecklistFromWidget = intent.getBooleanExtra(ChecklistWidgetProvider.EXTRA_OPEN_CHECKLIST, false)
         openPrayersFromWidget = intent.getBooleanExtra(com.example.widget.PrayerTimesWidgetProvider.EXTRA_OPEN_PRAYERS, false)
         openQuranPage = intent.getIntExtra(AdhkarNotificationManager.EXTRA_OPEN_QURAN_PAGE, 0).takeIf { it in 1..604 }
+        playAdhanForDebug(intent)
         enableEdgeToEdge()
 
         setContent {
@@ -107,14 +108,31 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /** While an adhan plays, a volume key stops it instead of changing the volume (issue #71). */
-    override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent?): Boolean {
-        val volumeKey = keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP || keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN
-        if (volumeKey && com.example.prayer.AdhanAlertService.playing) {
+    /**
+     * While an adhan plays, a volume key stops it instead of changing the volume (issue #71).
+     * Handled before any view sees the key, and the matching key-up is consumed too.
+     */
+    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        val volumeKey = event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP ||
+            event.keyCode == android.view.KeyEvent.KEYCODE_VOLUME_DOWN
+        if (volumeKey && event.action == android.view.KeyEvent.ACTION_DOWN && com.example.prayer.AdhanAlertService.playing) {
             com.example.prayer.AdhanAlertService.stop(this)
+            stoppedAdhanWithKey = true
             return true
         }
-        return super.onKeyDown(keyCode, event)
+        if (volumeKey && event.action == android.view.KeyEvent.ACTION_UP && stoppedAdhanWithKey) {
+            stoppedAdhanWithKey = false
+            return true
+        }
+        return super.dispatchKeyEvent(event)
+    }
+    private var stoppedAdhanWithKey = false
+
+    /** Debug builds only: `--ez debug_play_adhan true` plays the adhan now, to test it on a device. */
+    private fun playAdhanForDebug(intent: Intent?) {
+        if (BuildConfig.DEBUG && intent?.getBooleanExtra("debug_play_adhan", false) == true) {
+            com.example.prayer.AdhanAlertService.preview(this)
+        }
     }
 
     override fun onResume() {
@@ -132,6 +150,7 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        playAdhanForDebug(intent)
         notificationCategory = intent.getStringExtra(AdhkarNotificationManager.EXTRA_OPEN_CATEGORY)
         openChecklistFromWidget = intent.getBooleanExtra(ChecklistWidgetProvider.EXTRA_OPEN_CHECKLIST, false)
         openPrayersFromWidget = intent.getBooleanExtra(com.example.widget.PrayerTimesWidgetProvider.EXTRA_OPEN_PRAYERS, false)

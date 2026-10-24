@@ -76,6 +76,16 @@ class AdhkarViewModel(application: Application) : AndroidViewModel(application) 
         com.example.prayer.AdhanScheduler(getApplication()).reschedule()
     }
 
+    private val _adhanVolume = MutableStateFlow(prefs.getAdhanVolume())
+    val adhanVolume = _adhanVolume.asStateFlow()
+    /** Saved in steps of 10%; an adhan or preview that is playing changes at once. */
+    fun setAdhanVolume(volume: Float) {
+        val stepped = (Math.round(volume * 10) / 10f).coerceIn(0.1f, 1f)
+        prefs.setAdhanVolume(stepped)
+        _adhanVolume.value = stepped
+        com.example.prayer.AdhanAlertService.applyVolume(stepped)
+    }
+
     private val _adhanPrayers = MutableStateFlow(prefs.getAdhanPrayers())
     val adhanPrayers = _adhanPrayers.asStateFlow()
     fun setAdhanPrayer(prayer: com.example.prayer.AdhanPrayer, enabled: Boolean) {

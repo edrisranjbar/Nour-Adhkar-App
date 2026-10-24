@@ -101,6 +101,13 @@ class PreferenceRepository(context: Context) {
         return saved.takeIf { it.isSelected } ?: com.example.prayer.AdhanSound()
     }
 
+    /** Adhan loudness as a share of the phone's alarm volume, 0.1 to 1 (default: full). */
+    fun getAdhanVolume(): Float = prefs.getFloat("adhan_volume", 1f).coerceIn(0.1f, 1f)
+
+    fun setAdhanVolume(volume: Float) {
+        prefs.edit().putFloat("adhan_volume", volume.coerceIn(0.1f, 1f)).apply()
+    }
+
     fun setAdhanSound(sound: com.example.prayer.AdhanSound) {
         require(sound.id.isEmpty() || sound.isSelected)
         prefs.edit().putString("adhan_sound_id", sound.id)
