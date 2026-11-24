@@ -207,6 +207,23 @@ fun EmotionalAyahCard(viewModel: AdhkarViewModel, fontScale: Float) {
                             color = TextPersian.copy(alpha = 0.72f),
                             modifier = Modifier.align(Alignment.End)
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "تأمل در آیه",
+                            fontSize = (10 * fontScale).sp,
+                            fontWeight = FontWeight.Medium,
+                            color = TextPersian.copy(alpha = 0.72f),
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Right
+                        )
+                        Text(
+                            text = emotionalAyah.reflection,
+                            fontSize = (11.5 * fontScale).sp,
+                            lineHeight = (18 * fontScale).sp,
+                            color = TextPersian,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Right
+                        )
                         }
                     }
                 }
